@@ -1,7 +1,7 @@
 const qrcode = require('qrcode-terminal');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const { printChats, getGroupParticipants, getGroupIdByName, removeParticipantByPhoneNumber } = require('./chat');
-const getAuthorizedContacts = require('./googlesheets');
+const getWorksheetContents = require('./googlesheets');
 
 const client = new Client({
     authStrategy: new LocalAuth()
@@ -11,12 +11,15 @@ client.on('qr', qr => {
     qrcode.generate(qr, {small: true});
 });
 
-client.on('ready', async () => {
+client.on('ready', () => {
     console.log('Client is ready!');
 
-    // Use await within an async function to wait for Promise resolution
-    const contactList = await getAuthorizedContacts('1Sv2UVDeOk3C_Zt4Bye6LWrm9G93G57YEyp-RUVcljSw', 'Cadastro completo');
-    console.log(contactList);
+    
+
+    getWorksheetContents('1Sv2UVDeOk3C_Zt4Bye6LWrm9G93G57YEyp-RUVcljSw', 'Cadastro completo')
+      .then(data => console.log(data))
+      .catch(error => console.error(error));
 });
+
 
 client.initialize();

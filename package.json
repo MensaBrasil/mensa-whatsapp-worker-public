@@ -1,0 +1,24 @@
+{
+  "name": "mensa-whatsapp-admin",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Associacao-Mensa-Brasil/mensa-whatsapp-admin.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Associacao-Mensa-Brasil/mensa-whatsapp-admin/issues"
+  },
+  "homepage": "https://github.com/Associacao-Mensa-Brasil/mensa-whatsapp-admin#readme",
+  "dependencies": {
+    "google-auth-library": "^9.0.0",
+    "googleapis": "^123.0.0",
+    "whatsapp-web.js": "^1.21.0"
+  }
+}
