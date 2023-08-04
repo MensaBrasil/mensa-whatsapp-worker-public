@@ -14,10 +14,9 @@ client.on('qr', qr => {
 client.on('ready', async () => {
     console.log('Client is ready!');
 
-    
+    // Use await within an async function to wait for Promise resolution
+    const contactList = await getAuthorizedContacts('1Sv2UVDeOk3C_Zt4Bye6LWrm9G93G57YEyp-RUVcljSw', 'Cadastro completo');
+    console.log(contactList);
 });
-
-contactList = getAuthorizedContacts('1Sv2UVDeOk3C_Zt4Bye6LWrm9G93G57YEyp-RUVcljSw', 'Cadastro completo');
-console.log(contactList);
 
 client.initialize();
