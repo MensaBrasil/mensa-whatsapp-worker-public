@@ -13,11 +13,12 @@ client.on('qr', qr => {
 
 client.on('ready', () => {
     console.log('Client is ready!');
-
-    
-
     getWorksheetContents('1Sv2UVDeOk3C_Zt4Bye6LWrm9G93G57YEyp-RUVcljSw', 'Cadastro completo')
-      .then(data => console.log(data))
+    .then(df => {
+        // You can access a column by its name using df['columnName']
+        const columnData = df['TELEFONE - CELULAR'];
+        console.log(columnData.values);
+      })
       .catch(error => console.error(error));
 });
 
