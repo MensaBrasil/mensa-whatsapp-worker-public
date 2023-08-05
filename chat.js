@@ -29,17 +29,17 @@ async function getGroupParticipants(client, groupId) {
 
     if (!groupChat.isGroup) {
         console.log('Chat is not a group chat');
-        return;
+        return [];
     }
 
-    console.log(`Group: ${groupChat.name}`);
-    console.log('Participants:');
 
-    // Iterate over participants
-    for(let participant of groupChat.participants) {
-        console.log(`ID: ${participant.id.user}, isAdmin: ${participant.isAdmin}`);
-    }
+    // Iterate over participants and map each to an object containing their ID and admin status
+    return groupChat.participants.map(participant => ({
+        phone: participant.id.user,
+        isAdmin: participant.isAdmin
+    }));
 }
+
 
 async function removeParticipantByPhoneNumber(client, groupId, phoneNumber) {
     // Fetch the GroupChat by its ID
