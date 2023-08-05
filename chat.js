@@ -64,11 +64,43 @@ async function removeParticipantByPhoneNumber(client, groupId, phoneNumber) {
 }
 
 
+async function sendMessageToNumber(client, phoneNumber, message) {
+    try {
+      const chat = await client.getChatById(`${phoneNumber}@c.us`);
+      if (chat) {
+        await chat.sendMessage(message);
+        console.log(`Message sent to ${phoneNumber}`);
+      } else {
+        console.log(`Failed to send message to ${phoneNumber}: Chat not found.`);
+      }
+    } catch (error) {
+      console.error(`Error sending message to ${phoneNumber}: ${error.message}`);
+    }
+  }
+  
+
+  async function removeParticipantByPhoneNumber(client, groupId, phoneNumber) {
+    try {
+        const groupChat = await client.getChatById(groupId);
+        const participantId = groupChat.participants.find(participant => participant.id._serialized.includes(phoneNumber)).id._serialized;
+        
+        if (participantId) {
+            return await groupChat.removeParticipants([participantId]);
+        } else {
+            console.error(`Unable to find participant with phone number ${phoneNumber} in group ${groupId}`);
+            return null;
+        }
+    } catch (error) {
+        console.error(`Failed to remove participant with phone number ${phoneNumber} from group ${groupId}`, error);
+        return null;
+    }
+}
 
 
 module.exports = {
     printChats,
     getGroupParticipants,
     getGroupIdByName,
-    removeParticipantByPhoneNumber
+    removeParticipantByPhoneNumber,
+    sendMessageToNumber
 };

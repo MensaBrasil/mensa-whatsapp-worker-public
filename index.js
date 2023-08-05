@@ -1,9 +1,32 @@
 const qrcode = require('qrcode-terminal');
 const { Client, LocalAuth } = require('whatsapp-web.js');
-const { printChats, getGroupParticipants, getGroupIdByName, removeParticipantByPhoneNumber } = require('./chat');
+const { printChats, getGroupParticipants, getGroupIdByName, removeParticipantByPhoneNumber, sendMessageToNumber } = require('./chat');
 const getWorksheetContents = require('./googlesheets');
 const fs = require('fs');
 const checkPhoneNumber = require('./phone-check');
+const { ObjectId } = require('mongodb');
+const { isMessageAlreadySent, saveMessageToMongoDB } = require('./mongo');
+const MongoClient = require('mongodb').MongoClient;
+const { inactiveMessage, notFoundMessage } = require('./messages');
+
+require('dotenv').config();
+
+const username = encodeURIComponent(process.env.DB_USER);
+const password = encodeURIComponent(process.env.DB_PASS);
+const dbName = process.env.DB_NAME;
+
+const uri = `mongodb+srv://${username}:${password}@mensawhatsapp.tpllazx.mongodb.net/${dbName}`;
+
+const clientMongo = new MongoClient(uri, { useUnifiedTopology: true });
+
+(async () => {
+  try {
+    await clientMongo.connect();
+    console.log('Connected to MongoDB successfully!');
+  } catch (err) {
+    console.error('Error connecting to MongoDB:', err);
+  }
+})();
 
 const client = new Client({
     authStrategy: new LocalAuth()
@@ -13,36 +36,73 @@ client.on('qr', qr => {
     qrcode.generate(qr, {small: true});
 });
 
-client.on('ready', () => {
+// Helper function to introduce a delay
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+const groupNames = [
+    'Automação Mensa - voluntários ',
+    'Automação Mensa - voluntários 2',
+];
+
+
+client.on('ready', async () => {
     console.log('Client is ready!');
 
-    const groupName = 'Avisos Mensa - SUDESTE';  // Replace with your actual group name
+    for (const groupName of groupNames) {
+        console.log(`Processing group: ${groupName}`);
+        
+        try {
+            const groupId = await getGroupIdByName(client, groupName);
+            const participants = await getGroupParticipants(client, groupId);
+            const groupMembers = participants.map(participant => participant.phone);
+            const df = await getWorksheetContents('1Sv2UVDeOk3C_Zt4Bye6LWrm9G93G57YEyp-RUVcljSw', 'Cadastro completo');
 
-    getGroupIdByName(client, groupName)
-        .then(groupId => getGroupParticipants(client, groupId))
-        .then(participants => {
-            // Use phone property from the object returned by getGroupParticipants
-            const groupMembers = participants.map(participant => participant.phone);  
-            return getWorksheetContents('1Sv2UVDeOk3C_Zt4Bye6LWrm9G93G57YEyp-RUVcljSw', 'Cadastro completo')
-                .then(df => {
-                    let checkPromises = groupMembers.map(member => checkPhoneNumber(df, member));
+            let checkResults = await Promise.all(groupMembers.map(member => checkPhoneNumber(df, member)));
 
-                    return Promise.all(checkPromises)
-                        .then(results => {
-                            let notFoundNumbers = groupMembers.filter((member, i) => !results[i].found);
-                            let inactiveNumbers = groupMembers.filter((member, i) => results[i].found && results[i].status !== 'Ativo');
-                        
-                            // Save numbers not found to a file
-                            fs.writeFileSync('not_found_numbers.txt', notFoundNumbers.join('\n'));
-                        
-                            // Save active numbers to a file
-                            fs.writeFileSync('inactive_numbers.txt', inactiveNumbers.join('\n'));
-                            
-                            console.log('Done!');
-                        });
-                });
-        })
-        .catch(console.error);
+            let notFoundNumbers = groupMembers.filter((member, i) => !checkResults[i].found);
+            let inactiveNumbers = groupMembers.filter((member, i) => checkResults[i].found && checkResults[i].status !== 'Ativo');
+
+            fs.writeFileSync(`not_found_numbers_${groupName}.txt`, notFoundNumbers.join('\n'));
+            fs.writeFileSync(`inactive_numbers_${groupName}.txt`, inactiveNumbers.join('\n'));
+
+            for (let inactiveNumber of inactiveNumbers) {
+                const alreadySent = await isMessageAlreadySent(clientMongo, dbName, 'communicated_inactive', inactiveNumber, inactiveMessage);
+                if (!alreadySent) {
+                    await sendMessageToNumber(client, inactiveNumber, inactiveMessage);
+                    await saveMessageToMongoDB(clientMongo, dbName, 'communicated_inactive', inactiveNumber, inactiveMessage, groupName);
+                }
+                await delay(10000); // Wait for 10 seconds
+            }
+
+            for (let notFoundNumber of notFoundNumbers) {
+                const alreadySent = await isMessageAlreadySent(clientMongo, dbName, 'communicated_not_found', notFoundNumber, notFoundMessage);
+                if (!alreadySent) {
+                    await sendMessageToNumber(client, notFoundNumber, notFoundMessage);
+                    await saveMessageToMongoDB(clientMongo, dbName, 'communicated_not_found', notFoundNumber, notFoundMessage, groupName);
+                }
+                await delay(10000); // Wait for 10 seconds
+            }
+
+            console.log(`Finished processing group: ${groupName}`);
+        } catch (error) {
+            console.error(`Error processing group ${groupName}:`, error);
+        }
+    }
+    console.log('All groups processed!');
 });
 
+
 client.initialize();
+
+process.on('SIGINT', async () => {
+    try {
+        await clientMongo.close();
+        console.log('Disconnected from MongoDB.');
+        process.exit(0);
+    } catch (err) {
+        console.error('Error closing MongoDB connection:', err);
+        process.exit(1);
+    }
+});
