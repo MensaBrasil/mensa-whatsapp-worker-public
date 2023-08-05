@@ -42,8 +42,7 @@ function delay(ms) {
 }
 
 const groupNames = [
-    'Automação Mensa - voluntários ',
-    'Automação Mensa - voluntários 2',
+    'Mensa Minas Gerais',
 ];
 
 
@@ -64,7 +63,8 @@ client.on('ready', async () => {
             let checkResults = await Promise.all(groupMembers.map(member => checkPhoneNumber(df, member)));
 
             let notFoundNumbers = groupMembers.filter((member, i) => !checkResults[i].found);
-            let inactiveNumbers = groupMembers.filter((member, i) => checkResults[i].found && checkResults[i].status !== 'Ativo');
+            let inactiveNumbers = groupMembers.filter((member, i) => checkResults[i].found && checkResults[i].status !== 'Ativo' && checkResults[i].status !== 'Transferido'); // Transferido is a special case for now. Convidados
+
 
             for (let inactiveNumber of inactiveNumbers) {
                 const alreadySent = await isMessageAlreadySent(clientMongo, dbName, 'communicated_inactive', inactiveNumber, inactiveMessage);

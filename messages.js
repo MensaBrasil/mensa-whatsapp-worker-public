@@ -21,21 +21,22 @@ Abraços mensans robóticos,
 Zelador 🤖
 `
 
-const notFoundMessage = `Fala aí! 👋
+const notFoundMessage = `Olá, mensan! 👋
 
-Aqui é o Zelador, o seu robô mensageiro da Mensa! 🤖
+Aqui quem fala é o Zelador, o robô da Mensa Brasil! 🤖
 
-Vim aqui porque tivemos um pequeno contratempo: não estamos conseguindo encontrar seu cadastro no nosso sistema. 😕 Acontece, né? Não se preocupe, a gente resolve isso rapidinho!
+Estou te enviando esta mensagem, pois tive um pequeno contratempo: não encontrei este seu número de telefone nos cadastros de nosso sistema da Mensa Brasil. 😕 Mas não se preocupe, juntos resolveremos isso rapidinho!
 
-Pra arrumar tudo direitinho, precisamos que você envie um e-mail para secretaria@mensa.org.br com o seu número de membro e o telefone que você usa no WhatsApp. 📧👌 
+Pra corrigir a situação, preciso que você envie um e-mail para secretaria@mensa.org.br com o seu número de membro e o número de telefone que você usa no WhatsApp. 📧👌 
 
-Importante: O prazo pra enviar esse e-mail é de 7 dias, tá bom? ⏰ Se a gente não receber suas informações nesse período, infelizmente teremos que te remover do grupo. Mas tenho certeza de que você vai resolver isso rapidinho!
+Importante: seu prazo para enviar o e-mail de regularização cadastral é de 7 dias, contados da data desta mensagem. ⏰ Se nossa secretaria não receber suas informações neste período, infelizmente terei que remover este número de telefone dos grupos oficiais de WhatsApp da Mensa Brasil. Por isso, tenho certeza de resolveremos a situação rapidinho! 🧠😉
 
 Aguardamos seu e-mail e ficamos à disposição para qualquer dúvida. Lembre-se, estou aqui pra te ajudar! 🆘
 
-Contamos com você! 
+Contamos com você!
 
-Abraços, 
+Abraços mensans robóticos,
+
 Zelador 🤖
 `
 
