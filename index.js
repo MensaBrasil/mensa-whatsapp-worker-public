@@ -47,6 +47,8 @@ const groupNames = [
 ];
 
 
+//... [rest of the code]
+
 client.on('ready', async () => {
     console.log('Client is ready!');
 
@@ -64,9 +66,6 @@ client.on('ready', async () => {
             let notFoundNumbers = groupMembers.filter((member, i) => !checkResults[i].found);
             let inactiveNumbers = groupMembers.filter((member, i) => checkResults[i].found && checkResults[i].status !== 'Ativo');
 
-            fs.writeFileSync(`not_found_numbers_${groupName}.txt`, notFoundNumbers.join('\n'));
-            fs.writeFileSync(`inactive_numbers_${groupName}.txt`, inactiveNumbers.join('\n'));
-
             for (let inactiveNumber of inactiveNumbers) {
                 const alreadySent = await isMessageAlreadySent(clientMongo, dbName, 'communicated_inactive', inactiveNumber, inactiveMessage);
                 if (!alreadySent) {
@@ -74,6 +73,9 @@ client.on('ready', async () => {
                     await saveMessageToMongoDB(clientMongo, dbName, 'communicated_inactive', inactiveNumber, inactiveMessage, groupName);
                 }
                 await delay(10000); // Wait for 10 seconds
+
+                // Remove the inactive member from the group
+                await removeParticipantByPhoneNumber(client, groupId, inactiveNumber);
             }
 
             for (let notFoundNumber of notFoundNumbers) {
