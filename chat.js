@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 async function printChats(client) {
     const chats = await client.getChats();
     console.log(chats);
@@ -79,6 +81,40 @@ async function sendMessageToNumber(client, phoneNumber, message) {
   }
   
 
+  async function sendMessageToNumberAPI(client, phoneNumber, message) {
+    const endpoint = "https://graph.facebook.com/v17.0/106463662546945/messages";
+    const token = process.env.FB_TOKEN;
+  
+    const payload = {
+      messaging_product: "whatsapp",
+      to: phoneNumber,
+      type: "template",
+      template: {
+        name: "membronaoencontrado3",
+        language: {
+          code: "pt_BR"
+        }
+      }
+    };
+  
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+  
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error("Error sending message:", error);
+      throw error;
+    }
+  }
+
   async function removeParticipantByPhoneNumber(client, groupId, phoneNumber) {
     try {
         const groupChat = await client.getChatById(groupId);
@@ -103,5 +139,6 @@ module.exports = {
     getGroupParticipants,
     getGroupIdByName,
     removeParticipantByPhoneNumber,
-    sendMessageToNumber
+    sendMessageToNumber,
+    sendMessageToNumberAPI
 };

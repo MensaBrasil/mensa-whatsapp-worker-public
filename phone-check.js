@@ -1,4 +1,4 @@
-const phoneNumberColumns = ['TELEFONE - CELULAR', 'TELEFONE - COMERCIAL', 'TELEFONE - RESIDENCIAL'];
+const phoneNumberColumns = ['TELEFONE - CELULAR', 'TELEFONE - COMERCIAL', 'TELEFONE - RESIDENCIAL', 'TELEFONE - EXTRA'];
 
 function checkPhoneNumber(df, inputPhoneNumber) {
     for (let i = 0; i < df.shape[0]; i++) {

@@ -1,13 +1,13 @@
 const qrcode = require('qrcode-terminal');
 const { Client, LocalAuth } = require('whatsapp-web.js');
-const { printChats, getGroupParticipants, getGroupIdByName, removeParticipantByPhoneNumber, sendMessageToNumber } = require('./chat');
+const { printChats, getGroupParticipants, getGroupIdByName, removeParticipantByPhoneNumber, sendMessageToNumber, sendMessageToNumberAPI } = require('./chat');
 const getWorksheetContents = require('./googlesheets');
 const fs = require('fs');
 const checkPhoneNumber = require('./phone-check');
 const { ObjectId } = require('mongodb');
 const { isMessageAlreadySent, saveMessageToMongoDB } = require('./mongo');
 const MongoClient = require('mongodb').MongoClient;
-const { inactiveMessage, notFoundMessage } = require('./messages');
+const { getInactiveMessage, getNotFoundMessage } = require('./messages');
 
 require('dotenv').config();
 
@@ -37,16 +37,52 @@ client.on('qr', qr => {
 });
 
 // Helper function to introduce a delay
-function delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+function getRandomDelay(baseDelay) {
+    // Calculate the random variation as 20% of the baseDelay
+    const variation = baseDelay * 0.2;
+    // Generate a random number between -variation and variation
+    const randomDelay = Math.random() * (2 * variation) - variation;
+    // Add the randomDelay to the baseDelay
+    const totalDelay = baseDelay + randomDelay;
+    
+    return totalDelay;
 }
 
+function delay(ms) {
+    const totalDelay = getRandomDelay(ms);
+    return new Promise(resolve => setTimeout(resolve, totalDelay));
+}
+
+
+
 const groupNames = [
+    // Avisos
+    'Avisos Mensa JB SP CIDADE',
+    'Avisos Mensa JB SUL',
+    'Avisos Mensa JB C.O/N',
+    'Avisos Mensa JB Nordeste ',
+    'Avisos Mensa JB SP ESTADO',
+    'Avisos Mensa -  SUL',
+    'Avisos Mensa - C.O/N',
+    'Avisos Mensa - NORDESTE',
+    'Avisos Mensa SP CIDADE',
+    'Avisos Mensa - SUDESTE',
+    'Avisos Mensa JB SUDESTE ',
+    'Avisos Mensa SP ESTADO',
+    // SIGs
+    'MB | Autismo e Outras Neurodiversidades',
+    'MB | Xadrez',
+    'MB | Nerd',
+    // Regionais
     'Mensa Minas Gerais',
+    'Mensa Rio de Janeiro',
+    'Mensa DF',
+    'MB | Coordenação Nacional',
+
 ];
 
 
-//... [rest of the code]
+
 
 client.on('ready', async () => {
     console.log('Client is ready!');
@@ -67,24 +103,31 @@ client.on('ready', async () => {
 
 
             for (let inactiveNumber of inactiveNumbers) {
-                const alreadySent = await isMessageAlreadySent(clientMongo, dbName, 'communicated_inactive', inactiveNumber, inactiveMessage);
-                if (!alreadySent) {
-                    await sendMessageToNumber(client, inactiveNumber, inactiveMessage);
-                    await saveMessageToMongoDB(clientMongo, dbName, 'communicated_inactive', inactiveNumber, inactiveMessage, groupName);
-                }
-                await delay(10000); // Wait for 10 seconds
+                 const alreadySent = await isMessageAlreadySent(clientMongo, dbName, 'communicated_inactive', inactiveNumber);
+                 await saveMessageToMongoDB(clientMongo, dbName, 'communicated_inactive', inactiveNumber, groupName);
+                 if (!alreadySent) {
+                     //await sendMessageToNumber(client, inactiveNumber, getInactiveMessage(inactiveNumber));
+                     //await saveMessageToMongoDB(clientMongo, dbName, 'communicated_inactive', inactiveNumber, inactiveMessage, groupName);
+                     await delay(100);
+                 }
 
-                // Remove the inactive member from the group
-                await removeParticipantByPhoneNumber(client, groupId, inactiveNumber);
+                 // Remove the inactive member from the group
+                 //await removeParticipantByPhoneNumber(client, groupId, inactiveNumber);
             }
 
+
+
             for (let notFoundNumber of notFoundNumbers) {
-                const alreadySent = await isMessageAlreadySent(clientMongo, dbName, 'communicated_not_found', notFoundNumber, notFoundMessage);
-                if (!alreadySent) {
-                    await sendMessageToNumber(client, notFoundNumber, notFoundMessage);
-                    await saveMessageToMongoDB(clientMongo, dbName, 'communicated_not_found', notFoundNumber, notFoundMessage, groupName);
+                const alreadySent = await isMessageAlreadySent(clientMongo, dbName, 'communicated_not_found', notFoundNumber);
+                if (notFoundNumber == '33676034195') {
+                    console.log('Found 33676034195');
                 }
-                await delay(10000); // Wait for 10 seconds
+                await saveMessageToMongoDB(clientMongo, dbName, 'communicated_not_found', notFoundNumber, groupName);
+                if (!alreadySent) {
+                    console.log(`Sending message to ${notFoundNumber} because it was not found in the spreadsheet.`);
+                    //await sendMessageToNumberAPI(client, notFoundNumber, getNotFoundMessage(notFoundNumber));
+                    await delay(100); 
+                }
             }
 
             console.log(`Finished processing group: ${groupName}`);
