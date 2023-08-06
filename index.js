@@ -119,13 +119,10 @@ client.on('ready', async () => {
 
             for (let notFoundNumber of notFoundNumbers) {
                 const alreadySent = await isMessageAlreadySent(clientMongo, dbName, 'communicated_not_found', notFoundNumber);
-                if (notFoundNumber == '33676034195') {
-                    console.log('Found 33676034195');
-                }
                 await saveMessageToMongoDB(clientMongo, dbName, 'communicated_not_found', notFoundNumber, groupName);
                 if (!alreadySent) {
                     console.log(`Sending message to ${notFoundNumber} because it was not found in the spreadsheet.`);
-                    //await sendMessageToNumberAPI(client, notFoundNumber, getNotFoundMessage(notFoundNumber));
+                    await sendMessageToNumberAPI(client, notFoundNumber, getNotFoundMessage(notFoundNumber));
                     await delay(100); 
                 }
             }
