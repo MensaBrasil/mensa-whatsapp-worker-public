@@ -157,9 +157,12 @@ client.on('ready', async () => {
                 // Check if the group is in the list of groups where JB are alloweds
                 if (!jbGroupNames.includes(groupName)) {
 
+
                     // Remove the JB member from the group
                     //await removeParticipantByPhoneNumber(client, groupId, jbNumber);        <----------------------------------------------------
 
+
+                    
                 }
             }
 
