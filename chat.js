@@ -84,7 +84,11 @@ async function sendMessageToNumber(client, phoneNumber, message) {
   async function sendMessageToNumberAPI(client, phoneNumber, message) {
     const endpoint = "https://graph.facebook.com/v17.0/106463662546945/messages";
     const token = process.env.FB_TOKEN;
-  
+    // if token is 'staging', ignore the logic below and continue the code
+    if (token === 'staging') {
+      console.log('Staging token. Mensagem não enviada');
+      return;
+    }
     const payload = {
       messaging_product: "whatsapp",
       to: phoneNumber,
