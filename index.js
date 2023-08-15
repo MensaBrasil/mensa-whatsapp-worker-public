@@ -12,6 +12,7 @@ const { getInactiveMessage, getNotFoundMessage } = require('./messages');
 require('dotenv').config();
 
 const GOOGLE_SHEETS_CREDENTIALS_PATH = process.env.GOOGLE_SHEETS_CREDENTIALS_PATH;
+const GOOGLE_SHEET_ID= process.env.GOOGLE_SHEET_ID;
 
 const username = encodeURIComponent(process.env.DB_USER);
 const password = encodeURIComponent(process.env.DB_PASS);
@@ -79,7 +80,7 @@ client.on('ready', async () => {
             const groupMembers = participants.map(participant => participant.phone);
             let df;
             try {
-                df = await getWorksheetContents('1Sv2UVDeOk3C_Zt4Bye6LWrm9G93G57YEyp-RUVcljSw', 'Cadastro completo', GOOGLE_SHEETS_CREDENTIALS_PATH);
+                df = await getWorksheetContents(GOOGLE_SHEET_ID, 'Cadastro completo', GOOGLE_SHEETS_CREDENTIALS_PATH);
             } catch (err) {
                 console.error('Error loading getWorksheetContents:', err);
                 await clientMongo.close();  // Closing MongoDB connection before exiting.
@@ -100,7 +101,7 @@ client.on('ready', async () => {
             for (let inactiveNumber of inactiveNumbers) {
                 const result = resultsMap[inactiveNumber];
                 const alreadySent = await isMessageAlreadySent(clientMongo, dbName, 'communicated_inactive', inactiveNumber);
-                await removeParticipantByPhoneNumber(client, groupId, inactiveNumber);
+                //await removeParticipantByPhoneNumber(client, groupId, inactiveNumber);
                 console.log(`Number ${inactiveNumber} is inactive`);
                 if (!alreadySent) {
                     //console.log(`Sending message to ${inactiveNumber} because it is inactive.`);
@@ -119,7 +120,7 @@ client.on('ready', async () => {
                 if (notFoundNumber === '447810094555' || notFoundNumber === '4915122324805' || notFoundNumber === '62999552046' || notFoundNumber === '15142676652' || notFoundNumber === '556296462065') {
                     continue;
                 }
-                await removeParticipantByPhoneNumber(client, groupId, notFoundNumber);
+                //await removeParticipantByPhoneNumber(client, groupId, notFoundNumber);
                 console.log(`Unknown number ${notFoundNumber}`);
                 if (!alreadySent) {
                     //console.log(`Sending message to ${notFoundNumber} because it was not found in the spreadsheet.`);
