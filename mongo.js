@@ -6,7 +6,7 @@ async function isMessageAlreadySent(clientMongo, databaseName, collectionName, p
 }
 
 // Function to save/update the sent message to the MongoDB collection
-async function saveMessageToMongoDB(clientMongo, databaseName, collectionName, phoneNumber, groupName) {
+async function saveMessageToMongoDB(clientMongo, databaseName, collectionName, mb, phoneNumber, groupName) {
     const collection = clientMongo.db(databaseName).collection(collectionName);
 
     const existingDocument = await collection.findOne({ phoneNumber });
@@ -22,6 +22,7 @@ async function saveMessageToMongoDB(clientMongo, databaseName, collectionName, p
     } else {
         // If not, insert a new document
         await collection.insertOne({
+            mb,
             phoneNumber,
             dateSent: new Date(),
             groups: [groupName]

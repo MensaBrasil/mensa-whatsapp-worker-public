@@ -1,4 +1,4 @@
-const phoneNumberColumns = ['TELEFONE - CELULAR', 'TELEFONE - COMERCIAL', 'TELEFONE - RESIDENCIAL', 'TELEFONE - EXTRA'];
+const phoneNumberColumns = ['TELEFONE_1', 'TELEFONE_2', 'TELEFONE_3', 'TELEFONE_4'];
 
 function calculateAge(birthday) {
     let today = new Date();
@@ -22,6 +22,17 @@ function isMemberJb(age) {
 
 
 function checkPhoneNumber(df, inputPhoneNumber) {
+
+    // Validation to check if all columns exist in df
+    if(!phoneNumberColumns.every(col => df.columns.includes(col))) {
+        throw new Error("Some or all phoneNumberColumns do not exist in the dataframe.");
+    }
+
+    // Validation to check if the dataframe has less than 1500 rows
+    if(df.shape[0] < 1500) {
+        throw new Error("The dataframe has less than 1500 rows.");
+    }
+
     for (let i = 0; i < df.shape[0]; i++) {
 
         let birthday = df.at(i, 'DATA DE NASCIMENTO');
@@ -50,18 +61,23 @@ function checkPhoneNumber(df, inputPhoneNumber) {
                     // If it has 13 digits, it includes the ninth digit. Let's try without it too
                     let numberWithoutNinthDigit = phoneNumber.slice(0, 4) + phoneNumber.slice(5);
                     if (phoneNumber === inputPhoneNumber || numberWithoutNinthDigit === inputPhoneNumber) {
-                        return {found: true, status: status, isMemberJb: isMemberJb(age)};
+                      
+                        return {found: true, status: status, mb: df.at(i, 'N_DE_CADASTRO'), isMemberJb: isMemberJb(age)};
+
                     }
                 } else if (phoneNumber.length === 12) {
                     // If it has 12 digits, it doesn't include the ninth digit. Let's try with it too
                     let numberWithNinthDigit = phoneNumber.slice(0, 4) + '9' + phoneNumber.slice(4);
                     if (phoneNumber === inputPhoneNumber || numberWithNinthDigit === inputPhoneNumber) {
-                        return {found: true, status: status, isMemberJb: isMemberJb(age)};
+
+                        return {found: true, status: status, mb: df.at(i, 'N_DE_CADASTRO'), isMemberJb: isMemberJb(age)};
+
                     }
                 }
             } else {
                 if (phoneNumber === inputPhoneNumber) {
-                    return {found: true, status: status, isMemberJb: isMemberJb(age)};
+
+                    return {found: true, status: status, mb: df.at(i, 'N_DE_CADASTRO'), isMemberJb: isMemberJb(age)};
                 }
             }
         }
