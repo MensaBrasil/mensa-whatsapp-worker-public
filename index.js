@@ -11,21 +11,25 @@ const { getInactiveMessage, getNotFoundMessage } = require('./messages');
 
 require('dotenv').config();
 
+const GOOGLE_SHEETS_CREDENTIALS_PATH = process.env.GOOGLE_SHEETS_CREDENTIALS_PATH;
+const GOOGLE_SHEET_ID= process.env.GOOGLE_SHEET_ID;
+
 const username = encodeURIComponent(process.env.DB_USER);
 const password = encodeURIComponent(process.env.DB_PASS);
 const dbName = process.env.DB_NAME;
+const dbHost = process.env.DB_HOST;
 
-const uri = `mongodb+srv://${username}:${password}@mensawhatsapp.tpllazx.mongodb.net/${dbName}`;
+const uri = `mongodb+srv://${username}:${password}@${dbHost}/${dbName}`;
 
 const clientMongo = new MongoClient(uri, { useUnifiedTopology: true });
 
 (async () => {
-  try {
-    await clientMongo.connect();
-    console.log('Connected to MongoDB successfully!');
-  } catch (err) {
-    console.error('Error connecting to MongoDB:', err);
-  }
+    try {
+        await clientMongo.connect();
+        console.log('Connected to MongoDB successfully!');
+    } catch (err) {
+        console.error('Error connecting to MongoDB:', err);
+    }
 })();
 
 const client = new Client({
@@ -33,7 +37,7 @@ const client = new Client({
 });
 
 client.on('qr', qr => {
-    qrcode.generate(qr, {small: true});
+    qrcode.generate(qr, { small: true });
 });
 
 // Helper function to introduce a delay
@@ -44,7 +48,7 @@ function getRandomDelay(baseDelay) {
     const randomDelay = Math.random() * (2 * variation) - variation;
     // Add the randomDelay to the baseDelay
     const totalDelay = baseDelay + randomDelay;
-    
+
     return totalDelay;
 }
 
@@ -55,56 +59,8 @@ function delay(ms) {
 
 
 
-const groupNames = [
-    // // Avisos
-    'Avisos Mensa JB SP CIDADE',
-    'Avisos Mensa JB SUL',
-    'Avisos Mensa JB C.O/N',
-    'Avisos Mensa JB Nordeste ',
-    'Avisos Mensa JB SP ESTADO',
-    'Avisos Mensa -  SUL',
-    'Avisos Mensa - C.O/N',
-    'Avisos Mensa - NORDESTE', // parou aqui de enviar as mensagens
-    'Avisos Mensa SP CIDADE',
-    'Avisos Mensa - SUDESTE',
-    'Avisos Mensa JB SUDESTE ',
-    'Avisos Mensa SP ESTADO',
+const groupNames = process.env.GROUP_NAMES.split("','").map(name => name.replace(/^'|'$/g, ''));
 
-    // SIGs
-    'MB | Autismo e Outras Neurodiversidades',
-    'MB | Xadrez',
-    'MB | Nerd',
-    'MB | Business',
-    'MB | Data Science & IT',
-    'MB Scholar',
-    'MB Matemática',
-    'MB | SIG Medicina e Saúde',
-    'MB | Idiomas',
-    'MB | Direito',
-    'MB | SIGamers',
-    'MB | Carreiras e Desenvolvimento Profissional',
-    'MB | Gen Z',
-
-    // // Regionais
-    'Mensa Paraná',
-    'Mensa Rio Grande do Sul',
-    'Mensa Rio Grande do Norte',
-    'Mensa Rio de Janeiro',
-    'Mensa DF',
-    //'MB | Coordenação Nacional',
-    'Mensa Minas Gerais',
-    'Mensa Bahia',
-    'Mensa Rio Grande do Sul',
-    'MB | Espírito Santo',
-    'Mensampa',
-    'Mensa Rio Grande do Norte',
-    // JBs
-    'Mensa RJ pais JB',
-    'Mensa SC pais JB',
-    'Mensa MG pais JB',
-    'Mensa Campinas pais JB',
-    'Mensa DF pais JB', 
-];
 
 
 // groupNames = ["Mensa SC pais JB"];
@@ -123,9 +79,6 @@ const allGroupNames = groupNames.concat(jbGroupNames);
 
 client.on('ready', async () => {
     console.log('Client is ready!');
-
-
-    //TODO: Replace 'groupNames' with 'allGroupNames' ???       <----------------------------------------------------
     for (const groupName of groupNames) {
         console.log(`Processing group: ${groupName}`);
         try {
@@ -134,7 +87,7 @@ client.on('ready', async () => {
             const groupMembers = participants.map(participant => participant.phone);
             let df;
             try {
-                df = await getWorksheetContents('1Sv2UVDeOk3C_Zt4Bye6LWrm9G93G57YEyp-RUVcljSw', 'Cadastro completo');
+                df = await getWorksheetContents(GOOGLE_SHEET_ID, 'Cadastro completo', GOOGLE_SHEETS_CREDENTIALS_PATH);
             } catch (err) {
                 console.error('Error loading getWorksheetContents:', err);
                 await clientMongo.close();  // Closing MongoDB connection before exiting.
@@ -158,7 +111,7 @@ client.on('ready', async () => {
             for (let inactiveNumber of inactiveNumbers) {
                 const result = resultsMap[inactiveNumber];
                 const alreadySent = await isMessageAlreadySent(clientMongo, dbName, 'communicated_inactive', inactiveNumber);
-                await removeParticipantByPhoneNumber(client, groupId, inactiveNumber);
+                //await removeParticipantByPhoneNumber(client, groupId, inactiveNumber);
                 console.log(`Number ${inactiveNumber} is inactive`);
                 if (!alreadySent) {
                     //console.log(`Sending message to ${inactiveNumber} because it is inactive.`);
@@ -177,7 +130,7 @@ client.on('ready', async () => {
                 if (notFoundNumber === '447810094555' || notFoundNumber === '4915122324805' || notFoundNumber === '62999552046' || notFoundNumber === '15142676652' || notFoundNumber === '556296462065') {
                     continue;
                 }
-                await removeParticipantByPhoneNumber(client, groupId, notFoundNumber);
+                //await removeParticipantByPhoneNumber(client, groupId, notFoundNumber);
                 console.log(`Unknown number ${notFoundNumber}`);
                 if (!alreadySent) {
                     //console.log(`Sending message to ${notFoundNumber} because it was not found in the spreadsheet.`);

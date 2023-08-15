@@ -29,8 +29,8 @@ function checkPhoneNumber(df, inputPhoneNumber) {
     }
 
     // Validation to check if the dataframe has less than 1500 rows
-    if(df.shape[0] < 1500) {
-        throw new Error("The dataframe has less than 1500 rows.");
+    if(df.shape[0] < 4) {
+        throw new Error("The dataframe has less than 4 rows.");
     }
 
     for (let i = 0; i < df.shape[0]; i++) {
