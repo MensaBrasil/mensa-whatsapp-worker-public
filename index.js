@@ -57,8 +57,6 @@ function delay(ms) {
 
 const groupNames = [
     // // Avisos
-    'Mensa Minas Gerais',
-    
     'Avisos Mensa JB SP CIDADE',
     'Avisos Mensa JB SUL',
     'Avisos Mensa JB C.O/N',
@@ -71,6 +69,7 @@ const groupNames = [
     'Avisos Mensa - SUDESTE',
     'Avisos Mensa JB SUDESTE ',
     'Avisos Mensa SP ESTADO',
+
     // SIGs
     'MB | Autismo e Outras Neurodiversidades',
     'MB | Xadrez',
@@ -78,11 +77,22 @@ const groupNames = [
     'MB | Business',
     'MB | Data Science & IT',
     'MB Scholar',
-    // Regionais
+    'MB Matemática',
+    'MB | SIG Medicina e Saúde',
+    'MB | Idiomas',
+    'MB | Direito',
+    'MB | SIGamers',
+    'MB | Carreiras e Desenvolvimento Profissional',
+    'MB | Gen Z',
 
+    // // Regionais
+    'Mensa Paraná',
+    'Mensa Rio Grande do Sul',
+    'Mensa Rio Grande do Norte',
     'Mensa Rio de Janeiro',
     'Mensa DF',
     //'MB | Coordenação Nacional',
+    'Mensa Minas Gerais',
     'Mensa Bahia',
     'Mensa Rio Grande do Sul',
     'MB | Espírito Santo',
@@ -102,9 +112,9 @@ const groupNames = [
 
 client.on('ready', async () => {
     console.log('Client is ready!');
-    await sendMessageToNumberAPI(client, "553189629302", "naoencontradoremovido");
+    //await sendMessageToNumberAPI(client, "553189629302", "naoencontradoremovido");
     //await sendMessageToNumberAPI(client, "553189629302", "membroinativo");
-    delay(5000)
+    //await delay(20000)
     
     for (const groupName of groupNames) {
         console.log(`Processing group: ${groupName}`);
@@ -135,15 +145,14 @@ client.on('ready', async () => {
             for (let inactiveNumber of inactiveNumbers) {
                 const result = resultsMap[inactiveNumber];
                 const alreadySent = await isMessageAlreadySent(clientMongo, dbName, 'communicated_inactive', inactiveNumber);
-                //await removeParticipantByPhoneNumber(client, groupId, inactiveNumber);
+                await removeParticipantByPhoneNumber(client, groupId, inactiveNumber);
                 console.log(`Number ${inactiveNumber} is inactive`);
                 if (!alreadySent) {
                     //console.log(`Sending message to ${inactiveNumber} because it is inactive.`);
-                    //await sendMessageToNumberAPI(client, inactiveNumber, "membroinativo");
-                    //await saveMessageToMongoDB(clientMongo, dbName, 'communicated_inactive', result.mb, inactiveNumber, groupName);
-                    //await delay(60000);
+                    await sendMessageToNumberAPI(client, inactiveNumber, "membroinativo");
+                    await saveMessageToMongoDB(clientMongo, dbName, 'communicated_inactive', result.mb, inactiveNumber, groupName);
                 }
-                //await delay(60000);
+                await delay(60000);
                 // Remove the inactive member from the group
                 //await removeParticipantByPhoneNumber(client, groupId, inactiveNumber);
             }
@@ -151,14 +160,18 @@ client.on('ready', async () => {
             for (let notFoundNumber of notFoundNumbers) {
                 const result = resultsMap[notFoundNumber];
                 const alreadySent = await isMessageAlreadySent(clientMongo, dbName, 'communicated_not_found_removed', notFoundNumber);
-                //await removeParticipantByPhoneNumber(client, groupId, notFoundNumber);
+                // skip removing 447810094555 and (+49)15122324805
+                if (notFoundNumber === '447810094555' || notFoundNumber === '4915122324805' || notFoundNumber === '62999552046' || notFoundNumber === '15142676652' || notFoundNumber === '556296462065') {
+                    continue;
+                }
+                await removeParticipantByPhoneNumber(client, groupId, notFoundNumber);
                 console.log(`Unknown number ${notFoundNumber}`);
                 if (!alreadySent) {
                     //console.log(`Sending message to ${notFoundNumber} because it was not found in the spreadsheet.`);
-                    //await sendMessageToNumberAPI(client, notFoundNumber, "naoencontradoremovido");
-                    //await saveMessageToMongoDB(clientMongo, dbName, 'communicated_not_found_removed', result.mb, notFoundNumber, groupName);
+                    await sendMessageToNumberAPI(client, notFoundNumber, "naoencontradoremovido");
+                    await saveMessageToMongoDB(clientMongo, dbName, 'communicated_not_found_removed', result.mb, notFoundNumber, groupName);
                 }
-                //await delay(20000);
+                await delay(60000);
             }
 
             console.log(`Finished processing group: ${groupName}`);

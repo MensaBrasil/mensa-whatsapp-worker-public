@@ -1,6 +1,17 @@
 const phoneNumberColumns = ['TELEFONE_1', 'TELEFONE_2', 'TELEFONE_3', 'TELEFONE_4'];
 
 function checkPhoneNumber(df, inputPhoneNumber) {
+
+    // Validation to check if all columns exist in df
+    if(!phoneNumberColumns.every(col => df.columns.includes(col))) {
+        throw new Error("Some or all phoneNumberColumns do not exist in the dataframe.");
+    }
+
+    // Validation to check if the dataframe has less than 1500 rows
+    if(df.shape[0] < 1500) {
+        throw new Error("The dataframe has less than 1500 rows.");
+    }
+
     for (let i = 0; i < df.shape[0]; i++) {
         for (let column of phoneNumberColumns) {
             let phoneNumber = df.at(i, column);
