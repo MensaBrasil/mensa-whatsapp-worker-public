@@ -65,13 +65,20 @@ const groupNames = process.env.GROUP_NAMES.split("','").map(name => name.replace
 
 // groupNames = ["Mensa SC pais JB"];
 
+// Groups where JB are alloweds
+const jbGroupNames = [
+
+    //TODO: Add JB groups here         <----------------------------------------------------
+
+];
+
+
+// Merge both lists og groups
+const allGroupNames = groupNames.concat(jbGroupNames);
+
 
 client.on('ready', async () => {
     console.log('Client is ready!');
-    //await sendMessageToNumberAPI(client, "553189629302", "naoencontradoremovido");
-    //await sendMessageToNumberAPI(client, "553189629302", "membroinativo");
-    //await delay(20000)
-
     for (const groupName of groupNames) {
         console.log(`Processing group: ${groupName}`);
         try {
@@ -97,6 +104,9 @@ client.on('ready', async () => {
 
             let notFoundNumbers = groupMembers.filter((member, i) => !checkResults[i].found);
             let inactiveNumbers = groupMembers.filter((member, i) => checkResults[i].found && checkResults[i].status !== 'Ativo' && checkResults[i].status !== 'Transferido'); // Transferido is a special case for now. Convidados
+          
+            //Get all JB's numbers
+            let jbNumbers = groupMembers.filter((member, i) => checkResults[i].found && checkResults[i].status === 'Ativo' && checkResults[i].isMemberJb);
 
             for (let inactiveNumber of inactiveNumbers) {
                 const result = resultsMap[inactiveNumber];
@@ -129,6 +139,32 @@ client.on('ready', async () => {
                 }
                 await delay(60000);
             }
+
+
+            //Remove JB's from groups where they are not alloweds
+            for (let jbNumber of jbNumbers) {
+                
+                //TODO: Change collectionName to the correct one        <----------------------------------------------------
+                let collectionName = 'communicated_jbs';
+                const alreadySent = await isMessageAlreadySent(clientMongo, dbName, collectionName, jbNumber);
+                await saveMessageToMongoDB(clientMongo, dbName, collectionName, jbNumber, groupName);
+                if (!alreadySent) {
+                    await delay(100);
+                }
+
+                // Check if the group is in the list of groups where JB are alloweds
+                if (!jbGroupNames.includes(groupName)) {
+
+
+                    // Remove the JB member from the group
+                    //await removeParticipantByPhoneNumber(client, groupId, jbNumber);        <----------------------------------------------------
+
+
+                    
+                }
+            }
+
+            
 
             console.log(`Finished processing group: ${groupName}`);
         } catch (error) {
