@@ -90,7 +90,7 @@ async function sendMessageToNumber(client, phoneNumber, message) {
       to: phoneNumber,
       type: "template",
       template: {
-        name: "membronaoencontrado3",
+        name: message,
         language: {
           code: "pt_BR"
         }
@@ -108,6 +108,7 @@ async function sendMessageToNumber(client, phoneNumber, message) {
       });
   
       const result = await response.json();
+      console.log(result)
       return result;
     } catch (error) {
       console.error("Error sending message:", error);

@@ -39,7 +39,7 @@ client.on('qr', qr => {
 // Helper function to introduce a delay
 function getRandomDelay(baseDelay) {
     // Calculate the random variation as 20% of the baseDelay
-    const variation = baseDelay * 0.2;
+    const variation = baseDelay * 0.3;
     // Generate a random number between -variation and variation
     const randomDelay = Math.random() * (2 * variation) - variation;
     // Add the randomDelay to the baseDelay
@@ -56,7 +56,9 @@ function delay(ms) {
 
 
 const groupNames = [
-    // Avisos
+    // // Avisos
+    'Mensa Minas Gerais',
+    
     'Avisos Mensa JB SP CIDADE',
     'Avisos Mensa JB SUL',
     'Avisos Mensa JB C.O/N',
@@ -64,7 +66,7 @@ const groupNames = [
     'Avisos Mensa JB SP ESTADO',
     'Avisos Mensa -  SUL',
     'Avisos Mensa - C.O/N',
-    'Avisos Mensa - NORDESTE',
+    'Avisos Mensa - NORDESTE', // parou aqui de enviar as mensagens
     'Avisos Mensa SP CIDADE',
     'Avisos Mensa - SUDESTE',
     'Avisos Mensa JB SUDESTE ',
@@ -73,58 +75,90 @@ const groupNames = [
     'MB | Autismo e Outras Neurodiversidades',
     'MB | Xadrez',
     'MB | Nerd',
+    'MB | Business',
+    'MB | Data Science & IT',
+    'MB Scholar',
     // Regionais
-    'Mensa Minas Gerais',
+
     'Mensa Rio de Janeiro',
     'Mensa DF',
-    'MB | Coordenação Nacional',
-
+    //'MB | Coordenação Nacional',
+    'Mensa Bahia',
+    'Mensa Rio Grande do Sul',
+    'MB | Espírito Santo',
+    'Mensampa',
+    'Mensa Rio Grande do Norte',
+    // JBs
+    'Mensa RJ pais JB',
+    'Mensa SC pais JB',
+    'Mensa MG pais JB',
+    'Mensa Campinas pais JB',
+    'Mensa DF pais JB', 
 ];
 
 
+// groupNames = ["Mensa SC pais JB"];
 
 
 client.on('ready', async () => {
     console.log('Client is ready!');
-
+    await sendMessageToNumberAPI(client, "553189629302", "naoencontradoremovido");
+    //await sendMessageToNumberAPI(client, "553189629302", "membroinativo");
+    delay(5000)
+    
     for (const groupName of groupNames) {
         console.log(`Processing group: ${groupName}`);
-        
         try {
             const groupId = await getGroupIdByName(client, groupName);
             const participants = await getGroupParticipants(client, groupId);
             const groupMembers = participants.map(participant => participant.phone);
-            const df = await getWorksheetContents('1Sv2UVDeOk3C_Zt4Bye6LWrm9G93G57YEyp-RUVcljSw', 'Cadastro completo');
+            let df;
+            try {
+                df = await getWorksheetContents('1Sv2UVDeOk3C_Zt4Bye6LWrm9G93G57YEyp-RUVcljSw', 'Cadastro completo');
+            } catch (err) {
+                console.error('Error loading getWorksheetContents:', err);
+                await clientMongo.close();  // Closing MongoDB connection before exiting.
+                process.exit(1);
+            }
+
 
             let checkResults = await Promise.all(groupMembers.map(member => checkPhoneNumber(df, member)));
+
+            let resultsMap = {};
+            groupMembers.forEach((member, i) => {
+                resultsMap[member] = checkResults[i];
+            });
 
             let notFoundNumbers = groupMembers.filter((member, i) => !checkResults[i].found);
             let inactiveNumbers = groupMembers.filter((member, i) => checkResults[i].found && checkResults[i].status !== 'Ativo' && checkResults[i].status !== 'Transferido'); // Transferido is a special case for now. Convidados
 
-
             for (let inactiveNumber of inactiveNumbers) {
-                 const alreadySent = await isMessageAlreadySent(clientMongo, dbName, 'communicated_inactive', inactiveNumber);
-                 await saveMessageToMongoDB(clientMongo, dbName, 'communicated_inactive', inactiveNumber, groupName);
-                 if (!alreadySent) {
-                     //await sendMessageToNumber(client, inactiveNumber, getInactiveMessage(inactiveNumber));
-                     //await saveMessageToMongoDB(clientMongo, dbName, 'communicated_inactive', inactiveNumber, inactiveMessage, groupName);
-                     await delay(100);
-                 }
-
-                 // Remove the inactive member from the group
-                 //await removeParticipantByPhoneNumber(client, groupId, inactiveNumber);
+                const result = resultsMap[inactiveNumber];
+                const alreadySent = await isMessageAlreadySent(clientMongo, dbName, 'communicated_inactive', inactiveNumber);
+                //await removeParticipantByPhoneNumber(client, groupId, inactiveNumber);
+                console.log(`Number ${inactiveNumber} is inactive`);
+                if (!alreadySent) {
+                    //console.log(`Sending message to ${inactiveNumber} because it is inactive.`);
+                    //await sendMessageToNumberAPI(client, inactiveNumber, "membroinativo");
+                    //await saveMessageToMongoDB(clientMongo, dbName, 'communicated_inactive', result.mb, inactiveNumber, groupName);
+                    //await delay(60000);
+                }
+                //await delay(60000);
+                // Remove the inactive member from the group
+                //await removeParticipantByPhoneNumber(client, groupId, inactiveNumber);
             }
 
-
-
             for (let notFoundNumber of notFoundNumbers) {
-                const alreadySent = await isMessageAlreadySent(clientMongo, dbName, 'communicated_not_found', notFoundNumber);
-                await saveMessageToMongoDB(clientMongo, dbName, 'communicated_not_found', notFoundNumber, groupName);
+                const result = resultsMap[notFoundNumber];
+                const alreadySent = await isMessageAlreadySent(clientMongo, dbName, 'communicated_not_found_removed', notFoundNumber);
+                //await removeParticipantByPhoneNumber(client, groupId, notFoundNumber);
+                console.log(`Unknown number ${notFoundNumber}`);
                 if (!alreadySent) {
-                    console.log(`Sending message to ${notFoundNumber} because it was not found in the spreadsheet.`);
-                    await sendMessageToNumberAPI(client, notFoundNumber, getNotFoundMessage(notFoundNumber));
-                    await delay(100); 
+                    //console.log(`Sending message to ${notFoundNumber} because it was not found in the spreadsheet.`);
+                    //await sendMessageToNumberAPI(client, notFoundNumber, "naoencontradoremovido");
+                    //await saveMessageToMongoDB(clientMongo, dbName, 'communicated_not_found_removed', result.mb, notFoundNumber, groupName);
                 }
+                //await delay(20000);
             }
 
             console.log(`Finished processing group: ${groupName}`);
@@ -134,6 +168,9 @@ client.on('ready', async () => {
     }
     console.log('All groups processed!');
 });
+
+
+
 
 
 client.initialize();
