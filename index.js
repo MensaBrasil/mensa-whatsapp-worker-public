@@ -61,9 +61,14 @@ function delay(ms) {
 
 const groupNames = process.env.GROUP_NAMES.split("','").map(name => name.replace(/^'|'$/g, ''));
 
-
-
-// groupNames = ["Mensa SC pais JB"];
+const dryRun = process.argv[2] === '--dry-run';
+//if dry run, warn on console. if not, warn too
+if (dryRun) {
+    console.log('Dry run enabled. No changes will be made to the groups.');
+} else {
+    console.log('!!!!!!Dry run DISABLED. Changes will be made to the groups.!!!!!!!');
+}
+//const groupNames = ['MB | Coordenação Nacional'];
 
 
 client.on('ready', async () => {
@@ -101,14 +106,18 @@ client.on('ready', async () => {
             for (let inactiveNumber of inactiveNumbers) {
                 const result = resultsMap[inactiveNumber];
                 const alreadySent = await isMessageAlreadySent(clientMongo, dbName, 'communicated_inactive', inactiveNumber);
-                //await removeParticipantByPhoneNumber(client, groupId, inactiveNumber);
+                if (!dryRun) {
+                await delay(60000);
+                await removeParticipantByPhoneNumber(client, groupId, inactiveNumber);
+                }
                 console.log(`Number ${inactiveNumber} is inactive`);
-                if (!alreadySent) {
-                    //console.log(`Sending message to ${inactiveNumber} because it is inactive.`);
+
+                if (!alreadySent && !dryRun) {
+                    console.log(`Sending message to ${inactiveNumber} because it is inactive.`);
                     await sendMessageToNumberAPI(client, inactiveNumber, "membroinativo");
                     await saveMessageToMongoDB(clientMongo, dbName, 'communicated_inactive', result.mb, inactiveNumber, groupName);
                 }
-                await delay(60000);
+                
                 // Remove the inactive member from the group
                 //await removeParticipantByPhoneNumber(client, groupId, inactiveNumber);
             }
@@ -120,14 +129,17 @@ client.on('ready', async () => {
                 if (notFoundNumber === '447810094555' || notFoundNumber === '4915122324805' || notFoundNumber === '62999552046' || notFoundNumber === '15142676652' || notFoundNumber === '556296462065') {
                     continue;
                 }
-                //await removeParticipantByPhoneNumber(client, groupId, notFoundNumber);
+                if (!dryRun){
+                await delay(60000);
+                await removeParticipantByPhoneNumber(client, groupId, notFoundNumber);
+                }
                 console.log(`Unknown number ${notFoundNumber}`);
-                if (!alreadySent) {
-                    //console.log(`Sending message to ${notFoundNumber} because it was not found in the spreadsheet.`);
+                if (!alreadySent && !dryRun) {
+                    console.log(`Sending message to ${notFoundNumber} because it was not found in the spreadsheet.`);
                     await sendMessageToNumberAPI(client, notFoundNumber, "naoencontradoremovido");
                     await saveMessageToMongoDB(clientMongo, dbName, 'communicated_not_found_removed', result.mb, notFoundNumber, groupName);
                 }
-                await delay(60000);
+                
             }
 
             console.log(`Finished processing group: ${groupName}`);
