@@ -14,6 +14,7 @@ function checkPhoneNumber(df, inputPhoneNumber) {
 
     for (let i = 0; i < df.shape[0]; i++) {
         for (let column of phoneNumberColumns) {
+            console.log(Object.keys(df));
             let phoneNumber = df.at(i, column);
 
             // Check if phone number is present in the current column

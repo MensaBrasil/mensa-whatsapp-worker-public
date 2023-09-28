@@ -59,11 +59,17 @@ async function getGroupsRemovedFrom(clientMongo, databaseName, phoneNumber) {
     return Array.from(new Set(groups)); // to ensure unique groups
 }
 
-async function reAddParticipantToGroups(phoneNumber) {
+async function reAddParticipantToGroups(phoneNumber, specificGroupName = null) {
     await delay(3000); 
     try {
-        await clientMongo.connect();
-        const groups = await getGroupsRemovedFrom(clientMongo, dbName, phoneNumber);
+        let groups = [];
+
+        if (specificGroupName) {
+            groups.push(specificGroupName); // Use the provided group name directly
+        } else {
+            await clientMongo.connect();
+            groups = await getGroupsRemovedFrom(clientMongo, dbName, phoneNumber);
+        }
 
         if (groups.length === 0) {
             console.log(`No groups found for number: ${phoneNumber}`);
@@ -71,12 +77,15 @@ async function reAddParticipantToGroups(phoneNumber) {
         }
 
         for (const groupName of groups) {
+            console.log(groupName)
             const groupId = await getGroupIdByName(client, groupName); 
             const chat = await client.getChatById(groupId);
             
             if (chat) {
+                //console.log(await chat.getInviteCode());
                 // Check if the user is already in the group
                 const participants = await getGroupParticipants(client, groupId);
+
                 const isAlreadyInGroup = participants.some(participant => participant.phone === phoneNumber);
 
 
@@ -92,7 +101,7 @@ async function reAddParticipantToGroups(phoneNumber) {
                     console.log(`Added ${phoneNumber} to group: ${groupName}`);
 
                     // Verification Step
-                    await delay(500);
+                    await delay(1500);
                     const newParticipants = await getGroupParticipants(client, groupId);
                     const isAdded = newParticipants.some(participant => participant.phone === phoneNumber);
                     if (isAdded) {
@@ -111,10 +120,15 @@ async function reAddParticipantToGroups(phoneNumber) {
             await delay(10000); // Delay after processing each group
         }
         console.log('Ended');
+        if (!specificGroupName) {
+            await clientMongo.close();
+        }
     } catch (error) {
         console.error(`Error adding ${phoneNumber} back to groups:`, error);
     } finally {
-        await clientMongo.close();
+        if (!specificGroupName) {
+            await clientMongo.close();
+        }
     }
 }
 
@@ -122,13 +136,18 @@ async function reAddParticipantToGroups(phoneNumber) {
 
 // Entry point
 client.on('ready', async () => {
-    const phoneNumber = process.argv[2];
-    if (!phoneNumber) {
-        console.log("Please provide a phone number as an argument.");
+    console.log("ready");
+    const phoneNumbers = process.argv.slice(2); // Retrieve all arguments after the script name
+    const specificGroupName = process.argv[2 + phoneNumbers.length] || null; // Retrieve the group name argument
+
+    if (phoneNumbers.length === 0) {
+        console.log("Please provide at least one phone number as arguments.");
         process.exit(1);
     }
 
-    await reAddParticipantToGroups(phoneNumber);
+    for (const phoneNumber of phoneNumbers) {
+        await reAddParticipantToGroups(phoneNumber, specificGroupName);
+    }
 });
 
 client.initialize();

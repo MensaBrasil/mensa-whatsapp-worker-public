@@ -8,6 +8,7 @@ const { ObjectId } = require('mongodb');
 const { isMessageAlreadySent, saveMessageToMongoDB } = require('./mongo');
 const MongoClient = require('mongodb').MongoClient;
 const { getInactiveMessage, getNotFoundMessage } = require('./messages');
+const dfd = require("danfojs-node");
 
 require('dotenv').config();
 
@@ -92,7 +93,10 @@ client.on('ready', async () => {
                 process.exit(1);
             }
 
-
+            if (!(df instanceof dfd.DataFrame)) {
+                console.error("df is not an instance of DataFrame. Skipping group:", groupName);
+                continue; // Skip this iteration
+            }
             let checkResults = await Promise.all(groupMembers.map(member => checkPhoneNumber(df, member)));
 
             let resultsMap = {};
@@ -126,7 +130,7 @@ client.on('ready', async () => {
                 const result = resultsMap[notFoundNumber];
                 const alreadySent = await isMessageAlreadySent(clientMongo, dbName, 'communicated_not_found_removed', notFoundNumber);
                 // skip removing 447810094555 and (+49)15122324805
-                if (notFoundNumber === '447810094555' || notFoundNumber === '4915122324805' || notFoundNumber === '62999552046' || notFoundNumber === '15142676652' || notFoundNumber === '556296462065') {
+                if (notFoundNumber === '447810094555' || notFoundNumber === '4915122324805' || notFoundNumber === '62999552046' || notFoundNumber === '15142676652' || notFoundNumber === '556296462065' && notFoundNumber === "556299552046") {
                     continue;
                 }
                 if (!dryRun){
