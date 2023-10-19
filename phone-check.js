@@ -1,4 +1,5 @@
 
+
 function checkPhoneNumber(phoneNumbersFromDB, inputPhoneNumber) {
     for (const entry of phoneNumbersFromDB) {
         let phoneNumber = entry.phone_number;
@@ -26,6 +27,7 @@ function checkPhoneNumber(phoneNumbersFromDB, inputPhoneNumber) {
                 let numberWithNinthDigit = phoneNumber.slice(0, 4) + '9' + phoneNumber.slice(4);
                 if (phoneNumber === inputPhoneNumber || numberWithNinthDigit === inputPhoneNumber) {
                     return {found: true, status: status, mb: entry.registration_id};
+
                 }
             }
         } else {
