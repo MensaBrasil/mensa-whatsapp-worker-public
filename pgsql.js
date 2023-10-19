@@ -50,17 +50,59 @@ const getPhoneNumbersWithStatus = async () => {
     
     SELECT 
         phone_number,
+        registration_id,
         MAX(status) AS status
     FROM PhoneNumbers 
     WHERE phone_number IS NOT NULL
-    GROUP BY phone_number;
+    GROUP BY phone_number, registration_id;
     
     `;
   
     const { rows } = await pool.query(query, [currentDate]);
     return rows;
-  };
-  
-  
+};
 
-module.exports = { getPhoneNumbersWithStatus };
+
+
+const recordUserExitFromGroup = async (phone_number, group_name) => {
+    const query = `
+        UPDATE mensa.member_groups
+        SET exit_date = CURRENT_DATE
+        WHERE phone_number = $1 AND group_name = $2 AND exit_date IS NULL;
+    `;
+    await pool.query(query, [phone_number, group_name]);
+};
+
+const recordUserEntryToGroup = async (registration_id, phone_number, group_name, status) => {
+    const query = `
+        INSERT INTO mensa.member_groups (registration_id, phone_number, group_name, status)
+        VALUES ($1, $2, $3, $4);
+    `;
+    await pool.query(query, [registration_id, phone_number, group_name, status]);
+};
+
+
+const isUserInGroup = async (phone_number, group_name) => {
+    const query = `
+        SELECT 1
+        FROM mensa.member_groups
+        WHERE phone_number = $1 AND group_name = $2 AND exit_date IS NULL;
+    `;
+    const result = await pool.query(query, [phone_number, group_name]);
+    return result.rows.length > 0;
+};
+
+async function getPreviousGroupMembers(groupName) {
+    const query = `SELECT phone_number FROM member_groups WHERE group_name = $1 AND exit_date IS NULL`;
+    const values = [groupName];
+    const result = await pool.query(query, values);
+    return result.rows.map(row => row.phone_number);
+    
+}
+
+
+module.exports = { getPhoneNumbersWithStatus, 
+                   recordUserExitFromGroup, 
+                   recordUserEntryToGroup, 
+                   isUserInGroup,
+                   getPreviousGroupMembers };
