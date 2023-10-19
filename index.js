@@ -1,18 +1,16 @@
 const qrcode = require('qrcode-terminal');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const { printChats, getGroupParticipants, getGroupIdByName, removeParticipantByPhoneNumber, sendMessageToNumber, sendMessageToNumberAPI } = require('./chat');
-const getWorksheetContents = require('./googlesheets');
 const fs = require('fs');
 const checkPhoneNumber = require('./phone-check');
 const { ObjectId } = require('mongodb');
 const { isMessageAlreadySent, saveMessageToMongoDB } = require('./mongo');
 const MongoClient = require('mongodb').MongoClient;
 const { getInactiveMessage, getNotFoundMessage } = require('./messages');
+const dfd = require("danfojs-node");
+const { getPhoneNumbersWithStatus } = require('./pgsql'); // Renamed function
 
 require('dotenv').config();
-
-const GOOGLE_SHEETS_CREDENTIALS_PATH = process.env.GOOGLE_SHEETS_CREDENTIALS_PATH;
-const GOOGLE_SHEET_ID= process.env.GOOGLE_SHEET_ID;
 
 const username = encodeURIComponent(process.env.DB_USER);
 const password = encodeURIComponent(process.env.DB_PASS);
@@ -61,9 +59,14 @@ function delay(ms) {
 
 const groupNames = process.env.GROUP_NAMES.split("','").map(name => name.replace(/^'|'$/g, ''));
 
-
-
-// groupNames = ["Mensa SC pais JB"];
+const scanMode = process.argv[2] === '--scan';
+//if scan, warn on console. if not, warn too
+if (scanMode) {
+    console.log('Scan mode enabled. No changes will be made to the groups.');
+} else {
+    console.log('!!!!!!Scan mode DISABLED. Changes will be made to the groups.!!!!!!!');
+}
+//const groupNames = ['MB | Coordenação Nacional'];
 
 // Groups where JB are alloweds
 const jbGroupNames = [
@@ -79,92 +82,58 @@ const allGroupNames = groupNames.concat(jbGroupNames);
 
 client.on('ready', async () => {
     console.log('Client is ready!');
+
+    //await sendMessageToNumberAPI(client, "553189629302", "naoencontradoremovido");
+    //await sendMessageToNumberAPI(client, "553189629302", "membroinativo");
+    //await delay(20000)
+    // Retrieve active phone numbers from PostgreSQL
+    const phoneNumbersFromDB = await getPhoneNumbersWithStatus(); // Fetch from PostgreSQL
+
+    // Create a map for easy lookup
+    const phoneStatusMap = {};
+    phoneNumbersFromDB.forEach(row => {
+        phoneStatusMap[row.phone_number] = row.status;
+    });
+    //get list of all groups im in
+    const chats = await client.getChats();
+    const groups = chats.filter(chat => chat.isGroup);
+    const groupNames = groups.map(group => group.name);
+
+
     for (const groupName of groupNames) {
         console.log(`Processing group: ${groupName}`);
         try {
             const groupId = await getGroupIdByName(client, groupName);
             const participants = await getGroupParticipants(client, groupId);
-            const groupMembers = participants.map(participant => participant.phone);
-            let df;
-            try {
-                df = await getWorksheetContents(GOOGLE_SHEET_ID, 'Cadastro completo', GOOGLE_SHEETS_CREDENTIALS_PATH);
-            } catch (err) {
-                console.error('Error loading getWorksheetContents:', err);
-                await clientMongo.close();  // Closing MongoDB connection before exiting.
-                process.exit(1);
-            }
 
+            const groupMembers = await participants.map(participant => participant.phone);
+            const phoneNumbersFromDB = await getPhoneNumbersWithStatus();
 
-            let checkResults = await Promise.all(groupMembers.map(member => checkPhoneNumber(df, member)));
-
-            let resultsMap = {};
-            groupMembers.forEach((member, i) => {
-                resultsMap[member] = checkResults[i];
-            });
-
-            let notFoundNumbers = groupMembers.filter((member, i) => !checkResults[i].found);
-            let inactiveNumbers = groupMembers.filter((member, i) => checkResults[i].found && checkResults[i].status !== 'Ativo' && checkResults[i].status !== 'Transferido'); // Transferido is a special case for now. Convidados
-          
-            //Get all JB's numbers
-            let jbNumbers = groupMembers.filter((member, i) => checkResults[i].found && checkResults[i].status === 'Ativo' && checkResults[i].isMemberJb);
-
-            for (let inactiveNumber of inactiveNumbers) {
-                const result = resultsMap[inactiveNumber];
-                const alreadySent = await isMessageAlreadySent(clientMongo, dbName, 'communicated_inactive', inactiveNumber);
-                //await removeParticipantByPhoneNumber(client, groupId, inactiveNumber);
-                console.log(`Number ${inactiveNumber} is inactive`);
-                if (!alreadySent) {
-                    //console.log(`Sending message to ${inactiveNumber} because it is inactive.`);
-                    await sendMessageToNumberAPI(client, inactiveNumber, "membroinativo");
-                    await saveMessageToMongoDB(clientMongo, dbName, 'communicated_inactive', result.mb, inactiveNumber, groupName);
-                }
-                await delay(60000);
-                // Remove the inactive member from the group
-                //await removeParticipantByPhoneNumber(client, groupId, inactiveNumber);
-            }
-
-            for (let notFoundNumber of notFoundNumbers) {
-                const result = resultsMap[notFoundNumber];
-                const alreadySent = await isMessageAlreadySent(clientMongo, dbName, 'communicated_not_found_removed', notFoundNumber);
-                // skip removing 447810094555 and (+49)15122324805
-                if (notFoundNumber === '447810094555' || notFoundNumber === '4915122324805' || notFoundNumber === '62999552046' || notFoundNumber === '15142676652' || notFoundNumber === '556296462065') {
-                    continue;
-                }
-                //await removeParticipantByPhoneNumber(client, groupId, notFoundNumber);
-                console.log(`Unknown number ${notFoundNumber}`);
-                if (!alreadySent) {
-                    //console.log(`Sending message to ${notFoundNumber} because it was not found in the spreadsheet.`);
-                    await sendMessageToNumberAPI(client, notFoundNumber, "naoencontradoremovido");
-                    await saveMessageToMongoDB(clientMongo, dbName, 'communicated_not_found_removed', result.mb, notFoundNumber, groupName);
-                }
-                await delay(60000);
-            }
-
-
-            //Remove JB's from groups where they are not alloweds
-            for (let jbNumber of jbNumbers) {
-                
-                //TODO: Change collectionName to the correct one        <----------------------------------------------------
-                let collectionName = 'communicated_jbs';
-                const alreadySent = await isMessageAlreadySent(clientMongo, dbName, collectionName, jbNumber);
-                await saveMessageToMongoDB(clientMongo, dbName, collectionName, jbNumber, groupName);
-                if (!alreadySent) {
-                    await delay(100);
-                }
-
-                // Check if the group is in the list of groups where JB are alloweds
-                if (!jbGroupNames.includes(groupName)) {
-
-
-                    // Remove the JB member from the group
-                    //await removeParticipantByPhoneNumber(client, groupId, jbNumber);        <----------------------------------------------------
-
-
-                    
-                }
-            }
-
-            
+for (const member of groupMembers) {
+    const checkResult = checkPhoneNumber(phoneNumbersFromDB, member);
+    // using table member_groups, compare current members with previous ones from postgres, and register modifications. Columns are registration_id, phone_number, group_name, entry_date, exit_date, status
+    
+    if (!checkResult.found) {
+        if (member === '447810094555' || member === '4915122324805' || member === '62999552046' || member === '15142676652' || member === '556296462065' && member === "556299552046") {
+            continue;
+        }
+        console.log(`Number ${member} not found in the database.`);
+        if (!scan) {
+            await delay(120000);
+            await removeParticipantByPhoneNumber(client, groupId, member);
+            //await sendMessageToNumberAPI(client, member, getNotFoundMessage());
+            await saveMessageToMongoDB(clientMongo, dbName, 'notfound', checkResult.mb, member, groupName);
+        }
+    } else if (checkResult.status === 'Inactive') {
+        console.log(`Number ${member} is inactive.`);
+        if (!scan) {
+            await delay(120000);
+            await removeParticipantByPhoneNumber(client, groupId, member);
+            //await sendMessageToNumberAPI(client, member, getInactiveMessage());
+            await saveMessageToMongoDB(clientMongo, dbName, 'inactive', checkResult.mb, member, groupName);
+        }
+    }
+}
 
             console.log(`Finished processing group: ${groupName}`);
         } catch (error) {

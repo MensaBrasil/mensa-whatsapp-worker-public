@@ -43,28 +43,6 @@ async function getGroupParticipants(client, groupId) {
 }
 
 
-async function removeParticipantByPhoneNumber(client, groupId, phoneNumber) {
-    // Fetch the GroupChat by its ID
-    console.log(groupId);
-    const groupChat = await client.getChatById(groupId);
-
-    if (!groupChat.isGroup) {
-        console.log('Chat is not a group chat');
-        return;
-    }
-
-    // Format the phone number
-    const participantId = `${phoneNumber}@c.us`;
-
-    try {
-        await groupChat.removeParticipants([participantId]);
-        console.log(`Removed participant: ${phoneNumber}`);
-    } catch (error) {
-        console.log(`Failed to remove participant: ${phoneNumber}`);
-        console.log(error);
-    }
-}
-
 
 async function sendMessageToNumber(client, phoneNumber, message) {
     try {
