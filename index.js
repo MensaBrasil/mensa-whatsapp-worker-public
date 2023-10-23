@@ -74,15 +74,30 @@ if (scanMode) {
 }
 //const groupNames = ['MB | Coordenação Nacional'];
 
+// Groups where JB are alloweds
+const jbGroupNames = [
+
+    //TODO: Add JB groups here         <----------------------------------------------------
+
+];
+
+
+// Merge both lists og groups
+const allGroupNames = groupNames.concat(jbGroupNames);
+
 
 
 client.on('ready', async () => {
     console.log('Client is ready!');
+
     
     const phoneNumbersFromDB = await getPhoneNumbersWithStatus();
+
+
     const chats = await client.getChats();
     const groups = chats.filter(chat => chat.isGroup);
     const groupNames = groups.map(group => group.name);
+
 
     for (const groupName of groupNames) {
         console.log(`Processing group: ${groupName}`);
@@ -91,6 +106,7 @@ client.on('ready', async () => {
         try {
             const groupId = await getGroupIdByName(client, groupName);
             const participants = await getGroupParticipants(client, groupId);
+
             const groupMembers = participants.map(participant => participant.phone);
 
             for (const member of groupMembers) {
@@ -124,6 +140,7 @@ client.on('ready', async () => {
                     await recordUserExitFromGroup(previousMember, groupName);
                 }
             }
+
 
             console.log(`Finished processing group: ${groupName}`);
         } catch (error) {
