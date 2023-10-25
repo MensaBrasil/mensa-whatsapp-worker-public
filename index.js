@@ -98,7 +98,7 @@ client.on('ready', async () => {
         process.exit(0);
     }
     //sanity check 2. if number 31989629302 is not in the database, exit
-    const checkResult = checkPhoneNumber(phoneNumbersFromDB, '31989629302');
+    const checkResult = checkPhoneNumber(phoneNumbersFromDB, '+553189629302');
     if (!checkResult.found) {
         console.log('Number 31989629302 not found in the database. Sanity check failed. Exiting.');
         process.exit(0);
