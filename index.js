@@ -90,15 +90,19 @@ const allGroupNames = groupNames.concat(jbGroupNames);
 client.on('ready', async () => {
     console.log('Client is ready!');
 
-
+    while (true) {
     const phoneNumbersFromDB = await getPhoneNumbersWithStatus();
-
+    //sanity check. if no numbers, exit
+    if (phoneNumbersFromDB.length === 0) {
+        console.log('No phone numbers found in the database. Exiting.');
+        process.exit(0);
+    }
 
     const chats = await client.getChats();
     const groups = chats.filter(chat => chat.isGroup);
     const groupNames = groups.map(group => group.name);
 
-    while (true) {
+   
         for (const groupName of groupNames) {
             console.log(`Processing group: ${groupName}`);
             const previousMembers = await getPreviousGroupMembers(groupName);
