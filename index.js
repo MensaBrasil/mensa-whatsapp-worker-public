@@ -110,6 +110,7 @@ client.on('ready', async () => {
 
    
         for (const groupName of groupNames) {
+
             console.log(`Processing group: ${groupName}`);
             const previousMembers = await getPreviousGroupMembers(groupName);
 
@@ -151,7 +152,7 @@ client.on('ready', async () => {
                     }
                 }
 
-
+                delay(10000);
                 console.log(`Finished processing group: ${groupName}`);
             } catch (error) {
                 console.error(`Error processing group ${groupName}:`, error);
