@@ -90,7 +90,7 @@ const allGroupNames = groupNames.concat(jbGroupNames);
 client.on('ready', async () => {
     console.log('Client is ready!');
 
-    
+
     const phoneNumbersFromDB = await getPhoneNumbersWithStatus();
 
 
@@ -98,56 +98,59 @@ client.on('ready', async () => {
     const groups = chats.filter(chat => chat.isGroup);
     const groupNames = groups.map(group => group.name);
 
+    while (true) {
+        for (const groupName of groupNames) {
+            console.log(`Processing group: ${groupName}`);
+            const previousMembers = await getPreviousGroupMembers(groupName);
 
-    for (const groupName of groupNames) {
-        console.log(`Processing group: ${groupName}`);
-        const previousMembers = await getPreviousGroupMembers(groupName);
+            try {
+                const groupId = await getGroupIdByName(client, groupName);
+                const participants = await getGroupParticipants(client, groupId);
 
-        try {
-            const groupId = await getGroupIdByName(client, groupName);
-            const participants = await getGroupParticipants(client, groupId);
+                const groupMembers = participants.map(participant => participant.phone);
 
-            const groupMembers = participants.map(participant => participant.phone);
+                for (const member of groupMembers) {
+                    const checkResult = checkPhoneNumber(phoneNumbersFromDB, member);
 
-            for (const member of groupMembers) {
-                const checkResult = checkPhoneNumber(phoneNumbersFromDB, member);
-                
-                if (checkResult.found) {
-                    if (!previousMembers.includes(member)) {
-                        await recordUserEntryToGroup(checkResult.mb, member, groupName, checkResult.status);
-                    }
+                    if (checkResult.found) {
+                        if (!previousMembers.includes(member)) {
+                            await recordUserEntryToGroup(checkResult.mb, member, groupName, checkResult.status);
+                        }
 
-                    if (checkResult.status === 'Inactive') {
-                        console.log(`Number ${member}, MB ${checkResult.mb} is inactive.`);
-                        if (!scanMode) {
+                        if (checkResult.status === 'Inactive') {
+                            console.log(`Number ${member}, MB ${checkResult.mb} is inactive.`);
+                            if (!scanMode) {
+                                await delay(60000);
+                                await removeParticipantByPhoneNumber(client, groupId, member);
+                                await saveMessageToMongoDB(clientMongo, dbName, 'inactive', checkResult.mb, member, groupName);
+                            }
+                        }
+                    } else {
+                        console.log(`Number ${member} not found in the database.`);
+                        if (!scanMode && member !== '447810094555' && member !== '4915122324805' && member !== '62999552046' && member !== '15142676652' && member !== "556299552046" && member !== '447810094555' && member != '555496875059') {
                             await delay(60000);
                             await removeParticipantByPhoneNumber(client, groupId, member);
-                            await saveMessageToMongoDB(clientMongo, dbName, 'inactive', checkResult.mb, member, groupName);
+                            await saveMessageToMongoDB(clientMongo, dbName, 'notfound', null, member, groupName);
                         }
                     }
-                } else {
-                    console.log(`Number ${member} not found in the database.`);
-                    if (!scanMode && member !== '447810094555' && member !== '4915122324805' && member !== '62999552046' && member !== '15142676652' && member !== "556299552046" && member !== '447810094555' && member != '555496875059' ) {
-                        await delay(60000);
-                        await removeParticipantByPhoneNumber(client, groupId, member);
-                        await saveMessageToMongoDB(clientMongo, dbName, 'notfound', null, member, groupName);
+                }
+                const currentMembers = groupMembers.filter(member => checkPhoneNumber(phoneNumbersFromDB, member).found);
+                for (const previousMember of previousMembers) {
+                    if (!currentMembers.includes(previousMember)) {
+                        await recordUserExitFromGroup(previousMember, groupName);
                     }
                 }
-            }
-            const currentMembers = groupMembers.filter(member => checkPhoneNumber(phoneNumbersFromDB, member).found);
-            for (const previousMember of previousMembers) {
-                if (!currentMembers.includes(previousMember)) {
-                    await recordUserExitFromGroup(previousMember, groupName);
-                }
-            }
 
 
-            console.log(`Finished processing group: ${groupName}`);
-        } catch (error) {
-            console.error(`Error processing group ${groupName}:`, error);
+                console.log(`Finished processing group: ${groupName}`);
+            } catch (error) {
+                console.error(`Error processing group ${groupName}:`, error);
+            }
+            delay(10000);
         }
+        console.log('All groups processed!');
+        await delay(600000);
     }
-    console.log('All groups processed!');
 });
 
 

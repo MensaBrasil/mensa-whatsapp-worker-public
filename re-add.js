@@ -40,8 +40,8 @@ function delay(ms) {
 }
 
 async function getGroupsRemovedFrom(clientMongo, databaseName, phoneNumber) {
-    const communicatedInactive = clientMongo.db(databaseName).collection('communicated_inactive');
-    const communicatedNotFoundRemoved = clientMongo.db(databaseName).collection('communicated_not_found_removed');
+    const communicatedInactive = clientMongo.db(databaseName).collection('inactive');
+    const communicatedNotFoundRemoved = clientMongo.db(databaseName).collection('not_found');
 
     const inactiveDocument = await communicatedInactive.findOne({ phoneNumber });
     const notFoundDocument = await communicatedNotFoundRemoved.findOne({ phoneNumber });

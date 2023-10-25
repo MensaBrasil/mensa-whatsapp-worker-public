@@ -39,3 +39,9 @@ Antes de executar o robô, você precisará das seguintes configurações:
 ## Personalização
 
 O código do robô pode ser personalizado para atender a requisitos específicos. Consulte os comentários no código para entender como cada parte do script funciona e como adaptá-lo conforme necessário.
+
+
+
+sudo apt-get update
+sudo apt-get install -y libgbm1
+sudo apt-get install libasound2
