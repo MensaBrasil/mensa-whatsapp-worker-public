@@ -97,6 +97,12 @@ client.on('ready', async () => {
         console.log('No phone numbers found in the database. Exiting.');
         process.exit(0);
     }
+    //sanity check 2. if number 31989629302 is not in the database, exit
+    const checkResult = checkPhoneNumber(phoneNumbersFromDB, '31989629302');
+    if (!checkResult.found) {
+        console.log('Number 31989629302 not found in the database. Sanity check failed. Exiting.');
+        process.exit(0);
+    }
 
     const chats = await client.getChats();
     const groups = chats.filter(chat => chat.isGroup);
