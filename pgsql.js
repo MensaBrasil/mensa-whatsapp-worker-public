@@ -64,7 +64,6 @@ const getPhoneNumbersWithStatus = async () => {
     FROM PhoneNumbers 
     WHERE phone_number IS NOT NULL
     GROUP BY phone_number, registration_id;
-    
     `;
   
     const { rows } = await pool.query(query, [currentDate]);

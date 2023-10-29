@@ -130,7 +130,7 @@ client.on('ready', async () => {
                         if (groupName.includes("JB")) {
                             jbGroupNames.push(groupName);
                         }
-                        
+                    
                         // If the user has jovem_brilhante = true,we check if the group name has JB in it, and if not, remove the user from the group. 
                         if (checkResult.jovem_brilhante && !jbGroupNames.includes(groupName)) { 
                             console.log(`Number ${member}, MB ${checkResult.mb} is JB and is not in a JB group.`);
