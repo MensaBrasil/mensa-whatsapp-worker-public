@@ -18,12 +18,12 @@ const {
 
 require('dotenv').config();
 
-const username = encodeURIComponent(process.env.DB_USER);
-const password = encodeURIComponent(process.env.DB_PASS);
+const username = process.env.DB_USER;
+const password = process.env.DB_PASS;
 const dbName = process.env.DB_NAME;
 const dbHost = process.env.DB_HOST;
 
-const uri = `mongodb+srv://${username}:${password}@${dbHost}/${dbName}`;
+const uri = `mongodb+srv://${username}:${password}@${dbHost}/${dbName}&ssl=true`;
 
 const clientMongo = new MongoClient(uri, { useUnifiedTopology: true });
 
@@ -74,15 +74,14 @@ if (scanMode) {
 }
 //const groupNames = ['MB | Coordenação Nacional'];
 
-// Groups where JB are alloweds
+// Groups where JB are allowed. You don't need to add the groups where the name already contains JB (e.g. JB São Paulo)
 const jbGroupNames = [
-
-    //TODO: Add JB groups here         <----------------------------------------------------
-
+    "SIGs Mensa Brasil",
+    "MB | Xadrez",
 ];
 
 
-// Merge both lists og groups
+// Merge both lists of groups
 const allGroupNames = groupNames.concat(jbGroupNames);
 
 
@@ -127,6 +126,22 @@ client.on('ready', async () => {
                         if (!previousMembers.includes(member)) {
                             await recordUserEntryToGroup(checkResult.mb, member, groupName, checkResult.status);
                         }
+                        //check if group has text JB in it, and add group name to jbGroupNames if it does
+                        if (groupName.includes("JB")) {
+                            jbGroupNames.push(groupName);
+                        }
+                        
+                        // If the user has jovem_brilhante = true,we check if the group name has JB in it, and if not, remove the user from the group. 
+                        if (checkResult.jovem_brilhante && !jbGroupNames.includes(groupName)) { 
+                            console.log(`Number ${member}, MB ${checkResult.mb} is JB and is not in a JB group.`);
+                            if (!scanMode) {
+                                await delay(60000);
+                                await removeParticipantByPhoneNumber(client, groupId, member);  
+                                await saveMessageToMongoDB(clientMongo, dbName, 'jb', checkResult.mb, member, groupName);
+                            }
+                        }
+                            
+                        
 
                         if (checkResult.status === 'Inactive') {
                             console.log(`Number ${member}, MB ${checkResult.mb} is inactive.`);
@@ -137,11 +152,14 @@ client.on('ready', async () => {
                             }
                         }
                     } else {
-                        console.log(`Number ${member} not found in the database.`);
-                        if (!scanMode && member !== '447810094555' && member !== '4915122324805' && member !== '62999552046' && member !== '15142676652' && member !== "556299552046" && member !== '447810094555' && member != '555496875059') {
+                        if (member !== '447810094555' && member !== '4915122324805' && member !== '62999552046' && member !== '15142676652' && member !== "556299552046" && member !== '447810094555' && member != '555496875059') {
+                            console.log(`Number ${member} not found in the database.`);
                             await delay(60000);
-                            await removeParticipantByPhoneNumber(client, groupId, member);
-                            await saveMessageToMongoDB(clientMongo, dbName, 'notfound', null, member, groupName);
+                            if (!scanMode) {
+                                await removeParticipantByPhoneNumber(client, groupId, member);
+                                await saveMessageToMongoDB(clientMongo, dbName, 'notfound', null, member, groupName);
+                            }
+                            
                         }
                     }
                 }

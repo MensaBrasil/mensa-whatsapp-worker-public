@@ -28,7 +28,11 @@ const getPhoneNumbersWithStatus = async () => {
                 WHEN med.max_expiration_date > $1 THEN 'Active'
                 WHEN r.transferred IS TRUE THEN 'Active'
                 ELSE 'Inactive'
-            END as status
+            END as status,
+            CASE
+                WHEN DATE_PART('year', AGE(r.birth_date)) < 18 THEN TRUE
+                ELSE FALSE
+            END as jovem_brilhante
         FROM phones p 
         LEFT JOIN MaxExpirationDates med ON p.registration_id = med.registration_id
         LEFT JOIN registration r ON p.registration_id = r.registration_id
@@ -42,7 +46,11 @@ const getPhoneNumbersWithStatus = async () => {
                 WHEN med.max_expiration_date > $1 THEN 'Active'
                 WHEN reg.transferred IS TRUE THEN 'Active'
                 ELSE 'Inactive'
-            END as status
+            END as status,
+            CASE
+                WHEN DATE_PART('year', AGE(reg.birth_date)) < 18 THEN TRUE
+                ELSE FALSE
+            END as jovem_brilhante
         FROM legal_representatives lr
         LEFT JOIN MaxExpirationDates med ON lr.registration_id = med.registration_id
         LEFT JOIN registration reg ON lr.registration_id = reg.registration_id
@@ -51,7 +59,8 @@ const getPhoneNumbersWithStatus = async () => {
     SELECT 
         phone_number,
         registration_id,
-        MAX(status) AS status
+        MAX(status) AS status,
+        BOOL_OR(jovem_brilhante) AS jovem_brilhante
     FROM PhoneNumbers 
     WHERE phone_number IS NOT NULL
     GROUP BY phone_number, registration_id;
