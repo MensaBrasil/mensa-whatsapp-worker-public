@@ -3,12 +3,10 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const { printChats, getGroupParticipants, getGroupIdByName, removeParticipantByPhoneNumber, sendMessageToNumber, sendMessageToNumberAPI } = require('./chat');
 const fs = require('fs');
 const checkPhoneNumber = require('./phone-check');
-const { ObjectId } = require('mongodb');
 const { isMessageAlreadySent, saveMessageToMongoDB } = require('./mongo');
-const MongoClient = require('mongodb').MongoClient;
 const { getInactiveMessage, getNotFoundMessage } = require('./messages');
 const dfd = require("danfojs-node");
-const { getPhoneNumbersWithStatus } = require('./pgsql'); // Renamed function
+const { getPhoneNumbersWithStatus, saveGroupsToList } = require('./pgsql'); // Renamed function
 
 const {
     recordUserEntryToGroup,
@@ -23,18 +21,8 @@ const password = process.env.DB_PASS;
 const dbName = process.env.DB_NAME;
 const dbHost = process.env.DB_HOST;
 
-const uri = `mongodb+srv://${username}:${password}@${dbHost}/${dbName}&ssl=true`;
 
-const clientMongo = new MongoClient(uri, { useUnifiedTopology: true });
 
-(async () => {
-    try {
-        await clientMongo.connect();
-        console.log('Connected to MongoDB successfully!');
-    } catch (err) {
-        console.error('Error connecting to MongoDB:', err);
-    }
-})();
 
 const client = new Client({
     authStrategy: new LocalAuth()
@@ -63,8 +51,6 @@ function delay(ms) {
 
 
 
-const groupNames = process.env.GROUP_NAMES.split("','").map(name => name.replace(/^'|'$/g, ''));
-
 const scanMode = process.argv[2] === '--scan';
 //if scan, warn on console. if not, warn too
 if (scanMode) {
@@ -81,33 +67,32 @@ const jbGroupNames = [
 ];
 
 
-// Merge both lists of groups
-const allGroupNames = groupNames.concat(jbGroupNames);
-
 
 
 client.on('ready', async () => {
     console.log('Client is ready!');
 
     while (true) {
-    const phoneNumbersFromDB = await getPhoneNumbersWithStatus();
-    //sanity check. if no numbers, exit
-    if (phoneNumbersFromDB.length === 0) {
-        console.log('No phone numbers found in the database. Exiting.');
-        process.exit(0);
-    }
-    //sanity check 2. if number 31989629302 is not in the database, exit
-    const checkResult = checkPhoneNumber(phoneNumbersFromDB, '553189629302');
-    if (!checkResult.found) {
-        console.log('Number 31989629302 not found in the database. Sanity check failed. Exiting.');
-        process.exit(0);
-    }
+        const phoneNumbersFromDB = await getPhoneNumbersWithStatus();
+        //sanity check. if no numbers, exit
+        if (phoneNumbersFromDB.length === 0) {
+            console.log('No phone numbers found in the database. Exiting.');
+            process.exit(0);
+        }
+        //sanity check 2. if number 31989629302 is not in the database, exit
+        const checkResult = checkPhoneNumber(phoneNumbersFromDB, '447474660572');
+        if (!checkResult.found) {
+            console.log('Number 447474660572 not found in the database. Sanity check failed. Exiting.');
+            process.exit(0);
+        }
 
-    const chats = await client.getChats();
-    const groups = chats.filter(chat => chat.isGroup);
-    const groupNames = groups.map(group => group.name);
+        const chats = await client.getChats();
+        const groups = chats.filter(chat => chat.isGroup);
+        const groupNames = groups.map(group => group.name);
+        //save group names and ids to database
+        await saveGroupsToList(groupNames);
 
-   
+
         for (const groupName of groupNames) {
 
             console.log(`Processing group: ${groupName}`);
@@ -118,37 +103,48 @@ client.on('ready', async () => {
                 const participants = await getGroupParticipants(client, groupId);
 
                 const groupMembers = participants.map(participant => participant.phone);
-
+                const currentMembers = groupMembers.filter(member => checkPhoneNumber(phoneNumbersFromDB, member).found);
+                for (const previousMember of previousMembers) {
+                    if (!currentMembers.includes(previousMember)) {
+                        await recordUserExitFromGroup(previousMember, groupName);
+                    }
+                }
                 for (const member of groupMembers) {
                     const checkResult = checkPhoneNumber(phoneNumbersFromDB, member);
+                    const reason = null;
 
                     if (checkResult.found) {
                         if (!previousMembers.includes(member)) {
+                            console.log(`Number ${member}, MB ${checkResult.mb} is new to the group.`);
+                            console.log(checkResult);
                             await recordUserEntryToGroup(checkResult.mb, member, groupName, checkResult.status);
                         }
+
+
+
                         //check if group has text JB in it, and add group name to jbGroupNames if it does
                         if (groupName.includes("JB")) {
                             jbGroupNames.push(groupName);
                         }
-                    
+
                         // If the user has jovem_brilhante = true,we check if the group name has JB in it, and if not, remove the user from the group. 
-                        if (checkResult.jovem_brilhante && !jbGroupNames.includes(groupName)) { 
+                        if (checkResult.jovem_brilhante && !jbGroupNames.includes(groupName)) {
                             console.log(`Number ${member}, MB ${checkResult.mb} is JB and is not in a JB group.`);
                             if (!scanMode) {
                                 await delay(60000);
-                                await removeParticipantByPhoneNumber(client, groupId, member);  
-                                await saveMessageToMongoDB(clientMongo, dbName, 'jb', checkResult.mb, member, groupName);
+                                await removeParticipantByPhoneNumber(client, groupId, member);
+                                reason = 'JB not in JB group';
                             }
                         }
-                            
-                        
+
+
 
                         if (checkResult.status === 'Inactive') {
                             console.log(`Number ${member}, MB ${checkResult.mb} is inactive.`);
                             if (!scanMode) {
                                 await delay(60000);
                                 await removeParticipantByPhoneNumber(client, groupId, member);
-                                await saveMessageToMongoDB(clientMongo, dbName, 'inactive', checkResult.mb, member, groupName);
+                                reason = 'Inactive';
                             }
                         }
                     } else {
@@ -157,25 +153,26 @@ client.on('ready', async () => {
                             await delay(60000);
                             if (!scanMode) {
                                 await removeParticipantByPhoneNumber(client, groupId, member);
-                                await saveMessageToMongoDB(clientMongo, dbName, 'notfound', null, member, groupName);
+                                reason = 'Not found in database';
                             }
-                            
+
                         }
                     }
-                }
-                const currentMembers = groupMembers.filter(member => checkPhoneNumber(phoneNumbersFromDB, member).found);
-                for (const previousMember of previousMembers) {
-                    if (!currentMembers.includes(previousMember)) {
-                        await recordUserExitFromGroup(previousMember, groupName);
+                    if (reason) {
+                        if (!scanMode) {
+                            await recordUserExitFromGroup(member, groupName, reason);
+                        }
                     }
+
                 }
 
-                delay(10000);
+
+                await delay(10000);
                 console.log(`Finished processing group: ${groupName}`);
             } catch (error) {
                 console.error(`Error processing group ${groupName}:`, error);
             }
-            delay(10000);
+            await delay(10000);
         }
         console.log('All groups processed!');
         await delay(600000);
@@ -184,19 +181,12 @@ client.on('ready', async () => {
 
 
 
-
-
-
-
 client.initialize();
 
 process.on('SIGINT', async () => {
     try {
-        await clientMongo.close();
-        console.log('Disconnected from MongoDB.');
         process.exit(0);
     } catch (err) {
-        console.error('Error closing MongoDB connection:', err);
         process.exit(1);
     }
 });

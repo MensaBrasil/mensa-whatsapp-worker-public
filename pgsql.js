@@ -72,13 +72,13 @@ const getPhoneNumbersWithStatus = async () => {
 
 
 
-const recordUserExitFromGroup = async (phone_number, group_name) => {
+const recordUserExitFromGroup = async (phone_number, group_name, reason) => {
     const query = `
         UPDATE mensa.member_groups
-        SET exit_date = CURRENT_DATE
+        SET exit_date = CURRENT_DATE, removal_reason = $3
         WHERE phone_number = $1 AND group_name = $2 AND exit_date IS NULL;
     `;
-    await pool.query(query, [phone_number, group_name]);
+    await pool.query(query, [phone_number, group_name, reason]);
 };
 
 const recordUserEntryToGroup = async (registration_id, phone_number, group_name, status) => {
@@ -105,6 +105,18 @@ async function getPreviousGroupMembers(groupName) {
     const values = [groupName];
     const result = await pool.query(query, values);
     return result.rows.map(row => row.phone_number);
+}
+
+async function saveGroupsToList(groupNames) {
+    //erase the previous list
+    await pool.query(`DELETE FROM group_list`);
+    
+    //parse the list of names and ids the list and save one per line
+    const query = `INSERT INTO group_list (group_name) VALUES ($1)`;
+    for (const groupName of groupNames) {
+        const values = [groupName];
+        await pool.query(query, values);
+    }
     
 }
 
@@ -113,4 +125,5 @@ module.exports = { getPhoneNumbersWithStatus,
                    recordUserExitFromGroup, 
                    recordUserEntryToGroup, 
                    isUserInGroup,
-                   getPreviousGroupMembers };
+                   getPreviousGroupMembers,
+                   saveGroupsToList };
