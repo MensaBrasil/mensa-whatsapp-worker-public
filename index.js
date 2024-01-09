@@ -6,7 +6,8 @@ const checkPhoneNumber = require('./phone-check');
 const { isMessageAlreadySent, saveMessageToMongoDB } = require('./mongo');
 const { getInactiveMessage, getNotFoundMessage } = require('./messages');
 const dfd = require("danfojs-node");
-const { getPhoneNumbersWithStatus, saveGroupsToList } = require('./pgsql'); // Renamed function
+const { getPhoneNumbersWithStatus, saveGroupsToList, getWhatsappQueue, registerWhatsappAddAttempt, registerWhatsappAddFulfilled } = require('./pgsql'); // Renamed function
+const { addPhoneNumberToGroup } = require('./re-add');
 
 const {
     recordUserEntryToGroup,
@@ -89,26 +90,53 @@ client.on('ready', async () => {
         const chats = await client.getChats();
         const groups = chats.filter(chat => chat.isGroup);
         const groupNames = groups.map(group => group.name);
+        const groupIds = groups.map(group => group.id._serialized);
+
         //save group names and ids to database
-        await saveGroupsToList(groupNames);
+        await saveGroupsToList(groupNames, groupIds);
 
 
         for (const groupName of groupNames) {
 
             console.log(`Processing group: ${groupName}`);
-            const previousMembers = await getPreviousGroupMembers(groupName);
+            const groupId = await getGroupIdByName(client, groupName);
+            const previousMembers = await getPreviousGroupMembers(groupId);
 
             try {
-                const groupId = await getGroupIdByName(client, groupName);
+
                 const participants = await getGroupParticipants(client, groupId);
 
                 const groupMembers = participants.map(participant => participant.phone);
                 const currentMembers = groupMembers.filter(member => checkPhoneNumber(phoneNumbersFromDB, member).found);
                 for (const previousMember of previousMembers) {
                     if (!currentMembers.includes(previousMember)) {
-                        await recordUserExitFromGroup(previousMember, groupName);
+                        await recordUserExitFromGroup(previousMember, groupId, 'Left group');
                     }
                 }
+                
+
+                //try adding members that requested to join the group
+                const queue = await getWhatsappQueue(groupId);
+                for (const request of queue.rows) {
+                    try {
+                        const addResult = await addPhoneNumberToGroup(client, request.phone_number, groupId);
+                        if (addResult === true) {
+                            await registerWhatsappAddFulfilled(request.id);
+                            console.log(`Number ${request.phone_number} added to group`);
+                        } else {
+                            throw new Error('Addition failed');
+                        }
+                    } catch (error) {
+                        // Register the attempt even if there was an error
+                        await registerWhatsappAddAttempt(request.id);
+                        console.error(`Error adding number ${request.phone_number} to group: ${error.message}`);
+                    }
+                }
+
+
+
+
+
                 for (const member of groupMembers) {
                     const checkResult = checkPhoneNumber(phoneNumbersFromDB, member);
                     const reason = null;
@@ -116,11 +144,9 @@ client.on('ready', async () => {
                     if (checkResult.found) {
                         if (!previousMembers.includes(member)) {
                             console.log(`Number ${member}, MB ${checkResult.mb} is new to the group.`);
-                            console.log(checkResult);
-                            await recordUserEntryToGroup(checkResult.mb, member, groupName, checkResult.status);
+
+                            await recordUserEntryToGroup(checkResult.mb, member, groupId, checkResult.status);
                         }
-
-
 
                         //check if group has text JB in it, and add group name to jbGroupNames if it does
                         if (groupName.includes("JB")) {
@@ -160,7 +186,7 @@ client.on('ready', async () => {
                     }
                     if (reason) {
                         if (!scanMode) {
-                            await recordUserExitFromGroup(member, groupName, reason);
+                            await recordUserExitFromGroup(member, groupId, reason);
                         }
                     }
 

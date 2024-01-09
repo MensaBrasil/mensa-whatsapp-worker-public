@@ -24,6 +24,6 @@
     "mongodb": "^5.7.0",
     "pg": "^8.11.3",
     "pgsql": "^1.0.0",
-    "whatsapp-web.js": "https://github.com/Julzk/whatsapp-web.js/tarball/jkr_hotfix_7"
+    "whatsapp-web.js": "^1.23.0"
   }
 }
