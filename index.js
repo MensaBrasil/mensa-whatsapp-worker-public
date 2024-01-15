@@ -74,18 +74,7 @@ client.on('ready', async () => {
     console.log('Client is ready!');
 
     while (true) {
-        const phoneNumbersFromDB = await getPhoneNumbersWithStatus();
-        //sanity check. if no numbers, exit
-        if (phoneNumbersFromDB.length === 0) {
-            console.log('No phone numbers found in the database. Exiting.');
-            process.exit(0);
-        }
-        //sanity check 2. if number 31989629302 is not in the database, exit
-        const checkResult = checkPhoneNumber(phoneNumbersFromDB, '447474660572');
-        if (!checkResult.found) {
-            console.log('Number 447474660572 not found in the database. Sanity check failed. Exiting.');
-            process.exit(0);
-        }
+        
 
         const chats = await client.getChats();
         const groups = chats.filter(chat => chat.isGroup);
@@ -97,6 +86,18 @@ client.on('ready', async () => {
 
 
         for (const groupName of groupNames) {
+            const phoneNumbersFromDB = await getPhoneNumbersWithStatus();
+            //sanity check. if no numbers, exit
+            if (phoneNumbersFromDB.length === 0) {
+                console.log('No phone numbers found in the database. Exiting.');
+                process.exit(0);
+            }
+            //sanity check 2. if number 31989629302 is not in the database, exit
+            const checkResult = checkPhoneNumber(phoneNumbersFromDB, '447474660572');
+            if (!checkResult.found) {
+                console.log('Number 447474660572 not found in the database. Sanity check failed. Exiting.');
+                process.exit(0);
+            }
 
             console.log(`Processing group: ${groupName}`);
             const groupId = await getGroupIdByName(client, groupName);
