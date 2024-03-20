@@ -132,6 +132,8 @@ client.on('ready', async () => {
                         await registerWhatsappAddAttempt(request.id);
                         console.error(`Error adding number ${request.phone_number} to group: ${error.message}`);
                     }
+                    // Wait a bit before adding the next number - Remove this soon
+                    await delay(30000)
                 }
 
 
