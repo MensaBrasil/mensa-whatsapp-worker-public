@@ -77,7 +77,7 @@ client.on('ready', async () => {
         
 
         const chats = await client.getChats();
-        const groups = chats.filter(chat => chat.isGroup);
+        const groups = chats.filter(chat => chat.isGroup && !chat.isReadOnly);
         const groupNames = groups.map(group => group.name);
         const groupIds = groups.map(group => group.id._serialized);
 
@@ -133,7 +133,7 @@ client.on('ready', async () => {
                         console.error(`Error adding number ${request.phone_number} to group: ${error.message}`);
                     }
                     // Wait a bit before adding the next number - Remove this soon
-                    await delay(30000)
+                    await delay(6000000)
                 }
 
 
