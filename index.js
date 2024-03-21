@@ -116,25 +116,7 @@ client.on('ready', async () => {
                 }
                 
 
-                //try adding members that requested to join the group
-                const queue = await getWhatsappQueue(groupId);
-                for (const request of queue.rows) {
-                    try {
-                        const addResult = await addPhoneNumberToGroup(client, request.phone_number, groupId);
-                        if (addResult === true) {
-                            await registerWhatsappAddFulfilled(request.id);
-                            console.log(`Number ${request.phone_number} added to group`);
-                        } else {
-                            throw new Error('Addition failed');
-                        }
-                    } catch (error) {
-                        // Register the attempt even if there was an error
-                        await registerWhatsappAddAttempt(request.id);
-                        console.error(`Error adding number ${request.phone_number} to group: ${error.message}`);
-                    }
-                    // Wait a bit before adding the next number - Remove this soon
-                    await delay(6000000)
-                }
+                
 
 
 
@@ -202,6 +184,26 @@ client.on('ready', async () => {
                 console.error(`Error processing group ${groupName}:`, error);
             }
             await delay(10000);
+
+            //try adding members that requested to join the group
+            const queue = await getWhatsappQueue(groupId);
+            for (const request of queue.rows) {
+                try {
+                    const addResult = await addPhoneNumberToGroup(client, request.phone_number, groupId);
+                    if (addResult === true) {
+                        await registerWhatsappAddFulfilled(request.id);
+                        console.log(`Number ${request.phone_number} added to group`);
+                    } else {
+                        throw new Error('Addition failed');
+                    }
+                } catch (error) {
+                    // Register the attempt even if there was an error
+                    await registerWhatsappAddAttempt(request.id);
+                    console.error(`Error adding number ${request.phone_number} to group: ${error.message}`);
+                }
+                // Wait a bit before adding the next number - Remove this soon
+                await delay(6000000)
+            }
         }
         console.log('All groups processed!');
         await delay(600000);
