@@ -187,10 +187,10 @@ client.on('ready', async () => {
             }
             await delay(10000);
 
-
+            const conversations = chats.filter(chat => !chat.isGroup);
             const queue = await getWhatsappQueue(groupId);
             // Extract the last 8 digits of each phone number from existing chats
-            const last8DigitsFromChats = chats.map(chat => chat.id.user).map(number => number.slice(-8));
+            const last8DigitsFromChats = conversations.map(chat => chat.id.user).map(number => number.slice(-8));
             if (!scanMode) {
                 for (const request of queue.rows) {
                     try {
@@ -211,8 +211,8 @@ client.on('ready', async () => {
                         await registerWhatsappAddAttempt(request.id);
                         console.error(`Error adding number ${request.phone_number} to group: ${error.message}`);
                     }
-                    // Wait a bit before adding the next number - Consider adjusting delay as per requirements
-                    await delay(6000000);
+                    // Wait a bit before adding the next number - Consider adjusting the delay time as per requirements
+                    await delay(6000000); // 6,000,000 ms = 100 minutes; adjust as needed
                 }
             }
         }
