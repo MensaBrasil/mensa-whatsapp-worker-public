@@ -14,6 +14,7 @@ const {
     recordUserExitFromGroup,
     getPreviousGroupMembers
 } = require('./pgsql');
+const { Console } = require('console');
 
 require('dotenv').config();
 
@@ -77,6 +78,7 @@ client.on('ready', async () => {
 
 
         const chats = await client.getChats();
+        console.log(chats);
         const groups = chats.filter(chat => chat.isGroup && !chat.isReadOnly);
         const groupNames = groups.map(group => group.name);
         const groupIds = groups.map(group => group.id._serialized);
