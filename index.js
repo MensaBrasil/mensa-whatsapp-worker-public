@@ -74,7 +74,7 @@ client.on('ready', async () => {
     console.log('Client is ready!');
 
     while (true) {
-        
+
 
         const chats = await client.getChats();
         const groups = chats.filter(chat => chat.isGroup && !chat.isReadOnly);
@@ -114,9 +114,9 @@ client.on('ready', async () => {
                         await recordUserExitFromGroup(previousMember, groupId, 'Left group');
                     }
                 }
-                
 
-                
+
+
 
 
 
@@ -159,7 +159,7 @@ client.on('ready', async () => {
                             }
                         }
                     } else {
-                        if (member !== '447810094555' && member !== '4915122324805' && member !== '62999552046' && member !== '15142676652' && member !== "556299552046" && member !== '447810094555' && member != '555496875059') {
+                        if (member !== '447782796843' && member !== '4915122324805' && member !== '62999552046' && member !== '15142676652' && member !== "556299552046" && member !== '447782796843' && member != '555496875059') {
                             console.log(`Number ${member} not found in the database.`);
                             await delay(60000);
                             if (!scanMode) {
@@ -185,24 +185,33 @@ client.on('ready', async () => {
             }
             await delay(10000);
 
-            //try adding members that requested to join the group
+
             const queue = await getWhatsappQueue(groupId);
-            for (const request of queue.rows) {
-                try {
-                    const addResult = await addPhoneNumberToGroup(client, request.phone_number, groupId);
-                    if (addResult === true) {
-                        await registerWhatsappAddFulfilled(request.id);
-                        console.log(`Number ${request.phone_number} added to group`);
-                    } else {
-                        throw new Error('Addition failed');
+            // Extract the last 8 digits of each phone number from existing chats
+            const last8DigitsFromChats = chats.map(chat => chat.id.user).map(number => number.slice(-8));
+            if (!scanMode) {
+                for (const request of queue.rows) {
+                    try {
+                        // Check if the last 8 digits of the requesting number are in the list of last 8 digits from existing chats
+                        if (last8DigitsFromChats.includes(request.phone_number.slice(-8))) {
+                            const addResult = await addPhoneNumberToGroup(client, request.phone_number, groupId);
+                            if (addResult === true) {
+                                await registerWhatsappAddFulfilled(request.id);
+                                console.log(`Number ${request.phone_number} added to group`);
+                            } else {
+                                throw new Error('Addition failed');
+                            }
+                        } else {
+                            console.log(`Number ${request.phone_number} not found in existing chats. Skipping...`);
+                        }
+                    } catch (error) {
+                        // Register the attempt even if there was an error
+                        await registerWhatsappAddAttempt(request.id);
+                        console.error(`Error adding number ${request.phone_number} to group: ${error.message}`);
                     }
-                } catch (error) {
-                    // Register the attempt even if there was an error
-                    await registerWhatsappAddAttempt(request.id);
-                    console.error(`Error adding number ${request.phone_number} to group: ${error.message}`);
+                    // Wait a bit before adding the next number - Consider adjusting delay as per requirements
+                    await delay(6000000);
                 }
-                // Wait a bit before adding the next number - Remove this soon
-                await delay(6000000)
             }
         }
         console.log('All groups processed!');
