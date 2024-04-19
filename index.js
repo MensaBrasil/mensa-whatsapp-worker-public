@@ -234,12 +234,12 @@ client.on('ready', async () => {
                         console.error(`Error adding number ${request.phone_number} to group: ${error.message}`);
                     }
                     // Wait a bit before adding the next number - Consider adjusting the delay time as per requirements
-                    await delay(6000000); // 6,000,000 ms = 100 minutes; adjust as needed
+                    await delay(60000); // 6,000,000 ms = 100 minutes; adjust as needed
                 }
             }
         }
         console.log('All groups processed!');
-        await delay(600000);
+        await delay(60000);
     }
 });
 
