@@ -26,9 +26,31 @@ const dbHost = process.env.DB_HOST;
 
 
 
+// const client = new Client({
+//     authStrategy: new LocalAuth()
+// });
+
 const client = new Client({
-    authStrategy: new LocalAuth()
-});
+    webVersion: "2.2325.3",
+    webVersionCache: {
+      type: "remote",
+      remotePath: "https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2325.3.html",
+    },
+    authStrategy: new LocalAuth(),
+    puppeteer: {
+      headless: true,
+      args: [
+        "--no-sandbox",
+        "--no-first-run",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-accelerated-2d-canvas",
+        "--disable-gpu",
+        "--single-process",
+        "--no-zygote",
+      ],
+    },
+  })
 
 client.on('qr', qr => {
     qrcode.generate(qr, { small: true });
