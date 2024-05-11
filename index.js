@@ -217,16 +217,20 @@ client.on('ready', async () => {
                 for (const request of queue.rows) {
                     try {
                         // Check if the last 8 digits of the requesting number are in the list of last 8 digits from existing chats
+                        // remove everything but digits from the phone number
+                        request.phone_number = request.phone_number.replace(/\D/g, '');
                         if (last8DigitsFromChats.includes(request.phone_number.slice(-8))) {
                             const addResult = await addPhoneNumberToGroup(client, request.phone_number, groupId);
                             if (addResult === true) {
                                 await registerWhatsappAddFulfilled(request.id);
                                 console.log(`Number ${request.phone_number} added to group`);
+                                
                             } else {
                                 throw new Error('Addition failed');
                             }
                         } else {
                             console.log(`Number ${request.phone_number} not found in existing chats. Skipping...`);
+                            continue;
                         }
                     } catch (error) {
                         // Register the attempt even if there was an error
@@ -234,7 +238,7 @@ client.on('ready', async () => {
                         console.error(`Error adding number ${request.phone_number} to group: ${error.message}`);
                     }
                     // Wait a bit before adding the next number - Consider adjusting the delay time as per requirements
-                    await delay(60000); // 6,000,000 ms = 100 minutes; adjust as needed
+                    await delay(30000); // 6,000,000 ms = 100 minutes; adjust as needed
                 }
             }
         }
