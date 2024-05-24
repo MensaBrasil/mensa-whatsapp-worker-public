@@ -173,7 +173,7 @@ client.on('ready', async () => {
                             }
                         }
                     } else {
-                        if (member !== '447782796843' && member !== '4915122324805' && member !== '62999552046' && member !== '15142676652' && member !== "556299552046" && member !== '447782796843' && member != '555496875059') {
+                        if (member !== '447475084085' && member !== '4915122324805' && member !== '62999552046' && member !== '15142676652' && member !== "556299552046" && member !== '447782796843' && member != '555496875059') {
                             console.log(`Number ${member} not found in the database.`);
                             await delay(60000);
                             if (!scanMode) {
@@ -228,7 +228,7 @@ client.on('ready', async () => {
                         console.error(`Error adding number ${request.phone_number} to group: ${error.message}`);
                     }
                     // Wait a bit before adding the next number - Consider adjusting the delay time as per requirements
-                    await delay(3000000); // 6,000,000 ms = 100 minutes; adjust as needed
+                    await delay(6000000); // 6,000,000 ms = 100 minutes; adjust as needed
                 }
             }
         }
