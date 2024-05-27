@@ -220,6 +220,7 @@ client.on('ready', async () => {
                             }
                         } else {
                             console.log(`Number ${request.phone_number} not found in existing chats. Skipping...`);
+                            delay(60000)
                             continue;
                         }
                     } catch (error) {
