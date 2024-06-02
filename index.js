@@ -173,7 +173,7 @@ client.on('ready', async () => {
                             }
                         }
                     } else {
-                        if (member !== '447475084085' && member !== '4915122324805' && member !== '62999552046' && member !== '15142676652' && member !== "556299552046" && member !== '447782796843' && member != '555496875059') {
+                        if (member !== '447475084085' && member !== '4915122324805' && member !== '62999552046' && member !== '15142676652' && member !== "556299552046" && member !== '447782796843' && member != '555496875059' && member != '34657489744') {
                             console.log(`Number ${member} not found in the database.`);
                             await delay(60000);
                             if (!scanMode) {
