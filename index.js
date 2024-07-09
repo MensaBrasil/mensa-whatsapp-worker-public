@@ -22,6 +22,8 @@ const password = process.env.DB_PASS;
 const dbName = process.env.DB_NAME;
 const dbHost = process.env.DB_HOST;
 
+const BOT_NUMBER = "447863603673";
+
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
@@ -31,10 +33,7 @@ const client = new Client({
         "--disable-gpu",
       ],
     },
-    webVersionCache: {
-        type: 'remote',
-        remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2413.51-beta.html',
-   }
+    webVersionCache: { type: 'remote', remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html', }
 });
 
 client.on('qr', qr => {
@@ -103,6 +102,11 @@ client.on('ready', async () => {
                 const groupMembers = participants.map(participant => participant.phone);
                 const currentMembers = groupMembers.filter(member => checkPhoneNumber(phoneNumbersFromDB, member).found);
 
+                const groupChat = await client.getChatById(groupId);
+                const botChatObj = groupChat.participants.find(chatObj => chatObj.id.user === BOT_NUMBER);
+
+                const isAdmin = botChatObj && botChatObj.isAdmin;
+
                 for (const previousMember of previousMembers) {
                     if (!currentMembers.includes(previousMember)) {
                         await recordUserExitFromGroup(previousMember, groupId, 'Left group');
@@ -123,7 +127,7 @@ client.on('ready', async () => {
                             jbGroupNames.push(groupName);
                         }
 
-                        if (checkResult.jovem_brilhante && !jbGroupNames.includes(groupName) && !addOnlyMode) {
+                        if (checkResult.jovem_brilhante && !jbGroupNames.includes(groupName) && !addOnlyMode && isAdmin) {
                             console.log(`Number ${member}, MB ${checkResult.mb} is JB and is not in a JB group.`);
                             if (!scanMode) {
                                 await delay(60000);
@@ -132,7 +136,7 @@ client.on('ready', async () => {
                             }
                         }
 
-                        if (checkResult.status === 'Inactive' && !addOnlyMode) {
+                        if (checkResult.status === 'Inactive' && !addOnlyMode && isAdmin) {
                             console.log(`Number ${member}, MB ${checkResult.mb} is inactive.`);
                             if (!scanMode) {
                                 await delay(60000);
@@ -141,7 +145,7 @@ client.on('ready', async () => {
                             }
                         }
                     } else {
-                        if (member !== '447475084085' && member !== '4915122324805' && member !== '62999552046' && member !== '15142676652' && member !== "556299552046" && member !== '447782796843' && member != '555496875059' && member != '34657489744' && !addOnlyMode) {
+                        if (member !== '447475084085' && member !== '4915122324805' && member !== '62999552046' && member !== '15142676652' && member !== "556299552046" && member !== '447782796843' && member != '555496875059' && member != '34657489744' && !addOnlyMode && isAdmin) {
                             console.log(`Number ${member} not found in the database.`);
                             await delay(60000);
                             if (!scanMode) {
@@ -167,7 +171,7 @@ client.on('ready', async () => {
             const conversations = chats.filter(chat => !chat.isGroup);
             const queue = await getWhatsappQueue(groupId);
             const last8DigitsFromChats = conversations.map(chat => chat.id.user).map(number => number.slice(-8));
-            if (!scanMode) {
+            if (!scanMode && isAdmin) {
                 for (const request of queue.rows) {
                     try {
                         request.phone_number = request.phone_number.replace(/\D/g, '');
