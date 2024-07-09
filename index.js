@@ -8,7 +8,6 @@ const { getInactiveMessage, getNotFoundMessage } = require('./messages');
 const dfd = require("danfojs-node");
 const { getPhoneNumbersWithStatus, saveGroupsToList, getWhatsappQueue, registerWhatsappAddAttempt, registerWhatsappAddFulfilled } = require('./pgsql'); // Renamed function
 const { addPhoneNumberToGroup } = require('./re-add');
-
 const {
     recordUserEntryToGroup,
     recordUserExitFromGroup,
@@ -23,13 +22,6 @@ const password = process.env.DB_PASS;
 const dbName = process.env.DB_NAME;
 const dbHost = process.env.DB_HOST;
 
-
-
-
-// const client = new Client({
-//     authStrategy: new LocalAuth()
-// });
-
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
@@ -39,8 +31,8 @@ const client = new Client({
         "--disable-gpu",
       ],
     },
-webVersionCache: { type: 'remote', remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html', }
-  })
+    webVersionCache: { type: 'remote', remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html', }
+});
 
 client.on('qr', qr => {
     qrcode.generate(qr, { small: true });
@@ -48,13 +40,9 @@ client.on('qr', qr => {
 
 // Helper function to introduce a delay
 function getRandomDelay(baseDelay) {
-    // Calculate the random variation as 20% of the baseDelay
     const variation = baseDelay * 0.3;
-    // Generate a random number between -variation and variation
     const randomDelay = Math.random() * (2 * variation) - variation;
-    // Add the randomDelay to the baseDelay
     const totalDelay = baseDelay + randomDelay;
-
     return totalDelay;
 }
 
@@ -63,50 +51,40 @@ function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, totalDelay));
 }
 
+const scanMode = process.argv.includes('--scan');
+const addOnlyMode = process.argv.includes('--add-only');
 
-
-const scanMode = process.argv[2] === '--scan';
-//if scan, warn on console. if not, warn too
 if (scanMode) {
     console.log('Scan mode enabled. No changes will be made to the groups.');
+} else if (addOnlyMode) {
+    console.log('Add-only mode enabled. Only additions will be made to the groups.');
 } else {
     console.log('!!!!!!Scan mode DISABLED. Changes will be made to the groups.!!!!!!!');
 }
-//const groupNames = ['MB | Coordenação Nacional'];
 
-// Groups where JB are allowed. You don't need to add the groups where the name already contains JB (e.g. JB São Paulo)
 const jbGroupNames = [
     "SIGs Mensa Brasil",
     "MB | Xadrez",
 ];
 
-
-
-
 client.on('ready', async () => {
     console.log('Client is ready!');
 
     while (true) {
-
-
         const chats = await client.getChats();
         console.log(chats);
         const groups = chats.filter(chat => chat.isGroup && !chat.isReadOnly);
         const groupNames = groups.map(group => group.name);
         const groupIds = groups.map(group => group.id._serialized);
 
-        //save group names and ids to database
         await saveGroupsToList(groupNames, groupIds);
-
 
         for (const groupName of groupNames) {
             const phoneNumbersFromDB = await getPhoneNumbersWithStatus();
-            //sanity check. if no numbers, exit
             if (phoneNumbersFromDB.length === 0) {
                 console.log('No phone numbers found in the database. Exiting.');
                 process.exit(0);
             }
-            //sanity check 2. if number 31989629302 is not in the database, exit
             const checkResult = checkPhoneNumber(phoneNumbersFromDB, '447474660572');
             if (!checkResult.found) {
                 console.log('Number 447474660572 not found in the database. Sanity check failed. Exiting.');
@@ -118,42 +96,31 @@ client.on('ready', async () => {
             const previousMembers = await getPreviousGroupMembers(groupId);
 
             try {
-
                 const participants = await getGroupParticipants(client, groupId);
-
                 const groupMembers = participants.map(participant => participant.phone);
                 const currentMembers = groupMembers.filter(member => checkPhoneNumber(phoneNumbersFromDB, member).found);
+
                 for (const previousMember of previousMembers) {
                     if (!currentMembers.includes(previousMember)) {
                         await recordUserExitFromGroup(previousMember, groupId, 'Left group');
                     }
                 }
 
-
-
-
-
-
-
-
                 for (const member of groupMembers) {
                     const checkResult = checkPhoneNumber(phoneNumbersFromDB, member);
-                    const reason = null;
+                    let reason = null;
 
                     if (checkResult.found) {
                         if (!previousMembers.includes(member)) {
                             console.log(`Number ${member}, MB ${checkResult.mb} is new to the group.`);
-
                             await recordUserEntryToGroup(checkResult.mb, member, groupId, checkResult.status);
                         }
 
-                        //check if group has text JB in it, and add group name to jbGroupNames if it does
                         if (groupName.includes("JB")) {
                             jbGroupNames.push(groupName);
                         }
 
-                        // If the user has jovem_brilhante = true,we check if the group name has JB in it, and if not, remove the user from the group. 
-                        if (checkResult.jovem_brilhante && !jbGroupNames.includes(groupName)) {
+                        if (checkResult.jovem_brilhante && !jbGroupNames.includes(groupName) && !addOnlyMode) {
                             console.log(`Number ${member}, MB ${checkResult.mb} is JB and is not in a JB group.`);
                             if (!scanMode) {
                                 await delay(60000);
@@ -162,9 +129,7 @@ client.on('ready', async () => {
                             }
                         }
 
-
-
-                        if (checkResult.status === 'Inactive') {
+                        if (checkResult.status === 'Inactive' && !addOnlyMode) {
                             console.log(`Number ${member}, MB ${checkResult.mb} is inactive.`);
                             if (!scanMode) {
                                 await delay(60000);
@@ -173,14 +138,13 @@ client.on('ready', async () => {
                             }
                         }
                     } else {
-                        if (member !== '447475084085' && member !== '4915122324805' && member !== '62999552046' && member !== '15142676652' && member !== "556299552046" && member !== '447782796843' && member != '555496875059' && member != '34657489744') {
+                        if (member !== '447475084085' && member !== '4915122324805' && member !== '62999552046' && member !== '15142676652' && member !== "556299552046" && member !== '447782796843' && member != '555496875059' && member != '34657489744' && !addOnlyMode) {
                             console.log(`Number ${member} not found in the database.`);
                             await delay(60000);
                             if (!scanMode) {
                                 await removeParticipantByPhoneNumber(client, groupId, member);
                                 reason = 'Not found in database';
                             }
-
                         }
                     }
                     if (reason) {
@@ -188,9 +152,7 @@ client.on('ready', async () => {
                             await recordUserExitFromGroup(member, groupId, reason);
                         }
                     }
-
                 }
-
 
                 await delay(10000);
                 console.log(`Finished processing group: ${groupName}`);
@@ -201,34 +163,28 @@ client.on('ready', async () => {
 
             const conversations = chats.filter(chat => !chat.isGroup);
             const queue = await getWhatsappQueue(groupId);
-            // Extract the last 8 digits of each phone number from existing chats
             const last8DigitsFromChats = conversations.map(chat => chat.id.user).map(number => number.slice(-8));
             if (!scanMode) {
                 for (const request of queue.rows) {
                     try {
-                        // Check if the last 8 digits of the requesting number are in the list of last 8 digits from existing chats
-                        // remove everything but digits from the phone number
                         request.phone_number = request.phone_number.replace(/\D/g, '');
                         if (last8DigitsFromChats.includes(request.phone_number.slice(-8))) {
                             const addResult = await addPhoneNumberToGroup(client, request.phone_number, groupId);
                             if (addResult === true) {
                                 await registerWhatsappAddFulfilled(request.id);
                                 console.log(`Number ${request.phone_number} added to group`);
-                                
                             } else {
                                 throw new Error('Addition failed');
                             }
                         } else {
                             console.log(`Number ${request.phone_number} not found in existing chats. Skipping...`);
-                            delay(60000)
+                            delay(60000);
                             continue;
                         }
                     } catch (error) {
-                        // Register the attempt even if there was an error
                         await registerWhatsappAddAttempt(request.id);
                         console.error(`Error adding number ${request.phone_number} to group: ${error.message}`);
                     }
-                    // Wait a bit before adding the next number - Consider adjusting the delay time as per requirements
                     await delay(6000000); // 6,000,000 ms = 100 minutes; adjust as needed
                 }
             }
@@ -237,8 +193,6 @@ client.on('ready', async () => {
         await delay(60000);
     }
 });
-
-
 
 client.initialize();
 
