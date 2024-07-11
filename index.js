@@ -22,8 +22,6 @@ const password = process.env.DB_PASS;
 const dbName = process.env.DB_NAME;
 const dbHost = process.env.DB_HOST;
 
-const BOT_NUMBER = "447863603673";
-
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
@@ -103,9 +101,14 @@ client.on('ready', async () => {
                 const currentMembers = groupMembers.filter(member => checkPhoneNumber(phoneNumbersFromDB, member).found);
 
                 const groupChat = await client.getChatById(groupId);
-                const botChatObj = groupChat.participants.find(chatObj => chatObj.id.user === BOT_NUMBER);
+                await groupChat.sendSeen();
+                await delay(10000);
 
-                const isAdmin = botChatObj && botChatObj.isAdmin;
+                const botChatObj = groupChat.participants.find(chatObj => chatObj.id.user === client.info.wid.user);
+                if (!botChatObj.isAdmin) {
+                    console.log("Bot is not an admin in this group. Skipping admin actions.");
+                    continue;
+                }
 
                 for (const previousMember of previousMembers) {
                     if (!currentMembers.includes(previousMember)) {
@@ -127,7 +130,7 @@ client.on('ready', async () => {
                             jbGroupNames.push(groupName);
                         }
 
-                        if (checkResult.jovem_brilhante && !jbGroupNames.includes(groupName) && !addOnlyMode && isAdmin) {
+                        if (checkResult.jovem_brilhante && !jbGroupNames.includes(groupName) && !addOnlyMode) {
                             console.log(`Number ${member}, MB ${checkResult.mb} is JB and is not in a JB group.`);
                             if (!scanMode) {
                                 await delay(60000);
@@ -136,7 +139,7 @@ client.on('ready', async () => {
                             }
                         }
 
-                        if (checkResult.status === 'Inactive' && !addOnlyMode && isAdmin) {
+                        if (checkResult.status === 'Inactive' && !addOnlyMode) {
                             console.log(`Number ${member}, MB ${checkResult.mb} is inactive.`);
                             if (!scanMode) {
                                 await delay(60000);
@@ -145,7 +148,7 @@ client.on('ready', async () => {
                             }
                         }
                     } else {
-                        if (member !== '447475084085' && member !== '4915122324805' && member !== '62999552046' && member !== '15142676652' && member !== "556299552046" && member !== '447782796843' && member != '555496875059' && member != '34657489744' && !addOnlyMode && isAdmin) {
+                        if (member !== '447475084085' && member !== '4915122324805' && member !== '62999552046' && member !== '15142676652' && member !== "556299552046" && member !== '447782796843' && member != '555496875059' && member != '34657489744' && !addOnlyMode) {
                             console.log(`Number ${member} not found in the database.`);
                             await delay(60000);
                             if (!scanMode) {
@@ -171,7 +174,7 @@ client.on('ready', async () => {
             const conversations = chats.filter(chat => !chat.isGroup);
             const queue = await getWhatsappQueue(groupId);
             const last8DigitsFromChats = conversations.map(chat => chat.id.user).map(number => number.slice(-8));
-            if (!scanMode && isAdmin) {
+            if (!scanMode) {
                 for (const request of queue.rows) {
                     try {
                         request.phone_number = request.phone_number.replace(/\D/g, '');
@@ -185,7 +188,7 @@ client.on('ready', async () => {
                             }
                         } else {
                             console.log(`Number ${request.phone_number} not found in existing chats. Skipping...`);
-                            delay(60000);
+                            await delay(60000);
                             continue;
                         }
                     } catch (error) {
