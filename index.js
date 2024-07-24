@@ -63,7 +63,7 @@ if (scanMode) {
 }
 
 const jbGroupNames = [
-    "SIGs Mensa Brasil",
+    "N-SIGs Mensa Brasil",
     "MB | Xadrez",
 ];
 
@@ -133,7 +133,7 @@ client.on('ready', async () => {
                         if (checkResult.jovem_brilhante && !jbGroupNames.includes(groupName) && !addOnlyMode) {
                             console.log(`Number ${member}, MB ${checkResult.mb} is JB and is not in a JB group.`);
                             if (!scanMode) {
-                                await delay(60000);
+                                await delay(300000);
                                 await removeParticipantByPhoneNumber(client, groupId, member);
                                 reason = 'JB not in JB group';
                             }
@@ -142,15 +142,15 @@ client.on('ready', async () => {
                         if (checkResult.status === 'Inactive' && !addOnlyMode) {
                             console.log(`Number ${member}, MB ${checkResult.mb} is inactive.`);
                             if (!scanMode) {
-                                await delay(60000);
+                                await delay(300000);
                                 await removeParticipantByPhoneNumber(client, groupId, member);
                                 reason = 'Inactive';
                             }
                         }
                     } else {
-                        if (member !== '447475084085' && member !== '4915122324805' && member !== '62999552046' && member !== '15142676652' && member !== "556299552046" && member !== '447782796843' && member != '555496875059' && member != '34657489744' && !addOnlyMode) {
+                        if (member !== '447863603673' && member !== '4915122324805' && member !== '62999552046' && member !== '15142676652' && member !== "556299552046" && member !== '447782796843' && member != '555496875059' && member != '34657489744' && !addOnlyMode) {
                             console.log(`Number ${member} not found in the database.`);
-                            await delay(60000);
+                            await delay(300000);
                             if (!scanMode) {
                                 await removeParticipantByPhoneNumber(client, groupId, member);
                                 reason = 'Not found in database';
@@ -174,7 +174,7 @@ client.on('ready', async () => {
             const conversations = chats.filter(chat => !chat.isGroup);
             const queue = await getWhatsappQueue(groupId);
             const last8DigitsFromChats = conversations.map(chat => chat.id.user).map(number => number.slice(-8));
-            if (!scanMode) {
+            if (!scanMode && addOnlyMode) {
                 for (const request of queue.rows) {
                     try {
                         request.phone_number = request.phone_number.replace(/\D/g, '');
