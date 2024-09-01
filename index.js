@@ -51,13 +51,26 @@ function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, totalDelay));
 }
 
+// Command-line mode checks
 const scanMode = process.argv.includes('--scan');
 const addOnlyMode = process.argv.includes('--add-only');
+const removeOnlyMode = process.argv.includes('--remove-only');
+const addAndRemoveMode = process.argv.includes('--add-and-remove');
+
+// Prompt the user if no mode is specified
+if (!scanMode && !addOnlyMode && !removeOnlyMode && !addAndRemoveMode) {
+    console.log('No mode specified. Please provide a mode: --scan, --add-only, --remove-only, or --add-and-remove.');
+    process.exit(0);
+}
 
 if (scanMode) {
     console.log('Scan mode enabled. No changes will be made to the groups.');
 } else if (addOnlyMode) {
     console.log('Add-only mode enabled. Only additions will be made to the groups.');
+} else if (removeOnlyMode) {
+    console.log('Remove-only mode enabled. Only removals will be made from the groups.');
+} else if (addAndRemoveMode) {
+    console.log('Add-and-remove mode enabled. Additions and removals will be made to/from the groups.');
 } else {
     console.log('!!!!!!Scan mode DISABLED. Changes will be made to the groups.!!!!!!!');
 }
@@ -129,31 +142,34 @@ client.on('ready', async () => {
                             jbGroupNames.push(groupName);
                         }
 
-                        if (checkResult.jovem_brilhante && !jbGroupNames.includes(groupName) && !addOnlyMode) {
+                        if (checkResult.jovem_brilhante && !jbGroupNames.includes(groupName) && (removeOnlyMode || addAndRemoveMode)) {
                             console.log(`Number ${member}, MB ${checkResult.mb} is JB and is not in a JB group.`);
                             if (!scanMode) {
-                                await delay(300000);
+                                
                                 await removeParticipantByPhoneNumber(client, groupId, member);
                                 reason = 'JB not in JB group';
+                                await delay(300000);
                             }
                         }
 
-                        if (checkResult.status === 'Inactive' && !addOnlyMode) {
+                        if (checkResult.status === 'Inactive' && (removeOnlyMode || addAndRemoveMode)) {
                             console.log(`Number ${member}, MB ${checkResult.mb} is inactive.`);
                             if (!scanMode) {
-                                await delay(300000);
+                                
                                 await removeParticipantByPhoneNumber(client, groupId, member);
                                 reason = 'Inactive';
+                                await delay(300000);
                             }
                         }
                     } else {
-                        if (member !== '447863603673' && member !== '4915122324805' && member !== '62999552046' && member !== '15142676652' && member !== "556299552046" && member !== '447782796843' && member != '555496875059' && member != '34657489744' && !addOnlyMode) {
+                        if (member !== '447863603673' && member !== '4915122324805' && member !== '62999552046' && member !== '15142676652' && member !== "556299552046" && member !== '447782796843' && member != '555496875059' && member != '34657489744' && (removeOnlyMode || addAndRemoveMode)) {
                             console.log(`Number ${member} not found in the database.`);
-                            await delay(300000);
+                            
                             if (!scanMode) {
                                 await removeParticipantByPhoneNumber(client, groupId, member);
                                 reason = 'Not found in database';
                             }
+                            await delay(300000);
                         }
                     }
                     if (reason) {
@@ -173,7 +189,7 @@ client.on('ready', async () => {
             const conversations = chats.filter(chat => !chat.isGroup);
             const queue = await getWhatsappQueue(groupId);
             const last8DigitsFromChats = conversations.map(chat => chat.id.user).map(number => number.slice(-8));
-            if (!scanMode && addOnlyMode) {
+            if (!scanMode && (addOnlyMode || addAndRemoveMode)) {
                 for (const request of queue.rows) {
                     try {
                         request.phone_number = request.phone_number.replace(/\D/g, '');
