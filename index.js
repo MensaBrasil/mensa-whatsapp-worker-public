@@ -72,7 +72,6 @@ client.on('ready', async () => {
 
     while (true) {
         const chats = await client.getChats();
-        console.log(chats);
         const groups = chats.filter(chat => chat.isGroup && !chat.isReadOnly);
         const groupNames = groups.map(group => group.name);
         const groupIds = groups.map(group => group.id._serialized);
