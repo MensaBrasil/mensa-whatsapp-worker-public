@@ -259,9 +259,9 @@ client.on('ready', async () => {
                             const addResult = await addPhoneNumberToGroup(client, request.phone_number, groupId);
                             if (addResult === true) {
                                 await registerWhatsappAddFulfilled(request.id);
-                                console.log(`Number ${request.phone_number} added to group`);
+                                console.log(`Number ${request.phone_number} added to group ${groupName}`);
                                 logAction(groupName, request.phone_number, 'Added', 'Fulfilled');
-                                await delay(600000); // Only delay if successfully added
+                                await delay(1200000); // Only delay if successfully added
                             } else {
                                 throw new Error('Addition failed');
                             }
