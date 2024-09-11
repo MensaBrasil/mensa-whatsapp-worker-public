@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/Associacao-Mensa-Brasil/mensa-whatsapp-admin#readme",
   "dependencies": {
+    "csv-writer": "^1.6.0",
     "danfojs-node": "^1.1.2",
     "dotenv": "^16.3.1",
     "google-auth-library": "^9.0.0",

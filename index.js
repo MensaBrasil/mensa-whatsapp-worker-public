@@ -6,7 +6,7 @@ const checkPhoneNumber = require('./phone-check');
 const { isMessageAlreadySent, saveMessageToMongoDB } = require('./mongo');
 const { getInactiveMessage, getNotFoundMessage } = require('./messages');
 const dfd = require("danfojs-node");
-const { getPhoneNumbersWithStatus, saveGroupsToList, getWhatsappQueue, registerWhatsappAddAttempt, registerWhatsappAddFulfilled } = require('./pgsql'); // Renamed function
+const { getPhoneNumbersWithStatus, saveGroupsToList, getWhatsappQueue, registerWhatsappAddAttempt, registerWhatsappAddFulfilled } = require('./pgsql');
 const { addPhoneNumberToGroup } = require('./re-add');
 const {
     recordUserEntryToGroup,
@@ -14,6 +14,8 @@ const {
     getPreviousGroupMembers
 } = require('./pgsql');
 const { Console } = require('console');
+const { createObjectCsvWriter } = require('csv-writer');
+const readline = require('readline'); // For non-blocking key press
 
 require('dotenv').config();
 
@@ -21,6 +23,71 @@ const username = process.env.DB_USER;
 const password = process.env.DB_PASS;
 const dbName = process.env.DB_NAME;
 const dbHost = process.env.DB_HOST;
+
+const csvWriter = createObjectCsvWriter({
+    path: 'action_log.csv',
+    header: [
+        {id: 'timestamp', title: 'Timestamp'},
+        {id: 'groupName', title: 'Group Name'},
+        {id: 'member', title: 'Member'},
+        {id: 'action', title: 'Action'},
+        {id: 'reason', title: 'Reason'}
+    ],
+    append: true // Append to existing log if exists
+});
+
+let skipDelay = false;
+
+// Setup readline to listen for key presses
+readline.emitKeypressEvents(process.stdin);
+process.stdin.setRawMode(true);
+
+process.stdin.on('keypress', (str, key) => {
+    if (key.name === 's') {
+        console.log('\nSkipping delay...');
+        skipDelay = true;
+    } else if (key.ctrl && key.name === 'c') {
+        process.exit(); // Allows ctrl+c to exit the program
+    }
+});
+
+// Countdown with display
+async function countdown(ms) {
+    const seconds = Math.floor(ms / 1000);
+    for (let i = seconds; i > 0; i--) {
+        if (skipDelay) {
+            skipDelay = false; // Reset skip flag
+            console.log('\nDelay skipped!');
+            return;
+        }
+        process.stdout.write(`\rCountdown: ${i} seconds remaining`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    console.log('\nCountdown finished.');
+}
+
+function getRandomDelay(baseDelay) {
+    const variation = baseDelay * 0.3;
+    const randomDelay = Math.random() * (2 * variation) - variation;
+    return baseDelay + randomDelay;
+}
+
+async function delay(ms) {
+    const totalDelay = getRandomDelay(ms);
+    await countdown(totalDelay);
+}
+
+function logAction(groupName, member, action, reason) {
+    const logEntry = {
+        timestamp: new Date().toISOString(),
+        groupName,
+        member,
+        action,
+        reason
+    };
+    csvWriter.writeRecords([logEntry])
+        .then(() => console.log(`Action logged: ${action} - ${member} in ${groupName}`));
+}
 
 const client = new Client({
     authStrategy: new LocalAuth(),
@@ -37,19 +104,6 @@ const client = new Client({
 client.on('qr', qr => {
     qrcode.generate(qr, { small: true });
 });
-
-// Helper function to introduce a delay
-function getRandomDelay(baseDelay) {
-    const variation = baseDelay * 0.3;
-    const randomDelay = Math.random() * (2 * variation) - variation;
-    const totalDelay = baseDelay + randomDelay;
-    return totalDelay;
-}
-
-function delay(ms) {
-    const totalDelay = getRandomDelay(ms);
-    return new Promise(resolve => setTimeout(resolve, totalDelay));
-}
 
 // Command-line mode checks
 const scanMode = process.argv.includes('--scan');
@@ -125,6 +179,7 @@ client.on('ready', async () => {
                 for (const previousMember of previousMembers) {
                     if (!currentMembers.includes(previousMember)) {
                         await recordUserExitFromGroup(previousMember, groupId, 'Left group');
+                        logAction(groupName, previousMember, 'Exit', 'Left group');
                     }
                 }
 
@@ -136,6 +191,7 @@ client.on('ready', async () => {
                         if (!previousMembers.includes(member)) {
                             console.log(`Number ${member}, MB ${checkResult.mb} is new to the group.`);
                             await recordUserEntryToGroup(checkResult.mb, member, groupId, checkResult.status);
+                            logAction(groupName, member, 'Entry', 'New to group');
                         }
 
                         if (groupName.includes("JB")) {
@@ -145,31 +201,37 @@ client.on('ready', async () => {
                         if (checkResult.jovem_brilhante && !jbGroupNames.includes(groupName) && (removeOnlyMode || addAndRemoveMode)) {
                             console.log(`Number ${member}, MB ${checkResult.mb} is JB and is not in a JB group.`);
                             if (!scanMode) {
-                                
-                                await removeParticipantByPhoneNumber(client, groupId, member);
-                                reason = 'JB not in JB group';
-                                await delay(300000);
+                                const removed = await removeParticipantByPhoneNumber(client, groupId, member);
+                                if (removed) {
+                                    reason = 'JB not in JB group';
+                                    logAction(groupName, member, 'Removal', reason);
+                                    await delay(300000);
+                                }
                             }
                         }
 
                         if (checkResult.status === 'Inactive' && (removeOnlyMode || addAndRemoveMode)) {
                             console.log(`Number ${member}, MB ${checkResult.mb} is inactive.`);
                             if (!scanMode) {
-                                
-                                await removeParticipantByPhoneNumber(client, groupId, member);
-                                reason = 'Inactive';
-                                await delay(300000);
+                                const removed = await removeParticipantByPhoneNumber(client, groupId, member);
+                                if (removed) {
+                                    reason = 'Inactive';
+                                    logAction(groupName, member, 'Removal', reason);
+                                    await delay(300000);
+                                }
                             }
                         }
                     } else {
                         if (member !== '351926855059' && member !== '447863603673' && member !== '4915122324805' && member !== '62999552046' && member !== '15142676652' && member !== "556299552046" && member !== '447782796843' && member != '555496875059' && member != '34657489744' && (removeOnlyMode || addAndRemoveMode)) {
                             console.log(`Number ${member} not found in the database.`);
-                            
                             if (!scanMode) {
-                                await removeParticipantByPhoneNumber(client, groupId, member);
-                                reason = 'Not found in database';
+                                const removed = await removeParticipantByPhoneNumber(client, groupId, member);
+                                if (removed) {
+                                    reason = 'Not found in database';
+                                    logAction(groupName, member, 'Removal', reason);
+                                    await delay(300000);
+                                }
                             }
-                            await delay(300000);
                         }
                     }
                     if (reason) {
@@ -198,19 +260,19 @@ client.on('ready', async () => {
                             if (addResult === true) {
                                 await registerWhatsappAddFulfilled(request.id);
                                 console.log(`Number ${request.phone_number} added to group`);
+                                logAction(groupName, request.phone_number, 'Added', 'Fulfilled');
+                                await delay(600000); // Only delay if successfully added
                             } else {
                                 throw new Error('Addition failed');
                             }
                         } else {
                             console.log(`Number ${request.phone_number} not found in existing chats. Skipping...`);
-                            await delay(60000);
                             continue;
                         }
                     } catch (error) {
                         await registerWhatsappAddAttempt(request.id);
                         console.error(`Error adding number ${request.phone_number} to group: ${error.message}`);
                     }
-                    await delay(6000000); // 6,000,000 ms = 100 minutes; adjust as needed
                 }
             }
         }
