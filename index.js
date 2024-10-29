@@ -16,13 +16,38 @@ const {
 const { Console } = require('console');
 const { createObjectCsvWriter } = require('csv-writer');
 const readline = require('readline'); // For non-blocking key press
-
+const twilio = require('twilio'); // Twilio for triggering flows
 require('dotenv').config();
 
 const username = process.env.DB_USER;
 const password = process.env.DB_PASS;
 const dbName = process.env.DB_NAME;
 const dbHost = process.env.DB_HOST;
+
+// Twilio credentials
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+const flowSid = process.env.TWILIO_FLOW_SID; 
+const twilioWhatsAppNumber = process.env.TWILIO_WHATSAPP_NUMBER;
+
+const twilioClient = twilio(accountSid, authToken);
+
+// Function to trigger the Twilio Flow with a reason
+async function triggerTwilioFlow(phoneNumber, reason) {
+    try {
+        const execution = await twilioClient.studio.v2.flows(flowSid)
+            .executions
+            .create({
+                to: phoneNumber,
+                from: `whatsapp:${twilioWhatsAppNumber}`,
+                parameters: { "reason": reason }  // Pass reason to Twilio Flow
+            });
+
+        console.log(`Twilio Flow triggered for ${phoneNumber} with reason: ${reason}, Execution SID: ${execution.sid}`);
+    } catch (error) {
+        console.error('Error triggering Twilio Flow:', error);
+    }
+}
 
 const csvWriter = createObjectCsvWriter({
     path: 'action_log.csv',
@@ -51,12 +76,11 @@ process.stdin.on('keypress', (str, key) => {
     }
 });
 
-// Countdown with display
 async function countdown(ms) {
     const seconds = Math.floor(ms / 1000);
     for (let i = seconds; i > 0; i--) {
         if (skipDelay) {
-            skipDelay = false; // Reset skip flag
+            skipDelay = false;
             console.log('\nDelay skipped!');
             return;
         }
@@ -105,13 +129,11 @@ client.on('qr', qr => {
     qrcode.generate(qr, { small: true });
 });
 
-// Command-line mode checks
 const scanMode = process.argv.includes('--scan');
 const addOnlyMode = process.argv.includes('--add-only');
 const removeOnlyMode = process.argv.includes('--remove-only');
 const addAndRemoveMode = process.argv.includes('--add-and-remove');
 
-// Prompt the user if no mode is specified
 if (!scanMode && !addOnlyMode && !removeOnlyMode && !addAndRemoveMode) {
     console.log('No mode specified. Please provide a mode: --scan, --add-only, --remove-only, or --add-and-remove.');
     process.exit(0);
@@ -217,6 +239,7 @@ client.on('ready', async () => {
                                 if (removed) {
                                     reason = 'Inactive';
                                     logAction(groupName, member, 'Removal', reason);
+                                    await triggerTwilioFlow(`whatsapp:+${member}`, "inactive"); // Trigger Twilio Flow on removal
                                     await delay(300000);
                                 }
                             }
@@ -229,6 +252,7 @@ client.on('ready', async () => {
                                 if (removed) {
                                     reason = 'Not found in database';
                                     logAction(groupName, member, 'Removal', reason);
+                                    await triggerTwilioFlow(`whatsapp:+${member}`, "not_found"); // Trigger Twilio Flow on removal
                                     await delay(300000);
                                 }
                             }
