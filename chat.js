@@ -102,18 +102,22 @@ async function sendMessageToNumber(client, phoneNumber, message) {
     try {
         const groupChat = await client.getChatById(groupId);
         const participantId = groupChat.participants.find(participant => participant.id._serialized.includes(phoneNumber)).id._serialized;
-        
+
         if (participantId) {
             console.log(`Attempting to remove participant: ${participantId}`);
             await groupChat.removeParticipants([participantId]);
             console.log(`Successfully removed participant: ${participantId}`);
+            return true;
         } else {
             console.error(`Unable to find participant with phone number ${phoneNumber} in group ${groupId}`);
+            return false;
         }
     } catch (error) {
         console.error(`Failed to remove participant with phone number ${phoneNumber} from group ${groupId}.`, error);
+        return false;
     }
 }
+
 
 
 
