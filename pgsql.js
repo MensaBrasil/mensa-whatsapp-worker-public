@@ -186,6 +186,5 @@ module.exports = {
     registerWhatsappAddAttempt,
     getMemberPhoneNumbers,
     registerWhatsappAddFulfilled,
-    getLastCommunication,  // New comms function
-    logCommunication       // New comms function
-};
+    getLastCommunication,  
+    logCommunication       }

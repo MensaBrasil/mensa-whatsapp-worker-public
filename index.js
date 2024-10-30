@@ -1,5 +1,3 @@
-// index.js
-
 const qrcode = require('qrcode-terminal');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const { printChats, getGroupParticipants, getGroupIdByName, removeParticipantByPhoneNumber, sendMessageToNumber, sendMessageToNumberAPI } = require('./chat');
@@ -12,39 +10,14 @@ const { getPhoneNumbersWithStatus, saveGroupsToList, getWhatsappQueue, registerW
 const { addPhoneNumberToGroup } = require('./re-add');
 const { recordUserEntryToGroup, recordUserExitFromGroup, getPreviousGroupMembers, saveCommsRecord, checkCommsRecord } = require('./pgsql'); // Add saveCommsRecord and checkCommsRecord here
 const { createObjectCsvWriter } = require('csv-writer');
-const readline = require('readline'); // For non-blocking key press
-
+const readline = require('readline');
+const { triggerTwilioOrRemove } = require('./twilioClient'); // Import the updated function
 require('dotenv').config();
 
 const username = process.env.DB_USER;
 const password = process.env.DB_PASS;
 const dbName = process.env.DB_NAME;
 const dbHost = process.env.DB_HOST;
-
-// Twilio credentials
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
-const flowSid = process.env.TWILIO_FLOW_SID; 
-const twilioWhatsAppNumber = process.env.TWILIO_WHATSAPP_NUMBER;
-
-const twilioClient = twilio(accountSid, authToken);
-
-// Function to trigger the Twilio Flow with a reason
-async function triggerTwilioFlow(phoneNumber, reason) {
-    try {
-        const execution = await twilioClient.studio.v2.flows(flowSid)
-            .executions
-            .create({
-                to: phoneNumber,
-                from: `whatsapp:${twilioWhatsAppNumber}`,
-                parameters: { "reason": reason }  // Pass reason to Twilio Flow
-            });
-
-        console.log(`Twilio Flow triggered for ${phoneNumber} with reason: ${reason}, Execution SID: ${execution.sid}`);
-    } catch (error) {
-        console.error('Error triggering Twilio Flow:', error);
-    }
-}
 
 const csvWriter = createObjectCsvWriter({
     path: 'action_log.csv',
@@ -232,6 +205,7 @@ client.on('ready', async () => {
                                 if (removed) {
                                     reason = 'Inactive';
                                     logAction(groupName, member, 'Removal', reason);
+                                    await triggerTwilioOrRemove(`whatsapp:+${member}`, "inactive"); // Replaced triggerTwilioFlow
                                     await delay(300000);
                                 }
                             }
@@ -244,6 +218,7 @@ client.on('ready', async () => {
                                 if (removed) {
                                     reason = 'Not found in database';
                                     logAction(groupName, member, 'Removal', reason);
+                                    await triggerTwilioOrRemove(`whatsapp:+${member}`, "not_found"); // Replaced triggerTwilioFlow
                                     await delay(300000);
                                 }
                             }
