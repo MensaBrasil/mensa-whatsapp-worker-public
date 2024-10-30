@@ -71,7 +71,6 @@ const getPhoneNumbersWithStatus = async () => {
 };
 
 
-
 const recordUserExitFromGroup = async (phone_number, group_id, reason) => {
     const query = `
         UPDATE mensa.member_groups
@@ -90,6 +89,18 @@ const recordUserEntryToGroup = async (registration_id, phone_number, group_id, s
 };
 
 
+// Function to retrieve the latest communication entry for a phone number
+async function getLastCommunication(phoneNumber) {
+    const query = `SELECT * FROM comms WHERE phone_number = $1 ORDER BY timestamp DESC LIMIT 1`;
+    const result = await pool.query(query, [phoneNumber]);
+    return result.rows[0]; // Return the latest communication record
+}
+
+// Function to log a new communication event in the comms table
+async function logCommunication(phoneNumber, reason) {
+    const query = `INSERT INTO comms (phone_number, reason, timestamp) VALUES ($1, $2, NOW())`;
+    await pool.query(query, [phoneNumber, reason]);
+}
 
 
 async function getPreviousGroupMembers(groupId) {
@@ -165,12 +176,16 @@ async function getMemberPhoneNumbers(registration_id) {
     return result.rows.map(row => row.phone_number);
 }
 
-module.exports = { getPhoneNumbersWithStatus, 
-                   recordUserExitFromGroup, 
-                   recordUserEntryToGroup, 
-                   getPreviousGroupMembers,
-                   saveGroupsToList,
-                   getWhatsappQueue,
-                   registerWhatsappAddAttempt,
-                getMemberPhoneNumbers,
-            registerWhatsappAddFulfilled};
+module.exports = { 
+    getPhoneNumbersWithStatus, 
+    recordUserExitFromGroup, 
+    recordUserEntryToGroup, 
+    getPreviousGroupMembers,
+    saveGroupsToList,
+    getWhatsappQueue,
+    registerWhatsappAddAttempt,
+    getMemberPhoneNumbers,
+    registerWhatsappAddFulfilled,
+    getLastCommunication,  // New comms function
+    logCommunication       // New comms function
+};
