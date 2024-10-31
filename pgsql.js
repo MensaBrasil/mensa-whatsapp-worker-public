@@ -72,7 +72,6 @@ const getPhoneNumbersWithStatus = async () => {
     return rows;
 };
 
-
 const recordUserExitFromGroup = async (phone_number, group_id, reason) => {
     const query = `
         UPDATE mensa.member_groups
@@ -90,19 +89,17 @@ const recordUserEntryToGroup = async (registration_id, phone_number, group_id, s
     await pool.query(query, [registration_id, phone_number, group_id, status]);
 };
 
-
-// Function to retrieve the latest communication entry for a phone number and reason
-async function getLastCommunication(phoneNumber, reason) {
+async function getLastCommunication(phoneNumber) {
     const query = `
         SELECT * FROM whatsapp_comms 
-        WHERE phone_number = $1 AND reason = $2 AND status = 'unresolved' 
+        WHERE phone_number = $1
         ORDER BY timestamp DESC LIMIT 1
     `;
-    const result = await pool.query(query, [phoneNumber, reason]);
-    return result.rows[0]; // Return the latest communication record
+    const result = await pool.query(query, [phoneNumber]);
+    return result.rows[0];
 }
 
-// Function to log a new communication event in the whatsapp_comms table with 'unresolved' status by default
+
 async function logCommunication(phoneNumber, reason) {
     const query = `
         INSERT INTO whatsapp_comms (phone_number, reason, timestamp, status)
@@ -113,7 +110,6 @@ async function logCommunication(phoneNumber, reason) {
     await pool.query(query, [phoneNumber, reason]);
 }
 
-
 async function getPreviousGroupMembers(groupId) {
     const query = `SELECT phone_number FROM member_groups WHERE group_id = $1 AND exit_date IS NULL`;
     const values = [groupId];
@@ -122,15 +118,12 @@ async function getPreviousGroupMembers(groupId) {
 }
 
 async function saveGroupsToList(groupNames, groupIds) {
-    //erase the previous list
     await pool.query(`DELETE FROM group_list`);
     
-    //parse the list of names and ids the list and save one per line
     const query = `INSERT INTO group_list (group_name, group_id) VALUES ($1, $2)`;
     for (let i = 0; i < groupNames.length; i++) {
         await pool.query(query, [groupNames[i], groupIds[i]]);
     }
-    
 }
 
 async function getWhatsappQueue(group_id) {
@@ -146,7 +139,6 @@ async function getWhatsappQueue(group_id) {
     return await pool.query(query, [group_id]);
 }
 
-
 // Register WhatsApp add attempt, incrementing the number of attempts and updating last_attempt
 async function registerWhatsappAddAttempt(request_id) {
     const query = `UPDATE group_requests SET no_of_attempts = no_of_attempts + 1, last_attempt = NOW() WHERE id = $1`;
@@ -158,7 +150,6 @@ async function registerWhatsappAddFulfilled(id) {
     const query = `UPDATE group_requests SET fulfilled = true, last_attempt = NOW() WHERE id = $1`;
     await pool.query(query, [id]);
 }
-
 
 async function getMemberPhoneNumbers(registration_id) {
     const query = `SELECT 
@@ -182,7 +173,7 @@ async function getMemberPhoneNumbers(registration_id) {
                 WHERE 
                     registration_id = $1
                     AND alternative_phone IS NOT NULL;
-`;
+    `;
     const result = await pool.query(query, [registration_id]);
     return result.rows.map(row => row.phone_number);
 }
