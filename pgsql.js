@@ -1,3 +1,5 @@
+// pgsql.js
+
 const { Pool } = require('pg');
 require('dotenv').config();
 
@@ -89,16 +91,25 @@ const recordUserEntryToGroup = async (registration_id, phone_number, group_id, s
 };
 
 
-// Function to retrieve the latest communication entry for a phone number
-async function getLastCommunication(phoneNumber) {
-    const query = `SELECT * FROM comms WHERE phone_number = $1 ORDER BY timestamp DESC LIMIT 1`;
-    const result = await pool.query(query, [phoneNumber]);
+// Function to retrieve the latest communication entry for a phone number and reason
+async function getLastCommunication(phoneNumber, reason) {
+    const query = `
+        SELECT * FROM whatsapp_comms 
+        WHERE phone_number = $1 AND reason = $2 AND status = 'unresolved' 
+        ORDER BY timestamp DESC LIMIT 1
+    `;
+    const result = await pool.query(query, [phoneNumber, reason]);
     return result.rows[0]; // Return the latest communication record
 }
 
-// Function to log a new communication event in the comms table
+// Function to log a new communication event in the whatsapp_comms table with 'unresolved' status by default
 async function logCommunication(phoneNumber, reason) {
-    const query = `INSERT INTO comms (phone_number, reason, timestamp) VALUES ($1, $2, NOW())`;
+    const query = `
+        INSERT INTO whatsapp_comms (phone_number, reason, timestamp, status)
+        VALUES ($1, $2, NOW(), 'unresolved')
+        ON CONFLICT (phone_number, reason) 
+        DO UPDATE SET timestamp = NOW(), status = 'unresolved';
+    `;
     await pool.query(query, [phoneNumber, reason]);
 }
 
@@ -187,4 +198,5 @@ module.exports = {
     getMemberPhoneNumbers,
     registerWhatsappAddFulfilled,
     getLastCommunication,  
-    logCommunication       }
+    logCommunication
+};
