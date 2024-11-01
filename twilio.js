@@ -11,8 +11,8 @@ const twilioWhatsAppNumber = process.env.TWILIO_WHATSAPP_NUMBER;
 const twilioClient = twilio(accountSid, authToken);
 async function triggerTwilioOrRemove(phoneNumber, reason) {
     try {
+        await logCommunication(phoneNumber, reason); // Log communication in DB here to ensure it is logged even if Twilio fails. This will be used to remove the user from the list even if Twilio fails.
         const waitingPeriod = parseFloat(process.env.CONSTANT_WAITING_PERIOD) * 1.2;
-        
         const lastComm = await getLastCommunication(phoneNumber);
         const now = new Date();
 
@@ -21,14 +21,12 @@ async function triggerTwilioOrRemove(phoneNumber, reason) {
             const execution = await twilioClient.studio.v2.flows(flowSid)
                 .executions
                 .create({
-                    to: phoneNumber,
-                    from: `whatsapp:${twilioWhatsAppNumber}`,
-                    parameters: { "reason": reason }  
+                    to: `whatsapp:+${phoneNumber}`,
+                    from: `whatsapp:+${twilioWhatsAppNumber}`,
+                    parameters: { "reason": reason, "member_phone": `+${phoneNumber}` }  
                 });
 
             console.log(`Twilio Flow triggered for ${phoneNumber} with reason: ${reason}, Execution SID: ${execution.sid}`);
-            
-            await logCommunication(phoneNumber, reason);
 
             return true;
         } else {
@@ -44,7 +42,4 @@ async function triggerTwilioOrRemove(phoneNumber, reason) {
 
 module.exports = { 
     triggerTwilioOrRemove,
-    handleUserUpdate,
-    onUserPhoneNumberUpdate,
-    manageUserStatus  // Export the status management function
 };

@@ -14,10 +14,6 @@ const readline = require('readline');
 const { triggerTwilioOrRemove } = require('./twilioClient'); // Import the updated function
 require('dotenv').config();
 
-const username = process.env.DB_USER;
-const password = process.env.DB_PASS;
-const dbName = process.env.DB_NAME;
-const dbHost = process.env.DB_HOST;
 
 const csvWriter = createObjectCsvWriter({
     path: 'action_log.csv',
@@ -205,7 +201,7 @@ client.on('ready', async () => {
                                 if (removed) {
                                     reason = 'Inactive';
                                     logAction(groupName, member, 'Removal', reason);
-                                    await triggerTwilioOrRemove(`whatsapp:+${member}`, "inactive"); // Replaced triggerTwilioFlow
+                                    await triggerTwilioOrRemove(member, "mensa_inactive");
                                     await delay(300000);
                                 }
                             }
@@ -218,7 +214,7 @@ client.on('ready', async () => {
                                 if (removed) {
                                     reason = 'Not found in database';
                                     logAction(groupName, member, 'Removal', reason);
-                                    await triggerTwilioOrRemove(`whatsapp:+${member}`, "not_found"); // Replaced triggerTwilioFlow
+                                    await triggerTwilioOrRemove(member, "mensa_not_found");
                                     await delay(300000);
                                 }
                             }
