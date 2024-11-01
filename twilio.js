@@ -11,13 +11,12 @@ const twilioWhatsAppNumber = process.env.TWILIO_WHATSAPP_NUMBER;
 const twilioClient = twilio(accountSid, authToken);
 async function triggerTwilioOrRemove(phoneNumber, reason) {
     try {
-        await logCommunication(phoneNumber, reason); // Log communication in DB here to ensure it is logged even if Twilio fails. This will be used to remove the user from the list even if Twilio fails.
         const waitingPeriod = parseFloat(process.env.CONSTANT_WAITING_PERIOD) * 1.2;
         const lastComm = await getLastCommunication(phoneNumber);
         const now = new Date();
 
         if (!lastComm || now - new Date(lastComm.timestamp) > waitingPeriod) {
-            // Trigger Twilio Flow if outside the waiting period
+            await logCommunication(phoneNumber, reason); // Log communication in DB here to ensure it is logged even if Twilio fails. This will be used to remove the user from the list even if Twilio fails.
             const execution = await twilioClient.studio.v2.flows(flowSid)
                 .executions
                 .create({
