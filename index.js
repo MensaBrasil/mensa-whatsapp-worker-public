@@ -11,7 +11,7 @@ const { addPhoneNumberToGroup } = require('./re-add');
 const { recordUserEntryToGroup, recordUserExitFromGroup, getPreviousGroupMembers} = require('./pgsql'); 
 const { createObjectCsvWriter } = require('csv-writer');
 const readline = require('readline');
-const { triggerTwilioOrRemove } = require('./twilioClient'); // Import the updated function
+const { triggerTwilioOrRemove } = require('./twilio'); // Import the updated function
 require('dotenv').config();
 
 
