@@ -8,37 +8,27 @@ const { getInactiveMessage, getNotFoundMessage } = require('./messages');
 const dfd = require("danfojs-node");
 const { getPhoneNumbersWithStatus, saveGroupsToList, getWhatsappQueue, registerWhatsappAddAttempt, registerWhatsappAddFulfilled } = require('./pgsql');
 const { addPhoneNumberToGroup } = require('./re-add');
-const {
-    recordUserEntryToGroup,
-    recordUserExitFromGroup,
-    getPreviousGroupMembers
-} = require('./pgsql');
-const { Console } = require('console');
+const { recordUserEntryToGroup, recordUserExitFromGroup, getPreviousGroupMembers} = require('./pgsql'); 
 const { createObjectCsvWriter } = require('csv-writer');
-const readline = require('readline'); // For non-blocking key press
-
+const readline = require('readline');
+const { triggerTwilioOrRemove } = require('./twilioClient'); // Import the updated function
 require('dotenv').config();
 
-const username = process.env.DB_USER;
-const password = process.env.DB_PASS;
-const dbName = process.env.DB_NAME;
-const dbHost = process.env.DB_HOST;
 
 const csvWriter = createObjectCsvWriter({
     path: 'action_log.csv',
     header: [
-        {id: 'timestamp', title: 'Timestamp'},
-        {id: 'groupName', title: 'Group Name'},
-        {id: 'member', title: 'Member'},
-        {id: 'action', title: 'Action'},
-        {id: 'reason', title: 'Reason'}
+        { id: 'timestamp', title: 'Timestamp' },
+        { id: 'groupName', title: 'Group Name' },
+        { id: 'member', title: 'Member' },
+        { id: 'action', title: 'Action' },
+        { id: 'reason', title: 'Reason' }
     ],
-    append: true // Append to existing log if exists
+    append: true
 });
 
 let skipDelay = false;
 
-// Setup readline to listen for key presses
 readline.emitKeypressEvents(process.stdin);
 process.stdin.setRawMode(true);
 
@@ -47,16 +37,15 @@ process.stdin.on('keypress', (str, key) => {
         console.log('\nSkipping delay...');
         skipDelay = true;
     } else if (key.ctrl && key.name === 'c') {
-        process.exit(); // Allows ctrl+c to exit the program
+        process.exit();
     }
 });
 
-// Countdown with display
 async function countdown(ms) {
     const seconds = Math.floor(ms / 1000);
     for (let i = seconds; i > 0; i--) {
         if (skipDelay) {
-            skipDelay = false; // Reset skip flag
+            skipDelay = false;
             console.log('\nDelay skipped!');
             return;
         }
@@ -92,26 +81,21 @@ function logAction(groupName, member, action, reason) {
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
-      headless: true,
-      args: [
-        "--no-sandbox",
-        "--disable-gpu",
-      ],
+        headless: true,
+        args: ["--no-sandbox", "--disable-gpu"],
     },
-    webVersionCache: { type: 'remote', remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html', }
+    webVersionCache: { type: 'remote', remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html' }
 });
 
 client.on('qr', qr => {
     qrcode.generate(qr, { small: true });
 });
 
-// Command-line mode checks
 const scanMode = process.argv.includes('--scan');
 const addOnlyMode = process.argv.includes('--add-only');
 const removeOnlyMode = process.argv.includes('--remove-only');
 const addAndRemoveMode = process.argv.includes('--add-and-remove');
 
-// Prompt the user if no mode is specified
 if (!scanMode && !addOnlyMode && !removeOnlyMode && !addAndRemoveMode) {
     console.log('No mode specified. Please provide a mode: --scan, --add-only, --remove-only, or --add-and-remove.');
     process.exit(0);
@@ -217,18 +201,20 @@ client.on('ready', async () => {
                                 if (removed) {
                                     reason = 'Inactive';
                                     logAction(groupName, member, 'Removal', reason);
+                                    await triggerTwilioOrRemove(member, "mensa_inactive");
                                     await delay(300000);
                                 }
                             }
                         }
                     } else {
-                        if (member !== '18653480874' member !== '36705346911' && member !== '351926855059' && member !== '447863603673' && member !== '4915122324805' && member !== '62999552046' && member !== '15142676652' && member !== "556299552046" && member !== '447782796843' && member != '555496875059' && member != '34657489744' && (removeOnlyMode || addAndRemoveMode)) {
+                        if (member !== '18653480874' && member !== '36705346911' && member !== '351926855059' && member !== '447863603673' && member !== '4915122324805' && member !== '62999552046' && member !== '15142676652' && member !== "556299552046" && member !== '447782796843' && member !== '555496875059' && member !== '34657489744' && (removeOnlyMode || addAndRemoveMode)) {
                             console.log(`Number ${member} not found in the database.`);
                             if (!scanMode) {
                                 const removed = await removeParticipantByPhoneNumber(client, groupId, member);
                                 if (removed) {
                                     reason = 'Not found in database';
                                     logAction(groupName, member, 'Removal', reason);
+                                    await triggerTwilioOrRemove(member, "mensa_not_found");
                                     await delay(300000);
                                 }
                             }
@@ -247,32 +233,32 @@ client.on('ready', async () => {
                 console.error(`Error processing group ${groupName}:`, error);
             }
             await delay(10000);
+        }
 
-            const conversations = chats.filter(chat => !chat.isGroup);
-            const queue = await getWhatsappQueue(groupId);
-            const last8DigitsFromChats = conversations.map(chat => chat.id.user).map(number => number.slice(-8));
-            if (!scanMode && (addOnlyMode || addAndRemoveMode)) {
-                for (const request of queue.rows) {
-                    try {
-                        request.phone_number = request.phone_number.replace(/\D/g, '');
-                        if (last8DigitsFromChats.includes(request.phone_number.slice(-8))) {
-                            const addResult = await addPhoneNumberToGroup(client, request.phone_number, groupId);
-                            if (addResult === true) {
-                                await registerWhatsappAddFulfilled(request.id);
-                                console.log(`Number ${request.phone_number} added to group ${groupName}`);
-                                logAction(groupName, request.phone_number, 'Added', 'Fulfilled');
-                                await delay(1200000); // Only delay if successfully added
-                            } else {
-                                throw new Error('Addition failed');
-                            }
+        const conversations = chats.filter(chat => !chat.isGroup);
+        const queue = await getWhatsappQueue(groupId);
+        const last8DigitsFromChats = conversations.map(chat => chat.id.user).map(number => number.slice(-8));
+        if (!scanMode && (addOnlyMode || addAndRemoveMode)) {
+            for (const request of queue.rows) {
+                try {
+                    request.phone_number = request.phone_number.replace(/\D/g, '');
+                    if (last8DigitsFromChats.includes(request.phone_number.slice(-8))) {
+                        const addResult = await addPhoneNumberToGroup(client, request.phone_number, groupId);
+                        if (addResult === true) {
+                            await registerWhatsappAddFulfilled(request.id);
+                            console.log(`Number ${request.phone_number} added to group ${groupName}`);
+                            logAction(groupName, request.phone_number, 'Added', 'Fulfilled');
+                            await delay(1200000);
                         } else {
-                            console.log(`Number ${request.phone_number} not found in existing chats. Skipping...`);
-                            continue;
+                            throw new Error('Addition failed');
                         }
-                    } catch (error) {
-                        await registerWhatsappAddAttempt(request.id);
-                        console.error(`Error adding number ${request.phone_number} to group: ${error.message}`);
+                    } else {
+                        console.log(`Number ${request.phone_number} not found in existing chats. Skipping...`);
+                        continue;
                     }
+                } catch (error) {
+                    await registerWhatsappAddAttempt(request.id);
+                    console.error(`Error adding number ${request.phone_number} to group: ${error.message}`);
                 }
             }
         }
