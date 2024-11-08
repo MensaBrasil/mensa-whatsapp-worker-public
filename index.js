@@ -81,7 +81,7 @@ function logAction(groupName, member, action, reason) {
     csvWriter.writeRecords([logEntry])
         .then(() => {
             console.log(`Action logged: ${action} - ${member} in ${groupName}`);
-            telegramBot.sendMessage(telegramChatId, `Action logged: ${action} - ${member} in ${groupName}`);
+            telegramBot.sendMessage(telegramChatId, `Action logged: ${action} - ${member} in ${groupName} reason: ${reason}`);
         });
 }
 
