@@ -233,7 +233,7 @@ client.on('ready', async () => {
                 console.error(`Error processing group ${groupName}:`, error);
             }
             await delay(10000);
-        }
+        
 
         const conversations = chats.filter(chat => !chat.isGroup);
         const queue = await getWhatsappQueue(groupId);
@@ -264,7 +264,7 @@ client.on('ready', async () => {
         }
         console.log('All groups processed!');
         await delay(60000);
-    }
+    }}
 });
 
 client.initialize();
