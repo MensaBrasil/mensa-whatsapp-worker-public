@@ -23,6 +23,7 @@
     "google-auth-library": "^9.0.0",
     "googleapis": "^123.0.0",
     "mongodb": "^5.7.0",
+    "node-telegram-bot-api": "^0.66.0",
     "pg": "^8.11.3",
     "pgsql": "^1.0.0",
     "qrcode-terminal": "^0.12.0",

@@ -8,12 +8,12 @@ const { getInactiveMessage, getNotFoundMessage } = require('./messages');
 const dfd = require("danfojs-node");
 const { getPhoneNumbersWithStatus, saveGroupsToList, getWhatsappQueue, registerWhatsappAddAttempt, registerWhatsappAddFulfilled } = require('./pgsql');
 const { addPhoneNumberToGroup } = require('./re-add');
-const { recordUserEntryToGroup, recordUserExitFromGroup, getPreviousGroupMembers} = require('./pgsql'); 
+const { recordUserEntryToGroup, recordUserExitFromGroup, getPreviousGroupMembers } = require('./pgsql');
 const { createObjectCsvWriter } = require('csv-writer');
 const readline = require('readline');
-const { triggerTwilioOrRemove } = require('./twilio'); // Import the updated function
+const { triggerTwilioOrRemove } = require('./twilio');
+const TelegramBot = require('node-telegram-bot-api'); // Telegram bot API
 require('dotenv').config();
-
 
 const csvWriter = createObjectCsvWriter({
     path: 'action_log.csv',
@@ -28,6 +28,10 @@ const csvWriter = createObjectCsvWriter({
 });
 
 let skipDelay = false;
+
+const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN;
+const telegramChatId = process.env.TELEGRAM_CHAT_ID;
+const telegramBot = new TelegramBot(telegramBotToken);
 
 readline.emitKeypressEvents(process.stdin);
 process.stdin.setRawMode(true);
@@ -75,7 +79,10 @@ function logAction(groupName, member, action, reason) {
         reason
     };
     csvWriter.writeRecords([logEntry])
-        .then(() => console.log(`Action logged: ${action} - ${member} in ${groupName}`));
+        .then(() => {
+            console.log(`Action logged: ${action} - ${member} in ${groupName}`);
+            telegramBot.sendMessage(telegramChatId, `Action logged: ${action} - ${member} in ${groupName}`);
+        });
 }
 
 const client = new Client({
