@@ -204,29 +204,32 @@ client.on('ready', async () => {
                         if (checkResult.status === 'Inactive' && (removeOnlyMode || addAndRemoveMode)) {
                             console.log(`Number ${member}, MB ${checkResult.mb} is inactive.`);
                             if (!scanMode) {
-                                const removed = await removeParticipantByPhoneNumber(client, groupId, member);
-                                if (removed) {
-                                    reason = 'Inactive';
-                                    logAction(groupName, member, 'Removal', reason);
-                                    await triggerTwilioOrRemove(member, "mensa_inactive");
-                                    await delay(300000);
+                                const shouldRemove = await triggerTwilioOrRemove(member, "mensa_inactive");
+                                if (shouldRemove) {
+                                    const removed = await removeParticipantByPhoneNumber(client, groupId, member);
+                                    if (removed) {
+                                        reason = 'Inactive';
+                                        logAction(groupName, member, 'Removal', reason);
+                                        await delay(300000);
+                                    }
                                 }
                             }
-                        }
+                        }                       
                     } else {
                         if (member !== '+33681604260' && member !== '18653480874' && member !== '36705346911' && member !== '351926855059' && member !== '447863603673' && member !== '4915122324805' && member !== '62999552046' && member !== '15142676652' && member !== "556299552046" && member !== '447782796843' && member !== '555496875059' && member !== '34657489744' && (removeOnlyMode || addAndRemoveMode)) {
                             console.log(`Number ${member} not found in the database.`);
                             if (!scanMode) {
-                                const removed = await removeParticipantByPhoneNumber(client, groupId, member);
-                                if (removed) {
-                                    reason = 'Not found in database';
-                                    logAction(groupName, member, 'Removal', reason);
-                                    await triggerTwilioOrRemove(member, "mensa_not_found");
-                                    await delay(300000);
+                                const shouldRemove = await triggerTwilioOrRemove(member, "mensa_not_found");
+                                if (shouldRemove) {
+                                    const removed = await removeParticipantByPhoneNumber(client, groupId, member);
+                                    if (removed) {
+                                        reason = 'Not found in database';
+                                        logAction(groupName, member, 'Removal', reason);
+                                        await delay(300000);
+                                    }
                                 }
                             }
                         }
-                    }
                     if (reason) {
                         if (!scanMode) {
                             await recordUserExitFromGroup(member, groupId, reason);
