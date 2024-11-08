@@ -240,38 +240,40 @@ client.on('ready', async () => {
                 console.error(`Error processing group ${groupName}:`, error);
             }
             await delay(10000);
-        
 
-        const conversations = chats.filter(chat => !chat.isGroup);
-        const queue = await getWhatsappQueue(groupId);
-        const last8DigitsFromChats = conversations.map(chat => chat.id.user).map(number => number.slice(-8));
-        if (!scanMode && (addOnlyMode || addAndRemoveMode)) {
-            for (const request of queue.rows) {
-                try {
-                    request.phone_number = request.phone_number.replace(/\D/g, '');
-                    if (last8DigitsFromChats.includes(request.phone_number.slice(-8))) {
-                        const addResult = await addPhoneNumberToGroup(client, request.phone_number, groupId);
-                        if (addResult === true) {
-                            await registerWhatsappAddFulfilled(request.id);
-                            console.log(`Number ${request.phone_number} added to group ${groupName}`);
-                            logAction(groupName, request.phone_number, 'Added', 'Fulfilled');
-                            await delay(1200000);
+
+            const conversations = chats.filter(chat => !chat.isGroup);
+            const queue = await getWhatsappQueue(groupId);
+            const last8DigitsFromChats = conversations.map(chat => chat.id.user).map(number => number.slice(-8));
+            if (!scanMode && (addOnlyMode || addAndRemoveMode)) {
+                for (const request of queue.rows) {
+                    try {
+                        request.phone_number = request.phone_number.replace(/\D/g, '');
+                        if (last8DigitsFromChats.includes(request.phone_number.slice(-8))) {
+                            const addResult = await addPhoneNumberToGroup(client, request.phone_number, groupId);
+                            if (addResult === true) {
+                                await registerWhatsappAddFulfilled(request.id);
+                                console.log(`Number ${request.phone_number} added to group ${groupName}`);
+                                logAction(groupName, request.phone_number, 'Added', 'Fulfilled');
+                                await delay(1200000);
+                            } else {
+                                throw new Error('Addition failed');
+                            }
                         } else {
-                            throw new Error('Addition failed');
+                            console.log(`Number ${request.phone_number} not found in existing chats. Skipping...`);
+                            continue;
                         }
-                    } else {
-                        console.log(`Number ${request.phone_number} not found in existing chats. Skipping...`);
-                        continue;
+                    } catch (error) {
+                        await registerWhatsappAddAttempt(request.id);
+                        console.error(`Error adding number ${request.phone_number} to group: ${error.message}`);
                     }
-                } catch (error) {
-                    await registerWhatsappAddAttempt(request.id);
-                    console.error(`Error adding number ${request.phone_number} to group: ${error.message}`);
                 }
             }
+
+            await delay(60000);
         }
-        console.log('All groups processed!');
-        await delay(60000);
-    }}
+    console.log('All groups processed!');
+    }
 });
 
 client.initialize();
