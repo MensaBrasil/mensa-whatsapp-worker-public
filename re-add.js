@@ -87,10 +87,10 @@ async function tryAddParticipant(client, phoneNumber, groupId) {
     const participants = await getGroupParticipants(client, groupId);
     const isAlreadyInGroup = participants.some(participant => participant.phone === phoneNumber);
 
-    if (isAlreadyInGroup) {
-        console.log(`${phoneNumber} is already in group with ID: ${groupId}`);
-        return true;
-    }
+    // if (isAlreadyInGroup) {
+    //     console.log(`${phoneNumber} is already in group with ID: ${groupId}`);
+    //     return true;
+    // }
 
     if (chat.addParticipants) {
         chat.sendSeen();
