@@ -78,16 +78,28 @@ function logAction(groupName, member, action, reason) {
         action,
         reason
     };
+
     csvWriter.writeRecords([logEntry])
         .then(() => {
             console.log(`Action logged: ${action} - ${member} in ${groupName}`);
-            try {
-                telegramBot.sendMessage(telegramChatId, `Action logged: ${action} - ${member} in ${groupName} reason: ${reason}`);
-            } catch (error) {
-                console.error('Failed to send message:', error);
-            }
+            sendTelegramNotification(groupName, member, action, reason);
+        })
+        .catch(error => {
+            console.error('Failed to log action to CSV:', error);
         });
 }
+
+function sendTelegramNotification(groupName, member, action, reason) {
+    try {
+        telegramBot.sendMessage(telegramChatId, `Action logged: ${action} - ${member} in ${groupName} reason: ${reason}`)
+            .catch(error => {
+                console.error('Failed to send Telegram notification:', error);
+            });
+    } catch (error) {
+        console.error('Unexpected error in sendTelegramNotification:', error);
+    }
+}
+
 
 const client = new Client({
     authStrategy: new LocalAuth(),
