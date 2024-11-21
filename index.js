@@ -139,6 +139,8 @@ client.on('ready', async () => {
         const groupIds = groups.map(group => group.id._serialized);
 
         await saveGroupsToList(groupNames, groupIds);
+        console.log(`Total chats retrieved: ${chats.length}`);
+        console.log(`Groups retrieved: ${groups.length}`);
 
         for (const groupName of groupNames) {
             const phoneNumbersFromDB = await getPhoneNumbersWithStatus();
