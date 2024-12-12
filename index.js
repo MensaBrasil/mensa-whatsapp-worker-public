@@ -295,6 +295,7 @@ client.on('ready', async () => {
             await delay(60000);
         }
         console.log('All groups processed!');
+        await fetch('https://status.mensa.org.br/api/push/zg0CuALtFH7oScci4VwT3mXym71KZdUw?status=up&msg=OK&ping=');
     }
 });
 
