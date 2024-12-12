@@ -293,6 +293,7 @@ client.on('ready', async () => {
             }
 
             await delay(60000);
+            await fetch(process.env.UPTIME_URL);
         }
         console.log('All groups processed!');
     }
