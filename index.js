@@ -293,7 +293,7 @@ client.on('ready', async () => {
             }
 
             await delay(60000);
-            await fetch('https://status.mensa.org.br/api/push/zg0CuALtFH7oScci4VwT3mXym71KZdUw?status=up&msg=OK&ping=');
+            await fetch(process.env.UPTIME_URL);
         }
         console.log('All groups processed!');
     }
