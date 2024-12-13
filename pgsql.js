@@ -74,7 +74,7 @@ const getPhoneNumbersWithStatus = async () => {
 
 const recordUserExitFromGroup = async (phone_number, group_id, reason) => {
     const query = `
-        UPDATE mensa.member_groups
+        UPDATE member_groups
         SET exit_date = CURRENT_DATE, removal_reason = $3
         WHERE phone_number = $1 AND group_id = $2 AND exit_date IS NULL;
     `;
@@ -83,7 +83,7 @@ const recordUserExitFromGroup = async (phone_number, group_id, reason) => {
 
 const recordUserEntryToGroup = async (registration_id, phone_number, group_id, status) => {
     const query = `
-        INSERT INTO mensa.member_groups (registration_id, phone_number, group_id, status)
+        INSERT INTO member_groups (registration_id, phone_number, group_id, status)
         VALUES ($1, $2, $3, $4);
     `;
     await pool.query(query, [registration_id, phone_number, group_id, status]);
