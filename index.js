@@ -14,10 +14,6 @@ const readline = require('readline');
 const { triggerTwilioOrRemove } = require('./twilioClient'); // Import the updated function
 require('dotenv').config();
 
-const username = process.env.DB_USER;
-const password = process.env.DB_PASS;
-const dbName = process.env.DB_NAME;
-const dbHost = process.env.DB_HOST;
 
 const csvWriter = createObjectCsvWriter({
     path: 'action_log.csv',
@@ -205,20 +201,20 @@ client.on('ready', async () => {
                                 if (removed) {
                                     reason = 'Inactive';
                                     logAction(groupName, member, 'Removal', reason);
-                                    await triggerTwilioOrRemove(`whatsapp:+${member}`, "inactive"); // Replaced triggerTwilioFlow
+                                    await triggerTwilioOrRemove(member, "mensa_inactive");
                                     await delay(300000);
                                 }
                             }
                         }
                     } else {
-                        if (member !== '18653480874' && member !== '36705346911' && member !== '351926855059' && member !== '447863603673' && member !== '4915122324805' && member !== '62999552046' && member !== '15142676652' && member !== "556299552046" && member !== '447782796843' && member !== '555496875059' && member !== '34657489744' && (removeOnlyMode || addAndRemoveMode)) {
+                        if (member !== '+33681604260' && member !== '18653480874' && member !== '36705346911' && member !== '351926855059' && member !== '447863603673' && member !== '4915122324805' && member !== '62999552046' && member !== '15142676652' && member !== "556299552046" && member !== '447782796843' && member !== '555496875059' && member !== '34657489744' && (removeOnlyMode || addAndRemoveMode)) {
                             console.log(`Number ${member} not found in the database.`);
                             if (!scanMode) {
                                 const removed = await removeParticipantByPhoneNumber(client, groupId, member);
                                 if (removed) {
                                     reason = 'Not found in database';
                                     logAction(groupName, member, 'Removal', reason);
-                                    await triggerTwilioOrRemove(`whatsapp:+${member}`, "not_found"); // Replaced triggerTwilioFlow
+                                    await triggerTwilioOrRemove(member, "mensa_not_found");
                                     await delay(300000);
                                 }
                             }
