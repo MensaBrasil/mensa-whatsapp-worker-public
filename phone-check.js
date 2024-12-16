@@ -10,8 +10,10 @@ function checkPhoneNumber(phoneNumbersFromDB, inputPhoneNumber) {
         if (phoneNumber.includes('+')) {
             phoneNumber = phoneNumber.replace(/\D/g, ''); // Remove any non-numeric characters
         } else {
-            phoneNumber = '55' + phoneNumber.replace(/\D/g, ''); // Assume it's Brazilian (55)
+            // Remove leading zeros before adding the Brazilian country code
+            phoneNumber = '55' + phoneNumber.replace(/\D/g, '').replace(/^0+/, '');
         }
+        
 
         // Check matches for Brazilian numbers (with/without the ninth digit)
         if (phoneNumber.startsWith('55')) {
