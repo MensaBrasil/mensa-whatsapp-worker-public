@@ -93,10 +93,10 @@ function sendTelegramNotification(groupName, member, action, reason) {
     try {
         telegramBot.sendMessage(telegramChatId, `Action logged: ${action} - ${member} in ${groupName} reason: ${reason}`)
             .catch(error => {
-                console.error('Failed to send Telegram notification:', error);
+                console.error('Failed to send Telegram notification:');
             });
     } catch (error) {
-        console.error('Unexpected error in sendTelegramNotification:', error);
+        console.error('Unexpected error in sendTelegramNotification:');
     }
 }
 
