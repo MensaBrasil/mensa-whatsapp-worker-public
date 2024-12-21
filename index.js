@@ -289,7 +289,7 @@ client.on('ready', async () => {
                         }
                     } catch (error) {
                         await registerWhatsappAddAttempt(request.id);
-                        console.error(`Error adding number ${phone} to group: ${error.message}`);
+                        console.error(`Error adding member ${request.registration_id} to group: ${error.message}`);
                     }
                     
                 }
