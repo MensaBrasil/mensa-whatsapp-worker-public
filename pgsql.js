@@ -175,7 +175,7 @@ async function getMemberPhoneNumbers(registration_id) {
                     AND alternative_phone IS NOT NULL;
     `;
     const result = await pool.query(query, [registration_id]);
-    return result.rows.map(row => row.phone_number);
+    return result.rows.map(row => row.phone);
 }
 
 module.exports = { 

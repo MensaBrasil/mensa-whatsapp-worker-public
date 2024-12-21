@@ -270,7 +270,7 @@ client.on('ready', async () => {
             if (!scanMode && (addOnlyMode || addAndRemoveMode)) {
                 for (const request of queue.rows) {
                     try {
-                        phones = getMemberPhoneNumbers(request.registration_id);
+                        phones = await getMemberPhoneNumbers(request.registration_id);
                         for (const phone of phones) {
                             if (last8DigitsFromChats.includes(phone.slice(-8))) {
                                 const addResult = await addPhoneNumberToGroup(client, phone, groupId);
