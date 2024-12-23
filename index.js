@@ -150,6 +150,11 @@ client.on('ready', async () => {
         const groupNames = groups.map(group => group.name);
         const groupIds = groups.map(group => group.id._serialized);
 
+        if ((chats.length == 0) || (groups.length == 0)) {
+            console.log('No groups found. Exiting.');
+            process.exit(0);
+        }
+
         await saveGroupsToList(groupNames, groupIds);
         console.log(`Total chats retrieved: ${chats.length}`);
         console.log(`Groups retrieved: ${groups.length}`);
@@ -278,7 +283,7 @@ client.on('ready', async () => {
                                     await registerWhatsappAddFulfilled(request.id);
                                     console.log(`Number ${phone} added to group ${groupName}`);
                                     logAction(groupName, phone, 'Added', 'Fulfilled');
-                                    await delay(1200000);
+                                    await delay(3600000);
                                 } else {
                                     throw new Error('Addition failed');
                                 }
