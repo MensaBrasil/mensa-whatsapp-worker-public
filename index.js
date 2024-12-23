@@ -223,7 +223,20 @@ client.on('ready', async () => {
                             }
                         }
 
-                
+                        if (checkResult.status === 'Inactive' && (removeOnlyMode || addAndRemoveMode)) {
+                            console.log(`Number ${member}, MB ${checkResult.mb} is inactive.`);
+                            if (!scanMode) {
+                                const shouldRemove = await triggerTwilioOrRemove(member, "mensa_inactive");
+                                if (shouldRemove) {
+                                    const removed = await removeParticipantByPhoneNumber(client, groupId, member);
+                                    if (removed) {
+                                        reason = 'Inactive';
+                                        logAction(groupName, member, 'Removal', reason);
+                                        await delay(300000);
+                                    }
+                                }
+                            }
+                        }
 
 const dbRow = phoneNumbersFromDB.find(r => r.phone_number === member);
 if (dbRow) {
@@ -240,15 +253,15 @@ if (dbRow) {
             if (removed) {
                 logAction(groupName, member, 'Removal', 'User is JB over 10 in M.JB group');
                 await recordUserExitFromGroup(member, groupId, 'JB over 10 in M.JB group');
-                // optional delay(300000);
+                await delay(300000);
             }
         }
     }
 
     if (
-        groupName.includes("JB") &&     
-        !groupName.includes("M.JB") &&  
-        jb_under_10 &&                 
+        groupName.includes("JB") &&
+        !groupName.includes("M.JB") &&
+        jb_under_10 &&
         (removeOnlyMode || addAndRemoveMode)
     ) {
         console.log(`Removing ${member} (JB <10) from JB group.`);
@@ -257,11 +270,11 @@ if (dbRow) {
             if (removed) {
                 logAction(groupName, member, 'Removal', 'User is JB under 10 in JB group');
                 await recordUserExitFromGroup(member, groupId, 'JB under 10 in JB group');
-                // optional delay(300000);
+                await delay(300000);
             }
         }
     }
-}
+    
 
                         
 
@@ -346,7 +359,7 @@ if (dbRow) {
         }
         console.log('All groups processed!');
     }
-});
+    });
 
 client.initialize();
 
