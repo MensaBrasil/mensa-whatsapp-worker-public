@@ -164,8 +164,8 @@ client.on('ready', async () => {
             if (!checkResult.found) {
                 console.log('Number 447474660572 not found in the database. Sanity check failed. Exiting.');
                 process.exit(0);
-            }
-
+            }            
+            
             console.log(`Processing group: ${groupName}`);
             const groupId = await getGroupIdByName(client, groupName);
             const previousMembers = await getPreviousGroupMembers(groupId);
@@ -207,7 +207,11 @@ client.on('ready', async () => {
                             jbGroupNames.push(groupName);
                         }
 
-                        if (checkResult.jovem_brilhante && !jbGroupNames.includes(groupName) && (removeOnlyMode || addAndRemoveMode)) {
+                        if (
+                            checkResult.jovem_brilhante && 
+                            !jbGroupNames.includes(groupName) && 
+                            (removeOnlyMode || addAndRemoveMode)
+                        ) {
                             console.log(`Number ${member}, MB ${checkResult.mb} is JB and is not in a JB group.`);
                             if (!scanMode) {
                                 const removed = await removeParticipantByPhoneNumber(client, groupId, member);
@@ -219,22 +223,65 @@ client.on('ready', async () => {
                             }
                         }
 
-                        if (checkResult.status === 'Inactive' && (removeOnlyMode || addAndRemoveMode)) {
-                            console.log(`Number ${member}, MB ${checkResult.mb} is inactive.`);
-                            if (!scanMode) {
-                                const shouldRemove = await triggerTwilioOrRemove(member, "mensa_inactive");
-                                if (shouldRemove) {
-                                    const removed = await removeParticipantByPhoneNumber(client, groupId, member);
-                                    if (removed) {
-                                        reason = 'Inactive';
-                                        logAction(groupName, member, 'Removal', reason);
-                                        await delay(300000);
-                                    }
-                                }
-                            }
-                        }
+                
+
+const dbRow = phoneNumbersFromDB.find(r => r.phone_number === member);
+if (dbRow) {
+    const { jb_under_10, jb_over_10 } = dbRow;
+
+    if (
+        groupName.includes("M.JB") &&  
+        jb_over_10 &&                  
+        (removeOnlyMode || addAndRemoveMode)
+    ) {
+        console.log(`Removing ${member} (JB >=10) from M.JB group.`);
+        if (!scanMode) {
+            const removed = await removeParticipantByPhoneNumber(client, groupId, member);
+            if (removed) {
+                logAction(groupName, member, 'Removal', 'User is JB over 10 in M.JB group');
+                await recordUserExitFromGroup(member, groupId, 'JB over 10 in M.JB group');
+                // optional delay(300000);
+            }
+        }
+    }
+
+    if (
+        groupName.includes("JB") &&     
+        !groupName.includes("M.JB") &&  
+        jb_under_10 &&                 
+        (removeOnlyMode || addAndRemoveMode)
+    ) {
+        console.log(`Removing ${member} (JB <10) from JB group.`);
+        if (!scanMode) {
+            const removed = await removeParticipantByPhoneNumber(client, groupId, member);
+            if (removed) {
+                logAction(groupName, member, 'Removal', 'User is JB under 10 in JB group');
+                await recordUserExitFromGroup(member, groupId, 'JB under 10 in JB group');
+                // optional delay(300000);
+            }
+        }
+    }
+}
+
+                        
+
                     } else {
-                        if (member !== '+33681604260' && member !== '18653480874' && member !== '36705346911' && member !== '351926855059' && member !== '447863603673' && member !== '4915122324805' && member !== '62999552046' && member !== '15142676652' && member !== "556299552046" && member !== '447782796843' && member !== '555496875059' && member !== '34657489744' && (removeOnlyMode || addAndRemoveMode)) {
+                
+                        if (
+                            member !== '+33681604260' &&
+                            member !== '18653480874' &&
+                            member !== '36705346911' &&
+                            member !== '351926855059' &&
+                            member !== '447863603673' &&
+                            member !== '4915122324805' &&
+                            member !== '62999552046' &&
+                            member !== '15142676652' &&
+                            member !== "556299552046" &&
+                            member !== '447782796843' &&
+                            member !== '555496875059' &&
+                            member !== '34657489744' &&
+                            (removeOnlyMode || addAndRemoveMode)
+                        ) {
                             console.log(`Number ${member} not found in the database.`);
                             if (!scanMode) {
                                 const shouldRemove = await triggerTwilioOrRemove(member, "mensa_not_found");
@@ -249,6 +296,7 @@ client.on('ready', async () => {
                             }
                         }
                     }
+
                     if (reason) {
                         if (!scanMode) {
                             await recordUserExitFromGroup(member, groupId, reason);
@@ -262,7 +310,6 @@ client.on('ready', async () => {
                 console.error(`Error processing group ${groupName}:`, error);
             }
             await delay(10000);
-
 
             const conversations = chats.filter(chat => !chat.isGroup);
             const queue = await getWhatsappQueue(groupId);
@@ -291,7 +338,6 @@ client.on('ready', async () => {
                         await registerWhatsappAddAttempt(request.id);
                         console.error(`Error adding member ${request.registration_id} to group: ${error.message}`);
                     }
-                    
                 }
             }
 
