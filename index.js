@@ -100,7 +100,6 @@ function sendTelegramNotification(groupName, member, action, reason) {
     }
 }
 
-
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
@@ -238,48 +237,47 @@ client.on('ready', async () => {
                             }
                         }
 
-const dbRow = phoneNumbersFromDB.find(r => r.phone_number === member);
-if (dbRow) {
-    const { jb_under_10, jb_over_10 } = dbRow;
+                        const dbRow = phoneNumbersFromDB.find(r => r.phone_number === member);
+                        if (dbRow) {
+                            const { jb_under_10, jb_over_10 } = dbRow;
 
-    if (
-        groupName.includes("M.JB") &&  
-        jb_over_10 &&                  
-        (removeOnlyMode || addAndRemoveMode)
-    ) {
-        console.log(`Removing ${member} (JB >=10) from M.JB group.`);
-        if (!scanMode) {
-            const removed = await removeParticipantByPhoneNumber(client, groupId, member);
-            if (removed) {
-                logAction(groupName, member, 'Removal', 'User is JB over 10 in M.JB group');
-                await recordUserExitFromGroup(member, groupId, 'JB over 10 in M.JB group');
-                await delay(300000);
-            }
-        }
-    }
+                            if (
+                                groupName.includes("M.JB") &&  
+                                jb_over_10 &&                  
+                                !jb_under_10 &&                
+                                (removeOnlyMode || addAndRemoveMode)
+                            ) {
+                                console.log(`Removing ${member} (JB >=10) from M.JB group.`);
+                                if (!scanMode) {
+                                    const removed = await removeParticipantByPhoneNumber(client, groupId, member);
+                                    if (removed) {
+                                        logAction(groupName, member, 'Removal', 'User is JB over 10 in M.JB group');
+                                        await recordUserExitFromGroup(member, groupId, 'JB over 10 in M.JB group');
+                                        await delay(300000);
+                                    }
+                                }
+                            }
 
-    if (
-        groupName.includes("JB") &&
-        !groupName.includes("M.JB") &&
-        jb_under_10 &&
-        (removeOnlyMode || addAndRemoveMode)
-    ) {
-        console.log(`Removing ${member} (JB <10) from JB group.`);
-        if (!scanMode) {
-            const removed = await removeParticipantByPhoneNumber(client, groupId, member);
-            if (removed) {
-                logAction(groupName, member, 'Removal', 'User is JB under 10 in JB group');
-                await recordUserExitFromGroup(member, groupId, 'JB under 10 in JB group');
-                await delay(300000);
-            }
-        }
-    }
-    
-
-                        
+                            if (
+                                groupName.includes("JB") &&
+                                !groupName.includes("M.JB") &&
+                                jb_under_10 &&
+                                !jb_over_10 &&                 
+                                (removeOnlyMode || addAndRemoveMode)
+                            ) {
+                                console.log(`Removing ${member} (JB <10) from JB group.`);
+                                if (!scanMode) {
+                                    const removed = await removeParticipantByPhoneNumber(client, groupId, member);
+                                    if (removed) {
+                                        logAction(groupName, member, 'Removal', 'User is JB under 10 in JB group');
+                                        await recordUserExitFromGroup(member, groupId, 'JB under 10 in JB group');
+                                        await delay(300000);
+                                    }
+                                }
+                            }
+                        }
 
                     } else {
-                
                         if (
                             member !== '+33681604260' &&
                             member !== '18653480874' &&
@@ -359,7 +357,7 @@ if (dbRow) {
         }
         console.log('All groups processed!');
     }
-    });
+});
 
 client.initialize();
 

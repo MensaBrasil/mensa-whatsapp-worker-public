@@ -1,5 +1,3 @@
-// pgsql.js
-
 const { Pool } = require('pg');
 require('dotenv').config();
 
@@ -12,9 +10,10 @@ const pool = new Pool({
 });
 
 const getPhoneNumbersWithStatus = async () => {
-    const currentDate = new Date().toISOString().split('T')[0]; // Format as YYYY-MM-DD
+  const currentDate = new Date().toISOString().split('T')[0];
 
-    const query = `
+  const createTempTableQuery = `
+    CREATE TEMP TABLE temp_phone_data AS
     WITH MaxExpirationDates AS (
         SELECT
             registration_id,
@@ -36,8 +35,8 @@ const getPhoneNumbersWithStatus = async () => {
                 ELSE FALSE
             END AS jb_under_10,
             CASE
-                WHEN DATE_PART('year', AGE(r.birth_date)) >= 10 
-                     AND DATE_PART('year', AGE(r.birth_date)) < 18 THEN TRUE
+                WHEN DATE_PART('year', AGE(r.birth_date)) >= 10
+                 AND DATE_PART('year', AGE(r.birth_date)) < 18 THEN TRUE
                 ELSE FALSE
             END AS jb_over_10
         FROM phones p 
@@ -59,148 +58,163 @@ const getPhoneNumbersWithStatus = async () => {
                 ELSE FALSE
             END AS jb_under_10,
             CASE
-                WHEN DATE_PART('year', AGE(reg.birth_date)) >= 10 
-                     AND DATE_PART('year', AGE(reg.birth_date)) < 18 THEN TRUE
+                WHEN DATE_PART('year', AGE(reg.birth_date)) >= 10
+                 AND DATE_PART('year', AGE(reg.birth_date)) < 18 THEN TRUE
                 ELSE FALSE
             END AS jb_over_10
         FROM legal_representatives lr
         LEFT JOIN MaxExpirationDates med ON lr.registration_id = med.registration_id
         LEFT JOIN registration reg ON lr.registration_id = reg.registration_id
     )
-    SELECT 
-        phone_number,
-        registration_id,
-        MAX(status) AS status,
-        -- If any row within the same registration_id has jb_under_10 = TRUE, 
-        -- the final result is TRUE for that phone_number
-        BOOL_OR(jb_under_10) AS jb_under_10,
-        BOOL_OR(jb_over_10) AS jb_over_10
+    SELECT
+      phone_number,
+      registration_id,
+      status,
+      jb_under_10,
+      jb_over_10
     FROM PhoneNumbers
     WHERE phone_number IS NOT NULL
-    GROUP BY phone_number, registration_id;
-    `;
+  `;
+  await pool.query(createTempTableQuery, [currentDate]);
 
-    const { rows } = await pool.query(query, [currentDate]);
-    return rows;
+  const MultipleJB = `
+    SELECT
+      phone_number,
+      /* If ANY membership is 'Active', mark phone as 'Active' */
+      CASE WHEN BOOL_OR(status = 'Active') THEN 'Active' ELSE 'Inactive' END AS status,
+      /* If ANY child is under 10 => phone's "jb_under_10" is TRUE */
+      BOOL_OR(jb_under_10) AS jb_under_10,
+      /* If ANY child is over 10 => phone's "jb_over_10" is TRUE */
+      BOOL_OR(jb_over_10)  AS jb_over_10
+    FROM temp_phone_data
+    GROUP BY phone_number
+  `;
+  const { rows } = await pool.query(MultipleJB);
+
+  return rows;
 };
 
-
 const recordUserExitFromGroup = async (phone_number, group_id, reason) => {
-    const query = `
-        UPDATE member_groups
-        SET exit_date = CURRENT_DATE, removal_reason = $3
-        WHERE phone_number = $1 AND group_id = $2 AND exit_date IS NULL;
-    `;
-    await pool.query(query, [phone_number, group_id, reason]);
+  const query = `
+    UPDATE member_groups
+    SET exit_date = CURRENT_DATE, removal_reason = $3
+    WHERE phone_number = $1 AND group_id = $2 AND exit_date IS NULL;
+  `;
+  await pool.query(query, [phone_number, group_id, reason]);
 };
 
 const recordUserEntryToGroup = async (registration_id, phone_number, group_id, status) => {
-    const query = `
-        INSERT INTO member_groups (registration_id, phone_number, group_id, status)
-        VALUES ($1, $2, $3, $4);
-    `;
-    await pool.query(query, [registration_id, phone_number, group_id, status]);
+  const query = `
+    INSERT INTO member_groups (registration_id, phone_number, group_id, status)
+    VALUES ($1, $2, $3, $4);
+  `;
+  await pool.query(query, [registration_id, phone_number, group_id, status]);
 };
 
 async function getLastCommunication(phoneNumber) {
-    const query = `
-        SELECT * FROM whatsapp_comms 
-        WHERE phone_number = $1
-        ORDER BY timestamp DESC LIMIT 1
-    `;
-    const result = await pool.query(query, [phoneNumber]);
-    return result.rows[0];
+  const query = `
+    SELECT * FROM whatsapp_comms 
+    WHERE phone_number = $1
+    ORDER BY timestamp DESC LIMIT 1
+  `;
+  const result = await pool.query(query, [phoneNumber]);
+  return result.rows[0];
 }
 
-
 async function logCommunication(phoneNumber, reason) {
-    const query = `
-        INSERT INTO whatsapp_comms (phone_number, reason, timestamp, status)
-        VALUES ($1, $2, NOW(), 'unresolved')
-        ON CONFLICT (phone_number, reason) 
-        DO UPDATE SET timestamp = NOW(), status = 'unresolved';
-    `;
-    await pool.query(query, [phoneNumber, reason]);
+  const query = `
+    INSERT INTO whatsapp_comms (phone_number, reason, timestamp, status)
+    VALUES ($1, $2, NOW(), 'unresolved')
+    ON CONFLICT (phone_number, reason)
+    DO UPDATE SET timestamp = NOW(), status = 'unresolved';
+  `;
+  await pool.query(query, [phoneNumber, reason]);
 }
 
 async function getPreviousGroupMembers(groupId) {
-    const query = `SELECT phone_number FROM member_groups WHERE group_id = $1 AND exit_date IS NULL`;
-    const values = [groupId];
-    const result = await pool.query(query, values);
-    return result.rows.map(row => row.phone_number);
+  const query = `
+    SELECT phone_number
+    FROM member_groups
+    WHERE group_id = $1
+      AND exit_date IS NULL
+  `;
+  const values = [groupId];
+  const result = await pool.query(query, values);
+  return result.rows.map(row => row.phone_number);
 }
 
 async function saveGroupsToList(groupNames, groupIds) {
-    await pool.query(`DELETE FROM group_list`);
-    
-    const query = `INSERT INTO group_list (group_name, group_id) VALUES ($1, $2)`;
-    for (let i = 0; i < groupNames.length; i++) {
-        await pool.query(query, [groupNames[i], groupIds[i]]);
-    }
+  await pool.query(`DELETE FROM group_list`);
+  const query = `
+    INSERT INTO group_list (group_name, group_id)
+    VALUES ($1, $2)
+  `;
+  for (let i = 0; i < groupNames.length; i++) {
+    await pool.query(query, [groupNames[i], groupIds[i]]);
+  }
 }
 
 async function getWhatsappQueue(group_id) {
-    const query = `
-        SELECT * 
-        FROM group_requests 
-        WHERE 
-            no_of_attempts < 3 
-            AND group_id = $1 
-            AND fulfilled = false 
-            AND (last_attempt < NOW() - INTERVAL '1 day' OR last_attempt IS NULL)
-    `;
-    return await pool.query(query, [group_id]);
+  const query = `
+    SELECT *
+    FROM group_requests
+    WHERE no_of_attempts < 3
+      AND group_id = $1
+      AND fulfilled = false
+      AND (last_attempt < NOW() - INTERVAL '1 day' OR last_attempt IS NULL)
+  `;
+  return await pool.query(query, [group_id]);
 }
 
-// Register WhatsApp add attempt, incrementing the number of attempts and updating last_attempt
 async function registerWhatsappAddAttempt(request_id) {
-    const query = `UPDATE group_requests SET no_of_attempts = no_of_attempts + 1, last_attempt = NOW() WHERE id = $1`;
-    await pool.query(query, [request_id]);
+  const query = `
+    UPDATE group_requests
+    SET no_of_attempts = no_of_attempts + 1,
+        last_attempt = NOW()
+    WHERE id = $1
+  `;
+  await pool.query(query, [request_id]);
 }
 
-// Register that a WhatsApp add was fulfilled and update last_attempt
 async function registerWhatsappAddFulfilled(id) {
-    const query = `UPDATE group_requests SET fulfilled = true, last_attempt = NOW() WHERE id = $1`;
-    await pool.query(query, [id]);
+  const query = `
+    UPDATE group_requests
+    SET fulfilled = true,
+        last_attempt = NOW()
+    WHERE id = $1
+  `;
+  await pool.query(query, [id]);
 }
 
 async function getMemberPhoneNumbers(registration_id) {
-    const query = `SELECT 
-                    phone_number AS phone
-                FROM 
-                    phones
-                WHERE 
-                    registration_id = $1
-                UNION ALL
-                SELECT 
-                    phone
-                FROM 
-                    legal_representatives
-                WHERE 
-                    registration_id = $1
-                UNION ALL
-                SELECT 
-                    alternative_phone AS phone
-                FROM 
-                    legal_representatives
-                WHERE 
-                    registration_id = $1
-                    AND alternative_phone IS NOT NULL;
-    `;
-    const result = await pool.query(query, [registration_id]);
-    return result.rows.map(row => row.phone);
+  const query = `
+    SELECT phone_number AS phone
+    FROM phones
+    WHERE registration_id = $1
+    UNION ALL
+    SELECT phone
+    FROM legal_representatives
+    WHERE registration_id = $1
+    UNION ALL
+    SELECT alternative_phone AS phone
+    FROM legal_representatives
+    WHERE registration_id = $1
+      AND alternative_phone IS NOT NULL
+  `;
+  const result = await pool.query(query, [registration_id]);
+  return result.rows.map(row => row.phone);
 }
 
-module.exports = { 
-    getPhoneNumbersWithStatus, 
-    recordUserExitFromGroup, 
-    recordUserEntryToGroup, 
-    getPreviousGroupMembers,
-    saveGroupsToList,
-    getWhatsappQueue,
-    registerWhatsappAddAttempt,
-    getMemberPhoneNumbers,
-    registerWhatsappAddFulfilled,
-    getLastCommunication,  
-    logCommunication
+module.exports = {
+  getPhoneNumbersWithStatus,
+  recordUserExitFromGroup,
+  recordUserEntryToGroup,
+  getPreviousGroupMembers,
+  saveGroupsToList,
+  getWhatsappQueue,
+  registerWhatsappAddAttempt,
+  getMemberPhoneNumbers,
+  registerWhatsappAddFulfilled,
+  getLastCommunication,
+  logCommunication
 };
