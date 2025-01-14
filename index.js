@@ -164,15 +164,17 @@ client.on('ready', async () => {
         
         // Check if member has a active chat with the bot and save results to a csv file.
         if (checkAuth) {
+            console.log('Check-auth mode enabled. Processing authorization requests...');
             const authorizationRequests = [];
+            const conversations = chats.filter(chat => !chat.isGroup);
+            const last8DigitsFromChats = conversations.map(chat => chat.id.user).map(number => number.slice(-8));
 
             for (const groupName of groupNames) {
                 const groupId = await getGroupIdByName(client, groupName);
                 const queue = await getWhatsappQueue(groupId);
-                const conversations = chats.filter(chat => !chat.isGroup);
-                const last8DigitsFromChats = conversations.map(chat => chat.id.user).map(number => number.slice(-8));
                 
                 for (const request of queue.rows) {
+                    console.log(`Processing request ${request.id}`);
                     try {
                         const phones = await getMemberPhoneNumbers(request.registration_id);
                         for (const phone of phones) {
@@ -207,6 +209,8 @@ client.on('ready', async () => {
                 .catch(error => {
                     console.error('Failed to save authorization requests to CSV:', error);
             });
+            console.log('Finished processing authorization requests! Exiting...');
+            process.exit(0);
         }
 
         for (const groupName of groupNames) {
