@@ -169,7 +169,9 @@ client.on('ready', async () => {
             for (const groupName of groupNames) {
                 const groupId = await getGroupIdByName(client, groupName);
                 const queue = await getWhatsappQueue(groupId);
-
+                const conversations = chats.filter(chat => !chat.isGroup);
+                const last8DigitsFromChats = conversations.map(chat => chat.id.user).map(number => number.slice(-8));
+                
                 for (const request of queue.rows) {
                     try {
                         const phones = await getMemberPhoneNumbers(request.registration_id);
