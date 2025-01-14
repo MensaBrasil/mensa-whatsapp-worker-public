@@ -331,8 +331,8 @@ client.on('ready', async () => {
                     try {
                         phones = await getMemberPhoneNumbers(request.registration_id);
                         for (const phone of phones) {
-                            phone = phone.replace(/\D/g, '');
-                            if (last8DigitsFromChats.includes(phone.slice(-8))) {
+                            const new_phone = phone.replace(/\D/g, '');
+                            if (last8DigitsFromChats.includes(new_phone.slice(-8))) {
                                 const addResult = await addPhoneNumberToGroup(client, phone, groupId);
                                 if (addResult === true) {
                                     await registerWhatsappAddFulfilled(request.id);
