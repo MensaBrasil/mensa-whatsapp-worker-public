@@ -166,20 +166,25 @@ client.on('ready', async () => {
         if (checkAuth) {
             const authorizationRequests = [];
 
-            for (const request of queue.rows) {
-                try {
-                    const phones = await getMemberPhoneNumbers(request.registration_id);
-                    for (const phone of phones) {
-                        const status = last8DigitsFromChats.includes(phone.slice(-8)) ? 'Authorized' : 'Not Authorized';
-                        const name = await getMemberName(request.registration_id);
-                        authorizationRequests.push({
-                            member_name: name,
-                            registration_id: request.registration_id,
-                            authorization_status: status
-                        });
+            for (const groupName of groupNames) {
+                const groupId = await getGroupIdByName(client, groupName);
+                const queue = await getWhatsappQueue(groupId);
+
+                for (const request of queue.rows) {
+                    try {
+                        const phones = await getMemberPhoneNumbers(request.registration_id);
+                        for (const phone of phones) {
+                            const status = last8DigitsFromChats.includes(phone.slice(-8)) ? 'Authorized' : 'Not Authorized';
+                            const name = await getMemberName(request.registration_id);
+                            authorizationRequests.push({
+                                member_name: name,
+                                registration_id: request.registration_id,
+                                authorization_status: status
+                            });
+                        }
+                    } catch (error) {
+                        console.error(`Error processing request ${request.id}: ${error.message}`);
                     }
-                } catch (error) {
-                    console.error(`Error processing request ${request.id}: ${error.message}`);
                 }
             }
 
