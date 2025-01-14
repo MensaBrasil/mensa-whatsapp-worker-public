@@ -98,7 +98,7 @@ async function tryAddParticipant(client, phoneNumber, groupId) {
         await chat.addParticipants([`${phoneNumber}@c.us`]);
 
         // Verification Step
-        await delay(1500);
+        await delay(10000);
         const newParticipants = await getGroupParticipants(client, groupId);
         const isAdded = newParticipants.some(participant => participant.phone === phoneNumber);
 
