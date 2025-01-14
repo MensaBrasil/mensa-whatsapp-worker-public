@@ -331,6 +331,7 @@ client.on('ready', async () => {
                                 }
                             } else {
                                 console.log(`Number ${phone} not found in existing chats. Skipping...`);
+                                await registerWhatsappAddAttempt(request.id);
                                 continue;
                             }
                         }
