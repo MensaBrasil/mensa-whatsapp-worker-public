@@ -120,7 +120,7 @@ const removeOnlyMode = process.argv.includes('--remove-only');
 const addAndRemoveMode = process.argv.includes('--add-and-remove');
 const checkAuth = process.argv.includes('--check-auth');
 
-if (!scanMode && !addOnlyMode && !removeOnlyMode && !addAndRemoveMode) {
+if (!scanMode && !addOnlyMode && !removeOnlyMode && !addAndRemoveMode && !checkAuth) {
     console.log('No mode specified. Please provide a mode: --scan, --add-only, --remove-only, --add-and-remove or --check-auth');
     process.exit(0);
 }
