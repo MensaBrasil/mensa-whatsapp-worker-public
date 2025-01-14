@@ -57,7 +57,6 @@ function normalizePhoneNumber(phoneNumber) {
 
 
 
-
 // Function to adjust the Brazilian phone number by adding or removing the '9' digit
 function adjustBrazilianPhoneNumber(phoneNumber) {
     const regexWithNine = /^55(\d{2})9(\d{8})$/; // Matches Brazilian numbers with the '9' digit
@@ -84,13 +83,13 @@ async function tryAddParticipant(client, phoneNumber, groupId) {
         return false;
     }
 
-    const participants = await getGroupParticipants(client, groupId);
-    const isAlreadyInGroup = participants.some(participant => participant.phone === phoneNumber);
+    // const participants = await getGroupParticipants(client, groupId);
+    // const isAlreadyInGroup = participants.some(participant => participant.phone === phoneNumber);
 
-    if (isAlreadyInGroup) {
-        console.log(`${phoneNumber} is already in group with ID: ${groupId}`);
-        return true;
-    }
+    // if (isAlreadyInGroup) {
+    //     console.log(`${phoneNumber} is already in group with ID: ${groupId}`);
+    //     return true;
+    // }
 
     if (chat.addParticipants) {
         chat.sendSeen();
