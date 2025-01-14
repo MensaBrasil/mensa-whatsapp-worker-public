@@ -162,6 +162,7 @@ client.on('ready', async () => {
         console.log(`Total chats retrieved: ${chats.length}`);
         console.log(`Groups retrieved: ${groups.length}`);
         
+        // Check if member has a active chat with the bot and save results to a csv file.
         if (checkAuth) {
             const authorizationRequests = [];
 
@@ -339,7 +340,6 @@ client.on('ready', async () => {
                         await registerWhatsappAddAttempt(request.id);
                         console.error(`Error adding member ${request.registration_id} to group: ${error.message}`);
                     }
-                    
                 }
             }
 
