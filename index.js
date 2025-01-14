@@ -6,7 +6,7 @@ const checkPhoneNumber = require('./phone-check');
 const { isMessageAlreadySent, saveMessageToMongoDB } = require('./mongo');
 const { getInactiveMessage, getNotFoundMessage } = require('./messages');
 const dfd = require("danfojs-node");
-const { getPhoneNumbersWithStatus, saveGroupsToList, getWhatsappQueue, registerWhatsappAddAttempt, registerWhatsappAddFulfilled, getMemberPhoneNumbers } = require('./pgsql');
+const { getPhoneNumbersWithStatus, saveGroupsToList, getWhatsappQueue, registerWhatsappAddAttempt, registerWhatsappAddFulfilled, getMemberPhoneNumbers, getMemberName } = require('./pgsql');
 const { addPhoneNumberToGroup } = require('./re-add');
 const { recordUserEntryToGroup, recordUserExitFromGroup, getPreviousGroupMembers } = require('./pgsql');
 const { createObjectCsvWriter } = require('csv-writer');
@@ -118,9 +118,10 @@ const scanMode = process.argv.includes('--scan');
 const addOnlyMode = process.argv.includes('--add-only');
 const removeOnlyMode = process.argv.includes('--remove-only');
 const addAndRemoveMode = process.argv.includes('--add-and-remove');
+const checkAuth = process.argv.includes('--check-auth');
 
 if (!scanMode && !addOnlyMode && !removeOnlyMode && !addAndRemoveMode) {
-    console.log('No mode specified. Please provide a mode: --scan, --add-only, --remove-only, or --add-and-remove.');
+    console.log('No mode specified. Please provide a mode: --scan, --add-only, --remove-only, --add-and-remove or --check-auth');
     process.exit(0);
 }
 
@@ -132,6 +133,8 @@ if (scanMode) {
     console.log('Remove-only mode enabled. Only removals will be made from the groups.');
 } else if (addAndRemoveMode) {
     console.log('Add-and-remove mode enabled. Additions and removals will be made to/from the groups.');
+} else if (checkAuth){
+    console.log('Check-auth mode enabled. Create a CSV file with authorization status of members that requested to join groups.');
 } else {
     console.log('!!!!!!Scan mode DISABLED. Changes will be made to the groups.!!!!!!!');
 }
@@ -158,6 +161,45 @@ client.on('ready', async () => {
         await saveGroupsToList(groupNames, groupIds);
         console.log(`Total chats retrieved: ${chats.length}`);
         console.log(`Groups retrieved: ${groups.length}`);
+        
+        if (checkAuth) {
+            const authorizationRequests = [];
+
+            for (const request of queue.rows) {
+                try {
+                    const phones = await getMemberPhoneNumbers(request.registration_id);
+                    for (const phone of phones) {
+                        const status = last8DigitsFromChats.includes(phone.slice(-8)) ? 'Authorized' : 'Not Authorized';
+                        const name = await getMemberName(request.registration_id);
+                        authorizationRequests.push({
+                            member_name: name,
+                            registration_id: request.registration_id,
+                            authorization_status: status
+                        });
+                    }
+                } catch (error) {
+                    console.error(`Error processing request ${request.id}: ${error.message}`);
+                }
+            }
+
+            const authorizationCsvWriter = createObjectCsvWriter({
+                path: 'authorization_requests.csv',
+                header: [
+                    { id: 'member_name', title: 'Member Name' },
+                    { id: 'registration_id', title: 'Registration ID' },
+                    { id: 'authorization_status', title: 'Authorization Status' }
+                ],
+                append: true
+            });
+
+            authorizationCsvWriter.writeRecords(authorizationRequests)
+                .then(() => {
+                    console.log('Authorization requests saved to CSV.');
+                })
+                .catch(error => {
+                    console.error('Failed to save authorization requests to CSV:', error);
+            });
+        }
 
         for (const groupName of groupNames) {
             const phoneNumbersFromDB = await getPhoneNumbersWithStatus();
@@ -300,7 +342,7 @@ client.on('ready', async () => {
                 }
             }
 
-            await delay(60000);
+            await delay(10000);
             await fetch(process.env.UPTIME_URL);
         }
         console.log('All groups processed!');
