@@ -102,12 +102,14 @@ function sendTelegramNotification(groupName, member, action, reason) {
 
 
 const client = new Client({
-    authStrategy: new LocalAuth(),
+    authStrategy: new LocalAuth({
+        dataPath: '.wpp_session'
+    }),
     puppeteer: {
         headless: true,
-        args: ["--no-sandbox", "--disable-gpu"],
+        args: ["--no-sandbox", '--disable-setuid-sandbox', "--disable-gpu"],
     },
-    webVersionCache: { type: 'remote', remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html' }
+    webVersionCache: { type: 'remote', remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.3000.1019450141-alpha.html' }
 });
 
 client.on('qr', qr => {
