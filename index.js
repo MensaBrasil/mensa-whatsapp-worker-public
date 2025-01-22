@@ -6,7 +6,7 @@ const checkPhoneNumber = require('./phone-check');
 const { isMessageAlreadySent, saveMessageToMongoDB } = require('./mongo');
 const { getInactiveMessage, getNotFoundMessage } = require('./messages');
 const dfd = require("danfojs-node");
-const { getPhoneNumbersWithStatus, saveGroupsToList, getWhatsappQueue, registerWhatsappAddAttempt, registerWhatsappAddFulfilled, getMemberPhoneNumbers } = require('./pgsql');
+const { getPhoneNumbersWithStatus, saveGroupsToList, getWhatsappQueue, registerWhatsappAddAttempt, registerWhatsappAddFulfilled, getMemberPhoneNumbers, getMemberName } = require('./pgsql');
 const { addPhoneNumberToGroup } = require('./re-add');
 const { recordUserEntryToGroup, recordUserExitFromGroup, getPreviousGroupMembers } = require('./pgsql');
 const { createObjectCsvWriter } = require('csv-writer');
@@ -102,12 +102,14 @@ function sendTelegramNotification(groupName, member, action, reason) {
 
 
 const client = new Client({
-    authStrategy: new LocalAuth(),
+    authStrategy: new LocalAuth({
+        dataPath: '.wpp_session'
+    }),
     puppeteer: {
         headless: true,
-        args: ["--no-sandbox", "--disable-gpu"],
+        args: ["--no-sandbox", '--disable-setuid-sandbox', "--disable-gpu"],
     },
-    webVersionCache: { type: 'remote', remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html' }
+    webVersionCache: { type: 'remote', remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.3000.1019450141-alpha.html' }
 });
 
 client.on('qr', qr => {
@@ -118,9 +120,10 @@ const scanMode = process.argv.includes('--scan');
 const addOnlyMode = process.argv.includes('--add-only');
 const removeOnlyMode = process.argv.includes('--remove-only');
 const addAndRemoveMode = process.argv.includes('--add-and-remove');
+const checkAuth = process.argv.includes('--check-auth');
 
-if (!scanMode && !addOnlyMode && !removeOnlyMode && !addAndRemoveMode) {
-    console.log('No mode specified. Please provide a mode: --scan, --add-only, --remove-only, or --add-and-remove.');
+if (!scanMode && !addOnlyMode && !removeOnlyMode && !addAndRemoveMode && !checkAuth) {
+    console.log('No mode specified. Please provide a mode: --scan, --add-only, --remove-only, --add-and-remove or --check-auth');
     process.exit(0);
 }
 
@@ -132,6 +135,8 @@ if (scanMode) {
     console.log('Remove-only mode enabled. Only removals will be made from the groups.');
 } else if (addAndRemoveMode) {
     console.log('Add-and-remove mode enabled. Additions and removals will be made to/from the groups.');
+} else if (checkAuth){
+    console.log('Check-auth mode enabled. Create a CSV file with authorization status of members that requested to join groups.');
 } else {
     console.log('!!!!!!Scan mode DISABLED. Changes will be made to the groups.!!!!!!!');
 }
@@ -158,6 +163,57 @@ client.on('ready', async () => {
         await saveGroupsToList(groupNames, groupIds);
         console.log(`Total chats retrieved: ${chats.length}`);
         console.log(`Groups retrieved: ${groups.length}`);
+        
+        // Check if member has a active chat with the bot and save results to a csv file.
+        if (checkAuth) {
+            console.log('Check-auth mode enabled. Processing authorization requests...');
+            const authorizationRequests = [];
+            const conversations = chats.filter(chat => !chat.isGroup);
+            const last8DigitsFromChats = conversations.map(chat => chat.id.user).map(number => number.slice(-8));
+
+            for (const groupName of groupNames) {
+                const groupId = await getGroupIdByName(client, groupName);
+                const queue = await getWhatsappQueue(groupId);
+                
+                for (const request of queue.rows) {
+                    console.log(`Processing request ${request.id}`);
+                    try {
+                        const phones = await getMemberPhoneNumbers(request.registration_id);
+                        for (const phone of phones) {
+                            const status = last8DigitsFromChats.includes(phone.slice(-8)) ? 'Authorized' : 'Not Authorized';
+                            const name = await getMemberName(request.registration_id);
+                            authorizationRequests.push({
+                                member_name: name,
+                                registration_id: request.registration_id,
+                                authorization_status: status
+                            });
+                        }
+                    } catch (error) {
+                        console.error(`Error processing request ${request.id}: ${error.message}`);
+                    }
+                }
+            }
+
+            const authorizationCsvWriter = createObjectCsvWriter({
+                path: 'authorization_requests.csv',
+                header: [
+                    { id: 'member_name', title: 'Member Name' },
+                    { id: 'registration_id', title: 'Registration ID' },
+                    { id: 'authorization_status', title: 'Authorization Status' }
+                ],
+                append: true
+            });
+
+            authorizationCsvWriter.writeRecords(authorizationRequests)
+                .then(() => {
+                    console.log('Authorization requests saved to CSV.');
+                })
+                .catch(error => {
+                    console.error('Failed to save authorization requests to CSV:', error);
+            });
+            console.log('Finished processing authorization requests! Exiting...');
+            process.exit(0);
+        }
 
         for (const groupName of groupNames) {
             const phoneNumbersFromDB = await getPhoneNumbersWithStatus();
@@ -277,7 +333,8 @@ client.on('ready', async () => {
                     try {
                         phones = await getMemberPhoneNumbers(request.registration_id);
                         for (const phone of phones) {
-                            if (last8DigitsFromChats.includes(phone.slice(-8))) {
+                            const new_phone = phone.replace(/\D/g, '');
+                            if (last8DigitsFromChats.includes(new_phone.slice(-8))) {
                                 const addResult = await addPhoneNumberToGroup(client, phone, groupId);
                                 if (addResult === true) {
                                     await registerWhatsappAddFulfilled(request.id);
@@ -296,11 +353,10 @@ client.on('ready', async () => {
                         await registerWhatsappAddAttempt(request.id);
                         console.error(`Error adding member ${request.registration_id} to group: ${error.message}`);
                     }
-                    
                 }
             }
 
-            await delay(60000);
+            await delay(10000);
             await fetch(process.env.UPTIME_URL);
         }
         console.log('All groups processed!');

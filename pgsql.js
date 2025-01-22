@@ -151,6 +151,12 @@ async function registerWhatsappAddFulfilled(id) {
     await pool.query(query, [id]);
 }
 
+async function getMemberName(registration_id) {
+    const query = `SELECT name FROM registration WHERE registration_id = $1`;
+    const result = await pool.query(query, [registration_id]);
+    return result.rows[0].name;
+}
+
 async function getMemberPhoneNumbers(registration_id) {
     const query = `SELECT 
                     phone_number AS phone
@@ -189,5 +195,6 @@ module.exports = {
     getMemberPhoneNumbers,
     registerWhatsappAddFulfilled,
     getLastCommunication,  
-    logCommunication
+    logCommunication,
+    getMemberName
 };
