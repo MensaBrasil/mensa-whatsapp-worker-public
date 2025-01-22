@@ -28,6 +28,6 @@
     "pgsql": "^1.0.0",
     "qrcode-terminal": "^0.12.0",
     "twilio": "^5.3.5",
-    "whatsapp-web.js": "ImTeli/whatsapp-web.js#main"
+    "whatsapp-web.js": "^1.26.1-alpha.3"
   }
 }
