@@ -213,7 +213,25 @@ async function insertNewWhatsAppMessage(
     message_type,
     device_type
 ){
-
+    const query =`
+    insert
+        into
+        whatsapp_messages (message_id,
+        group_id,
+        registration_id,
+        timestamp,
+        phone,
+        message_type,
+        device_type)
+    values ($1,
+    $2,
+    $3,
+    $4,
+    $5,
+    $6,
+    $7)
+    `;
+    await pool.query(query, [message_id, group_id, registration_id, timestamp, phone, message_type, device_type]);
 }
 
 module.exports = { 
