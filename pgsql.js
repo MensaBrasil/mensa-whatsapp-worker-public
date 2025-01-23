@@ -242,6 +242,5 @@ module.exports = {
     logCommunication,
     getMemberName,
     getLastMessageTimestamp,
-    getMemberIdByPhone,
     insertNewWhatsAppMessage
 };
