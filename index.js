@@ -253,7 +253,7 @@ client.on('ready', async () => {
                     const contact = await message.getContact();
                     const resp = checkPhoneNumber(phoneNumbersFromDB, contact.number);
                     
-                    if (resp === false) {
+                    if (!resp.found) {
                         console.log("Registration ID not found for phone number: ", contact.number, " skipping message.");
                         continue;
                     }
