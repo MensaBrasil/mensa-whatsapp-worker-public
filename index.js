@@ -259,12 +259,12 @@ client.on('ready', async () => {
 
                     const message_id = message.id.id;
                     const group_id = groupId;
-                    const timestamp = message.timestamp;
+                    const datetime = new Date(message.timestamp * 1000).toISOString();
                     const phone = contact.number;
                     const message_type = message.type;
                     const device_type = message.deviceType;
 
-                    insertNewWhatsAppMessage(message_id, group_id, resp.mb, timestamp, phone, message_type, device_type);
+                    insertNewWhatsAppMessage(message_id, group_id, resp.mb, datetime, phone, message_type, device_type);
                 }
 
                 console.log("All messages processed successfully for group: ", groupName);
