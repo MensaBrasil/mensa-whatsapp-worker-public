@@ -254,7 +254,6 @@ client.on('ready', async () => {
                     const resp = checkPhoneNumber(phoneNumbersFromDB, contact.number);
                     
                     if (!resp.found) {
-                        console.log("Registration ID not found for phone number: ", contact.number, " skipping message.");
                         continue;
                     }
 
