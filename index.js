@@ -234,9 +234,11 @@ client.on('ready', async () => {
             // Save messages data for all groups to the database.
 
             try {
-                console.log("Saving messages for group: ", groupName, " with id: ", groupId);
                 groupChat = await client.getChatById(groupId);
+                console.log("Syncing history for group: ", groupName);
                 await groupChat.syncHistory()
+                console.log("History synced for group: ", groupName);
+                console.log("Fetching messages for group: ", groupName);
                 let messages = await groupChat.fetchMessages({limit: 'Infinity'});
                 messages.reverse();
 
