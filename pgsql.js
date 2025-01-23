@@ -198,35 +198,27 @@ async function getLastMessageTimestamp(groupId) {
     return result.rows[0]?.unix_timestamp || 0;
 }
 
-async function insertNewWhatsAppMessage(
-    message_id,
-    group_id,
-    registration_id,
-    timestamp,
-    phone,
-    message_type,
-    device_type
-){
-    const query =`
-    insert
-        into
-        whatsapp_messages (message_id,
+async function insertNewWhatsAppMessages(messages) {
+    if (messages.length === 0) return;
+
+    const query = `
+    INSERT INTO whatsapp_messages (
+        message_id,
         group_id,
         registration_id,
         timestamp,
         phone,
         message_type,
-        device_type)
-    values ($1,
-    $2,
-    $3,
-    $4,
-    $5,
-    $6,
-    $7)
+        device_type
+    )
+    VALUES ${messages.map((_, index) => `($${index * 7 + 1}, $${index * 7 + 2}, $${index * 7 + 3}, $${index * 7 + 4}, $${index * 7 + 5}, $${index * 7 + 6}, $${index * 7 + 7})`).join(", ")}
+    ON CONFLICT (message_id) DO NOTHING
     `;
-    await pool.query(query, [message_id, group_id, registration_id, timestamp, phone, message_type, device_type]);
+
+    const values = messages.flat();
+    await pool.query(query, values);
 }
+
 
 module.exports = { 
     getPhoneNumbersWithStatus, 
@@ -242,5 +234,5 @@ module.exports = {
     logCommunication,
     getMemberName,
     getLastMessageTimestamp,
-    insertNewWhatsAppMessage
+    insertNewWhatsAppMessages
 };

@@ -6,7 +6,7 @@ const checkPhoneNumber = require('./phone-check');
 const { isMessageAlreadySent, saveMessageToMongoDB } = require('./mongo');
 const { getInactiveMessage, getNotFoundMessage } = require('./messages');
 const dfd = require("danfojs-node");
-const { getPhoneNumbersWithStatus, saveGroupsToList, getWhatsappQueue, registerWhatsappAddAttempt, registerWhatsappAddFulfilled, getMemberPhoneNumbers, getMemberName, getLastMessageTimestamp, insertNewWhatsAppMessage } = require('./pgsql');
+const { getPhoneNumbersWithStatus, saveGroupsToList, getWhatsappQueue, registerWhatsappAddAttempt, registerWhatsappAddFulfilled, getMemberPhoneNumbers, getMemberName, getLastMessageTimestamp, insertNewWhatsAppMessages } = require('./pgsql');
 const { addPhoneNumberToGroup } = require('./re-add');
 const { recordUserEntryToGroup, recordUserExitFromGroup, getPreviousGroupMembers } = require('./pgsql');
 const { createObjectCsvWriter } = require('csv-writer');
@@ -246,13 +246,12 @@ client.on('ready', async () => {
                 let new_messages = messages.filter(message => message.timestamp > last_message_timestamp_in_db);
                 
                 console.log("Processing: ", new_messages.length, " new messages");
+                const batch = [];
                 for (const message of new_messages) {
+                    const contact = await message.getContact();
+                    const resp = checkPhoneNumber(phoneNumbersFromDB, contact.number);
 
-                    contact = await message.getContact();
-
-                    resp = checkPhoneNumber(phoneNumbersFromDB, contact.number);
-                    
-                    if (resp.mb === false) {
+                    if (!resp.mb) {
                         console.log("Registration ID not found for phone number: ", contact.number, " skipping message.");
                         continue;
                     }
@@ -264,9 +263,9 @@ client.on('ready', async () => {
                     const message_type = message.type;
                     const device_type = message.deviceType;
 
-                    insertNewWhatsAppMessage(message_id, group_id, resp.mb, datetime, phone, message_type, device_type);
+                    batch.push([message_id, group_id, resp.mb, datetime, phone, message_type, device_type]);
                 }
-
+                await insertNewWhatsAppMessages(batch);
                 console.log("All messages processed successfully for group: ", groupName);
                 
             } catch (error) {
