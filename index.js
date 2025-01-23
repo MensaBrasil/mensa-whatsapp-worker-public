@@ -239,13 +239,29 @@ client.on('ready', async () => {
                 await groupChat.syncHistory()
                 console.log("History synced for group: ", groupName);
                 console.log("Fetching messages for group: ", groupName);
-                let messages = await groupChat.fetchMessages({limit: 'Infinity'});
-                messages.reverse();
+                let allMessages = [];
+                const batchSize = 100;
+                let lastMessageId = null;
+                let hasMoreMessages = true;
 
-                console.log("Total messages count: ", messages.length);
+                while (hasMoreMessages) {
+                    const options = { limit: batchSize };
+                    if (lastMessageId) {
+                        options.before = lastMessageId;
+                    }
+                    const messages = await groupChat.fetchMessages(options);
+                    if (messages.length > 0) {
+                        allMessages = messages.concat(allMessages);
+                        lastMessageId = messages[0].id._serialized;
+                    }
+                    hasMoreMessages = messages.length === batchSize;
+                }
+                allMessages.reverse();
+
+                console.log("Total messages count: ", allMessages.length);
 
                 let last_message_timestamp_in_db = await getLastMessageTimestamp(groupId);
-                let new_messages = messages.filter(message => message.timestamp > last_message_timestamp_in_db);
+                let new_messages = allMessages.filter(message => message.timestamp > last_message_timestamp_in_db);
                 
                 console.log("Processing: ", new_messages.length, " new messages");
                 let batch = [];
