@@ -246,12 +246,10 @@ client.on('ready', async () => {
                 let new_messages = messages.filter(message => message.timestamp > last_message_timestamp_in_db);
                 
                 console.log("Processing: ", new_messages.length, " new messages");
-                const batch = [];
+                let batch = [];
                 for (const message of new_messages) {
                     const contact = await message.getContact();
                     const resp = checkPhoneNumber(phoneNumbersFromDB, contact.number);
-
-                    resp = checkPhoneNumber(phoneNumbersFromDB, contact.number);
                     
                     if (resp === false) {
                         console.log("Registration ID not found for phone number: ", contact.number, " skipping message.");
