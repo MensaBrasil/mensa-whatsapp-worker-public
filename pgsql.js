@@ -198,12 +198,6 @@ async function getLastMessageTimestamp(groupId) {
     return result.rows[0]?.unix_timestamp || 0;
 }
 
-async function getMemberIdByPhone(phone) {
-    const query = `SELECT registration_id FROM phones WHERE RIGHT(REGEXP_REPLACE(phone_number, '[^0-9]', '', 'g'), 8) = $1`;
-    const result = await pool.query(query, [phone.slice(-8)]);
-    return result.rows[0]?.registration_id || null;
-}
-
 async function insertNewWhatsAppMessage(
     message_id,
     group_id,

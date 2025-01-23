@@ -247,14 +247,14 @@ client.on('ready', async () => {
                 console.log("Processing: ", new_messages.length, " new messages");
                 for (const message of new_messages) {
 
-                    const registration_id = await getMemberIdByPhone(contact.number);
+                    contact = await message.getContact();
+
+                    resp = checkPhoneNumber(phoneNumbersFromDB, contact.number);
                     
-                    if (registration_id === null) {
+                    if (resp.mb === false) {
                         console.log("Registration ID not found for phone number: ", contact.number, " skipping message.");
                         continue;
                     }
-
-                    contact = await message.getContact();
 
                     const message_id = message.id.id;
                     const group_id = groupId;
@@ -263,8 +263,9 @@ client.on('ready', async () => {
                     const message_type = message.type;
                     const device_type = message.deviceType;
 
-                    insertNewWhatsAppMessage(message_id, group_id, registration_id, timestamp, phone, message_type, device_type);
+                    insertNewWhatsAppMessage(message_id, group_id, resp.mb, timestamp, phone, message_type, device_type);
                 }
+
                 console.log("All messages processed successfully for group: ", groupName);
                 
             } catch (error) {
