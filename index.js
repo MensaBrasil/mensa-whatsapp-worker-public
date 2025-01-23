@@ -6,7 +6,7 @@ const checkPhoneNumber = require('./phone-check');
 const { isMessageAlreadySent, saveMessageToMongoDB } = require('./mongo');
 const { getInactiveMessage, getNotFoundMessage } = require('./messages');
 const dfd = require("danfojs-node");
-const { getPhoneNumbersWithStatus, saveGroupsToList, getWhatsappQueue, registerWhatsappAddAttempt, registerWhatsappAddFulfilled, getMemberPhoneNumbers, getMemberName } = require('./pgsql');
+const { getPhoneNumbersWithStatus, saveGroupsToList, getWhatsappQueue, registerWhatsappAddAttempt, registerWhatsappAddFulfilled, getMemberPhoneNumbers, getMemberName, getLastMessageTimestamp, getMemberIdByPhone, insertNewWhatsAppMessage } = require('./pgsql');
 const { addPhoneNumberToGroup } = require('./re-add');
 const { recordUserEntryToGroup, recordUserExitFromGroup, getPreviousGroupMembers } = require('./pgsql');
 const { createObjectCsvWriter } = require('csv-writer');
@@ -230,6 +230,46 @@ client.on('ready', async () => {
             console.log(`Processing group: ${groupName}`);
             const groupId = await getGroupIdByName(client, groupName);
             const previousMembers = await getPreviousGroupMembers(groupId);
+
+            // Save messages data for all groups to the database.
+
+            try {
+                console.log("Saving messages for group: ", groupName, " with id: ", groupId);
+                groupChat = await client.getChatById(groupId);
+                let messages = await groupChat.fetchMessages({limit: 'Infinity'});
+                messages.reverse();
+
+                console.log("Total messages count: ", messages.length);
+
+                let last_message_timestamp_in_db = await getLastMessageTimestamp(groupId);
+                let new_messages = messages.filter(message => message.timestamp > last_message_timestamp_in_db);
+                
+                console.log("Processing: ", new_messages.length, " new messages");
+                for (const message of new_messages) {
+
+                    const registration_id = await getMemberIdByPhone(contact.number);
+                    
+                    if (registration_id === null) {
+                        console.log("Registration ID not found for phone number: ", contact.number, " skipping message.");
+                        continue;
+                    }
+
+                    contact = await message.getContact();
+
+                    const message_id = message.id.id;
+                    const group_id = groupId;
+                    const timestamp = message.timestamp;
+                    const phone = contact.number;
+                    const message_type = message.type;
+                    const device_type = message.deviceType;
+
+                    insertNewWhatsAppMessage(message_id, group_id, registration_id, timestamp, phone, message_type, device_type);
+                }
+                console.log("All messages processed successfully for group: ", groupName);
+                
+            } catch (error) {
+                console.error(`Error saving messages for ${groupName}: `, error);
+            }
 
             try {
                 const participants = await getGroupParticipants(client, groupId);

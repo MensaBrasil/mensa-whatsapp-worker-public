@@ -184,6 +184,38 @@ async function getMemberPhoneNumbers(registration_id) {
     return result.rows.map(row => row.phone);
 }
 
+async function getLastMessageTimestamp(groupId) {
+    const query = `select
+                        extract(EPOCH
+                    from
+                        MAX(timestamp))::INT as unix_timestamp
+                    from
+                        whatsapp_messages
+                    where
+                        group_id = $1`;
+
+    const result = await pool.query(query, [groupId]);
+    return result.rows[0]?.unix_timestamp || 0;
+}
+
+async function getMemberIdByPhone(phone) {
+    const query = `SELECT registration_id FROM phones WHERE RIGHT(REGEXP_REPLACE(phone_number, '[^0-9]', '', 'g'), 8) = $1`;
+    const result = await pool.query(query, [phone.slice(-8)]);
+    return result.rows[0]?.registration_id || null;
+}
+
+async function insertNewWhatsAppMessage(
+    message_id,
+    group_id,
+    registration_id,
+    timestamp,
+    phone,
+    message_type,
+    device_type
+){
+
+}
+
 module.exports = { 
     getPhoneNumbersWithStatus, 
     recordUserExitFromGroup, 
@@ -196,5 +228,8 @@ module.exports = {
     registerWhatsappAddFulfilled,
     getLastCommunication,  
     logCommunication,
-    getMemberName
+    getMemberName,
+    getLastMessageTimestamp,
+    getMemberIdByPhone,
+    insertNewWhatsAppMessage
 };
