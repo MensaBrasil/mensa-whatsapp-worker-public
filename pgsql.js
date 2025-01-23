@@ -212,7 +212,6 @@ async function insertNewWhatsAppMessages(messages) {
         device_type
     )
     VALUES ${messages.map((_, index) => `($${index * 7 + 1}, $${index * 7 + 2}, $${index * 7 + 3}, $${index * 7 + 4}, $${index * 7 + 5}, $${index * 7 + 6}, $${index * 7 + 7})`).join(", ")}
-    ON CONFLICT (message_id) DO NOTHING
     `;
 
     const values = messages.flat();
