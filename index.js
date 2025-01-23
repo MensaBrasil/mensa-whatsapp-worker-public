@@ -108,8 +108,7 @@ const client = new Client({
     puppeteer: {
         headless: true,
         args: ["--no-sandbox", '--disable-setuid-sandbox', "--disable-gpu"],
-    },
-    webVersionCache: { type: 'remote', remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.3000.1019450141-alpha.html' }
+    }
 });
 
 client.on('qr', qr => {
