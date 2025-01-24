@@ -260,9 +260,9 @@ client.on('ready', async () => {
 
                 while (reachedTimestamp === false) {
                     try {
-                        const options = { limit: currentBatchSize };
+                        let options = { limit: currentBatchSize };
                         console.log("Fetching up to: ", options.limit, " messages...");
-                        const messages = await Promise.race([
+                        let messages = await Promise.race([
                             groupChat.fetchMessages(options),
                             timeoutPromise(40000) // 40-second timeout
                         ]);
