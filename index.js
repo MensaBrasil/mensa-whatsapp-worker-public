@@ -233,6 +233,11 @@ client.on('ready', async () => {
 
             // Save messages data for all groups to the database.
 
+            async function convertTimestampToDate(timestamp) {
+                let date = new Date(timestamp * 1000);
+                return date;
+            }
+
             try {
                 groupChat = await client.getChatById(groupId);
                 console.log("Syncing history for group: ", groupName);
@@ -249,21 +254,10 @@ client.on('ready', async () => {
                 new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms));
 
                 let lastMessageTimestampInDb = await getLastMessageTimestamp(groupId);
-                let timeLimitTimestamp = Date.now() - (3 * 30 * 24 * 60 * 60 * 1000); // 3 months ago
+                let timeLimitTimestamp = Math.floor(new Date().getTime()/1000.0) - (90 * 24 * 60 * 60); // 3 months ago
 
-                const formattedDate = new Date(timeLimitTimestamp);
-                const d = formattedDate.getDate();
-                const m = formattedDate.getMonth() + 1;
-                const y = formattedDate.getFullYear();
-                console.log(`Time limit date: ${d}/${m}/${y}`);
-                console.log(`Time limit timestamp: ${timeLimitTimestamp}`);
-
-                const lastMsgDate = new Date(lastMessageTimestampInDb * 1000);
-                const dayDb = lastMsgDate.getDate();
-                const monthDb = lastMsgDate.getMonth() + 1;
-                const yearDb = lastMsgDate.getFullYear();
-                console.log(`Timestamp in DB date: ${dayDb}/${monthDb}/${yearDb}`);
-                console.log(`Timestamp in DB: ${lastMessageTimestampInDb}`);
+                console.log("Last message date in db: ", await convertTimestampToDate(lastMessageTimestampInDb), " - timestamp: ", lastMessageTimestampInDb);
+                console.log("Time limit date: ", await convertTimestampToDate(timeLimitTimestamp), " - timestamp: ", timeLimitTimestamp);
 
                 while (reachedTimestamp === false) {
                     try {
@@ -276,12 +270,7 @@ client.on('ready', async () => {
                         console.log("Fetched: ", messages.length, " messages");
                         req_count += 1;
 
-                        const oldestMessageDate = new Date(messages[0].timestamp * 1000);
-                        const day = oldestMessageDate.getDate();
-                        const month = oldestMessageDate.getMonth() + 1;
-                        const year = oldestMessageDate.getFullYear();
-                        console.log(`Oldest message date in current batch: ${day}/${month}/${year}`);
-                        console.log(`Oldest message timestamp in current batch: ${messages[0].timestamp}`);
+                        console.log("Oldest message date: ", await convertTimestampToDate(messages[0].timestamp), " - timestamp: ", messages[0].timestamp);
 
                         if (req_count > 1){
                             if (messages.length > batchSize){
