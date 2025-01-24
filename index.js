@@ -249,7 +249,19 @@ client.on('ready', async () => {
                 new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms));
 
                 let lastMessageTimestampInDb = await getLastMessageTimestamp(groupId);
-                let timeLimitTimestamp = Date.now() - 3 * 30 * 24 * 60 * 60 * 1000; // 3 months ago
+                let timeLimitTimestamp = Date.now() - (3 * 30 * 24 * 60 * 60 * 1000); // 3 months ago
+
+                const formattedDate = new Date(timeLimitTimestamp);
+                const d = formattedDate.getDate();
+                const m = formattedDate.getMonth() + 1;
+                const y = formattedDate.getFullYear();
+                console.log(`Time limit date: ${d}/${m}/${y}`);
+
+                const lastMsgDate = new Date(lastMessageTimestampInDb * 1000);
+                const dayDb = lastMsgDate.getDate();
+                const monthDb = lastMsgDate.getMonth() + 1;
+                const yearDb = lastMsgDate.getFullYear();
+                console.log(`Last message timestamp in DB: ${dayDb}/${monthDb}/${yearDb}`);
 
                 while (reachedTimestamp === false) {
                     try {
@@ -261,6 +273,12 @@ client.on('ready', async () => {
                         ]);
                         console.log("Fetched: ", messages.length, " messages");
                         req_count += 1;
+
+                        const oldestMessageDate = new Date(messages[0].timestamp * 1000);
+                        const day = oldestMessageDate.getDate();
+                        const month = oldestMessageDate.getMonth() + 1;
+                        const year = oldestMessageDate.getFullYear();
+                        console.log(`Oldest message in current batch: ${day}/${month}/${year}`);
 
                         if (req_count > 1){
                             if (messages.length > batchSize){
