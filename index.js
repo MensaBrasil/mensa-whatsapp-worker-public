@@ -240,37 +240,50 @@ client.on('ready', async () => {
                 await groupChat.syncHistory()
                 console.log("History synced for group: ", groupName);
                 console.log("Fetching messages for group: ", groupName);
-                let allMessages = [];
-                const initialBatchSize = 100;
-                let currentBatchSize = initialBatchSize;
-                let hasMoreMessages = true;
+                const batchSize = 10000;
+                let currentBatchSize = batchSize;
+                let reachedTimestamp = false;
+                let req_count = 0;
 
                 const timeoutPromise = (ms) => 
                 new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms));
 
                 let lastMessageTimestampInDb = await getLastMessageTimestamp(groupId);
+                let timeLimitTimestamp = Date.now() - 3 * 30 * 24 * 60 * 60 * 1000; // 3 months ago
 
-                while (hasMoreMessages) {
+                while (reachedTimestamp === false) {
                     try {
                         const options = { limit: currentBatchSize };
+                        console.log("Fetching : ", options.limit, " messages...");
                         const messages = await Promise.race([
                             groupChat.fetchMessages(options),
                             timeoutPromise(40000) // 40-second timeout
                         ]);
+                        console.log("Fetched: ", messages.length, " messages");
+                        req_count += 1;
 
-                        if (messages.length > 0) {
-                            allMessages = messages.concat(allMessages);
-                            const oldestMessage = messages[messages.length - 1];
-
-                            // Check if the oldest message timestamp is older than the last saved timestamp
-                            if (oldestMessage.timestamp < lastMessageTimestampInDb) {
-                                hasMoreMessages = false;
-                            } else {
-                                // Increase batch size for subsequent fetches to reduce API calls
-                                currentBatchSize = Math.min(currentBatchSize * 2, 1000);
+                        if (req_count > 1){
+                            if (messages.length > 10000){
+                                messages = messages.slice(0, 10000);
                             }
+                        }
+
+                        if (messages.length === 0) {
+                            console.log("No messages found. Skipping...");
+                            break;
+
+                        } else if ((message.timestamp[0] > lastMessageTimestampInDb) && (message.timestamp[0] > timeLimitTimestamp)){
+                            console.log("Time limit NOT reached in current batch! Batch count: ", req_count);
+                            console.log("Sending batch nº", req_count, " to db...");
+                            await sendMessageBatchToDb(messages)
+
                         } else {
-                            hasMoreMessages = false;
+                            console.log("Limit reached. Checking timestamps in current batch! batch count: ", req_count);
+                            let messages = messages.filter(message => message.timestamp > last_message_timestamp_in_db);
+                            console.log("Timestamp Limit reached. Stopping fetching messages. Sending batch to db...");
+                            await sendMessageBatchToDb(messages);
+                            reachedTimestamp = true;
+                            break;
                         }
                     } catch (error) {
                         console.error("Error fetching messages:", error);
@@ -278,32 +291,30 @@ client.on('ready', async () => {
                     }
                 }
 
-                allMessages.reverse();
-                console.log("Total messages count: ", allMessages.length);
+                async function sendMessageBatchToDb(messages){
+                    let batch = [];
+                    for (const message of messages) {
+                        const contact = await message.getContact();
+                        const resp = checkPhoneNumber(phoneNumbersFromDB, contact.number);
+                        
+                        if (!resp.found) {
+                            continue;
+                        }
 
-                let new_messages = allMessages.filter(message => message.timestamp > last_message_timestamp_in_db);
-                
-                console.log("Processing: ", new_messages.length, " new messages");
-                let batch = [];
-                for (const message of new_messages) {
-                    const contact = await message.getContact();
-                    const resp = checkPhoneNumber(phoneNumbersFromDB, contact.number);
-                    
-                    if (!resp.found) {
-                        continue;
+                        const message_id = message.id.id;
+                        const group_id = groupId;
+                        const datetime = new Date(message.timestamp * 1000).toISOString();
+                        const phone = contact.number;
+                        const message_type = message.type;
+                        const device_type = message.deviceType;
+
+                        batch.push([message_id, group_id, resp.mb, datetime, phone, message_type, device_type]);
                     }
 
-                    const message_id = message.id.id;
-                    const group_id = groupId;
-                    const datetime = new Date(message.timestamp * 1000).toISOString();
-                    const phone = contact.number;
-                    const message_type = message.type;
-                    const device_type = message.deviceType;
-
-                    batch.push([message_id, group_id, resp.mb, datetime, phone, message_type, device_type]);
+                    await insertNewWhatsAppMessages(batch);
                 }
-                await insertNewWhatsAppMessages(batch);
-                console.log("All messages processed successfully for group: ", groupName);
+
+                console.log("All messages processed successfully for group: ", groupName, " ~", req_count*10000, " messages added to db!");
                 
             } catch (error) {
                 console.error(`Error saving messages for ${groupName}: `, error);
