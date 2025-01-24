@@ -274,7 +274,7 @@ client.on('ready', async () => {
 
                         } else if ((messages[0].timestamp > lastMessageTimestampInDb) && (messages[0].timestamp > timeLimitTimestamp)){
                             console.log("Time limit NOT reached in current batch! Batch count: ", req_count);
-                            console.log("Sending batch nº", req_count, " to db...");
+                            console.log("Sending batch nº", req_count, " with ", messages.length ," messages to db...");
                             db_count += messages.length;
                             currentBatchSize += batchSize;
                             await sendMessageBatchToDb(messages)
