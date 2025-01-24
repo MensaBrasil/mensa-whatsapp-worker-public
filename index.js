@@ -281,6 +281,7 @@ client.on('ready', async () => {
                             console.log("Last batch reached! Batch count: ", req_count);
                             let difference = currentBatchSize - messages.length;
                             messages = messages.slice(0, difference);
+                            console.log(messages.length, " remaining messages!");
                             reachedTimestamp = true;
                         }
 
