@@ -266,8 +266,8 @@ client.on('ready', async () => {
 
                         if (
                             groupName.includes("M.JB") &&
-                            jb_over_10 &&
-                            !jb_under_10 &&
+                            checkResult.jb_over_10 &&
+                            !checkResult.jb_under_10 &&
                             (removeOnlyMode || addAndRemoveMode)
                         ) {
                             console.log(`Removing ${member} (JB >=10) from M.JB group.`);
@@ -284,8 +284,8 @@ client.on('ready', async () => {
                         if (
                             groupName.includes("JB") &&
                             !groupName.includes("M.JB") &&
-                            jb_under_10 &&
-                            !jb_over_10 &&
+                            checkResult.jb_under_10 &&
+                            !checkResult.jb_over_10 &&
                             (removeOnlyMode || addAndRemoveMode)
                         ) {
                             console.log(`Removing ${member} (JB <10) from JB group.`);
