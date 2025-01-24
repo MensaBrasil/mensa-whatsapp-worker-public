@@ -15,70 +15,66 @@ const getPhoneNumbersWithStatus = async () => {
   const currentDate = new Date().toISOString().split('T')[0];
   const query = `
   WITH MaxExpirationDates AS (
-      SELECT
-          registration_id,
-          MAX(expiration_date) AS max_expiration_date
-      FROM membership_payments
-      GROUP BY registration_id
-  ),
-  
-  PhoneNumbers AS (
-      SELECT 
-          p.phone_number AS phone_number,
-          p.registration_id AS registration_id,
-          CASE
-              WHEN med.max_expiration_date > $1 THEN 'Active'
-              WHEN r.transferred IS TRUE THEN 'Active'
-              ELSE 'Inactive'
-          END AS status,
-          CASE
-              WHEN DATE_PART('year', AGE(r.birth_date)) < 10 THEN TRUE
-              ELSE FALSE
-          END AS jb_under_10,
-          CASE
-              WHEN DATE_PART('year', AGE(r.birth_date)) >= 10 
-                   AND DATE_PART('year', AGE(r.birth_date)) < 18 THEN TRUE
-              ELSE FALSE
-          END AS jb_over_10
-      FROM phones p 
-      LEFT JOIN MaxExpirationDates med ON p.registration_id = med.registration_id
-      LEFT JOIN registration r ON p.registration_id = r.registration_id
-  
-      UNION ALL
-  
-      SELECT 
-          lr.phone AS phone_number,
-          lr.registration_id,
-          CASE
-              WHEN med.max_expiration_date > $1 THEN 'Active'
-              WHEN reg.transferred IS TRUE THEN 'Active'
-              ELSE 'Inactive'
-          END AS status,
-          CASE
-              WHEN DATE_PART('year', AGE(reg.birth_date)) < 10 THEN TRUE
-              ELSE FALSE
-          END AS jb_under_10,
-          CASE
-              WHEN DATE_PART('year', AGE(reg.birth_date)) >= 10 
-                   AND DATE_PART('year', AGE(reg.birth_date)) < 18 THEN TRUE
-              ELSE FALSE
-          END as jb_over_10
-      FROM legal_representatives lr
-      LEFT JOIN MaxExpirationDates med ON lr.registration_id = med.registration_id
-      LEFT JOIN registration reg ON lr.registration_id = reg.registration_id
-  )
-  
-  SELECT 
-      phone_number,
-      /* Combine statuses: If ANY membership is 'Active', mark phone as 'Active' */
-      CASE WHEN BOOL_OR(status = 'Active') THEN 'Active' ELSE 'Inactive' END AS status,
-      /* Combine jb_under_10 and jb_over_10 flags across memberships */
-      BOOL_OR(jb_under_10) AS jb_under_10,
-      BOOL_OR(jb_over_10)  AS jb_over_10
-  FROM PhoneNumbers
-  WHERE phone_number IS NOT NULL
-  GROUP BY phone_number;
-  `;
+    SELECT
+        registration_id,
+        MAX(expiration_date) AS max_expiration_date
+    FROM membership_payments
+    GROUP BY registration_id
+),
+PhoneNumbers AS (
+    SELECT 
+        p.phone_number AS phone_number,
+        p.registration_id AS registration_id,
+        CASE
+            WHEN med.max_expiration_date > current_date THEN 'Active'
+            WHEN r.transferred IS TRUE THEN 'Active'
+            ELSE 'Inactive'
+        END AS status,
+        CASE
+            WHEN DATE_PART('year', AGE(r.birth_date)) < 10 THEN TRUE
+            ELSE FALSE
+        END AS jb_under_10,
+        CASE
+            WHEN DATE_PART('year', AGE(r.birth_date)) >= 10 
+                 AND DATE_PART('year', AGE(r.birth_date)) < 18 THEN TRUE
+            ELSE FALSE
+        END AS jb_over_10
+    FROM phones p 
+    LEFT JOIN MaxExpirationDates med ON p.registration_id = med.registration_id
+    LEFT JOIN registration r ON p.registration_id = r.registration_id
+
+    UNION ALL
+
+    SELECT 
+        lr.phone AS phone_number,
+        lr.registration_id,
+        CASE
+            WHEN med.max_expiration_date > current_date THEN 'Active'
+            WHEN reg.transferred IS TRUE THEN 'Active'
+            ELSE 'Inactive'
+        END AS status,
+        CASE
+            WHEN DATE_PART('year', AGE(reg.birth_date)) < 10 THEN TRUE
+            ELSE FALSE
+        END AS jb_under_10,
+        CASE
+            WHEN DATE_PART('year', AGE(reg.birth_date)) >= 10 
+                 AND DATE_PART('year', AGE(reg.birth_date)) < 18 THEN TRUE
+            ELSE FALSE
+        END as jb_over_10
+    FROM legal_representatives lr
+    LEFT JOIN MaxExpirationDates med ON lr.registration_id = med.registration_id
+    LEFT JOIN registration reg ON lr.registration_id = reg.registration_id
+)
+SELECT 
+    phone_number,
+    CASE WHEN BOOL_OR(status = 'Active') THEN 'Active' ELSE 'Inactive' END AS status,
+    BOOL_OR(jb_under_10) AS jb_under_10,
+    BOOL_OR(jb_over_10)  AS jb_over_10
+FROM PhoneNumbers
+WHERE phone_number IS NOT NULL
+GROUP BY phone_number;
+`;
 
   const { rows } = await pool.query(query);
   return rows;
