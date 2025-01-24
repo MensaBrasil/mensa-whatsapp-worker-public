@@ -13,7 +13,7 @@ function checkPhoneNumber(phoneNumbersFromDB, inputPhoneNumber) {
             // Remove leading zeros before adding the Brazilian country code
             phoneNumber = '55' + phoneNumber.replace(/\D/g, '').replace(/^0+/, '');
         }
-        
+
 
         // Check matches for Brazilian numbers (with/without the ninth digit)
         if (phoneNumber.startsWith('55')) {
@@ -24,20 +24,31 @@ function checkPhoneNumber(phoneNumbersFromDB, inputPhoneNumber) {
                 matchedEntries.push(entry);
             }
         } else if (phoneNumber === inputPhoneNumber) {
-            matchedEntries.push(entry);
+                matchedEntries.push(entry);
+            }
         }
-    }
 
     // Decide based on collected matched entries
     if (matchedEntries.length > 0) {
-        let isJovemBrilhante = true;
+        let hasJbUnder10 = false;
+        let hasJbOver10 = false;
+
         for (const entry of matchedEntries) {
-            if (!entry.jovem_brilhante) {
-                isJovemBrilhante = false;
-                break;
+            if (entry.jb_under_10) {
+                hasJbUnder10 = true;
+            }
+            if (entry.jb_over_10) {
+                hasJbOver10 = true;
             }
         }
-        return {found: true, status: matchedEntries[0].status, mb: matchedEntries[0].registration_id, jovem_brilhante: isJovemBrilhante};
+
+        return {
+            found: true,
+            status: matchedEntries[0].status,
+            mb: matchedEntries[0].registration_id,
+            jb_under_10: hasJbUnder10,
+            jb_over_10: hasJbOver10,
+        };
     }
 
     return {found: false};
