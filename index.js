@@ -263,8 +263,8 @@ client.on('ready', async () => {
                         req_count += 1;
 
                         if (req_count > 1){
-                            if (messages.length > 10000){
-                                messages = messages.slice(0, 10000);
+                            if (messages.length > batchSize){
+                                messages = messages.slice(0, batchSize);
                             }
                         }
 
@@ -314,7 +314,7 @@ client.on('ready', async () => {
                     await insertNewWhatsAppMessages(batch);
                 }
 
-                console.log("All messages processed successfully for group: ", groupName, " ~", req_count*10000, " messages added to db!");
+                console.log("All messages processed successfully for group: ", groupName, " ~", req_count*batchSize, " messages added to db!");
                 
             } catch (error) {
                 console.error(`Error saving messages for ${groupName}: `, error);
