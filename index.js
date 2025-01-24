@@ -281,7 +281,7 @@ client.on('ready', async () => {
                         if (req_count > 1){
                             if (currentBatchSize > messages.length){
                                 console.log("Last batch reached! Batch count: ", req_count);
-                                let difference = (message.lenght - ((req_count-1) * batchSize));
+                                let difference = (messages.lenght - ((req_count-1) * batchSize));
                                 console.log(difference, " remaining messages!");
                                 messages = messages.slice(0, difference);
                                 db_count += await sendMessageBatchToDb(messages);
