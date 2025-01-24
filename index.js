@@ -256,12 +256,14 @@ client.on('ready', async () => {
                 const m = formattedDate.getMonth() + 1;
                 const y = formattedDate.getFullYear();
                 console.log(`Time limit date: ${d}/${m}/${y}`);
+                console.log(`Time limit timestamp: ${timeLimitTimestamp}`);
 
                 const lastMsgDate = new Date(lastMessageTimestampInDb * 1000);
                 const dayDb = lastMsgDate.getDate();
                 const monthDb = lastMsgDate.getMonth() + 1;
                 const yearDb = lastMsgDate.getFullYear();
-                console.log(`Last message timestamp in DB: ${dayDb}/${monthDb}/${yearDb}`);
+                console.log(`Timestamp in DB date: ${dayDb}/${monthDb}/${yearDb}`);
+                console.log(`Timestamp in DB: ${lastMessageTimestampInDb}`);
 
                 while (reachedTimestamp === false) {
                     try {
@@ -278,7 +280,8 @@ client.on('ready', async () => {
                         const day = oldestMessageDate.getDate();
                         const month = oldestMessageDate.getMonth() + 1;
                         const year = oldestMessageDate.getFullYear();
-                        console.log(`Oldest message in current batch: ${day}/${month}/${year}`);
+                        console.log(`Oldest message date in current batch: ${day}/${month}/${year}`);
+                        console.log(`Oldest message timestamp in current batch: ${messages[0].timestamp}`);
 
                         if (req_count > 1){
                             if (messages.length > batchSize){
