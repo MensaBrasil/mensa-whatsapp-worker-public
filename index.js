@@ -216,11 +216,12 @@ client.on('ready', async () => {
         }
 
         for (const groupName of groupNames) {
-            const phoneNumbersFromDB = await getPhoneNumbersWithStatus();
+            const phoneNumbersFromDB = preprocessPhoneNumbers(await getPhoneNumbersWithStatus());
             if (phoneNumbersFromDB.length === 0) {
                 console.log('No phone numbers found in the database. Exiting.');
                 process.exit(0);
             }
+            
             const checkResult = checkPhoneNumber(phoneNumbersFromDB, '447474660572');
             if (!checkResult.found) {
                 console.log('Number 447474660572 not found in the database. Sanity check failed. Exiting.');
