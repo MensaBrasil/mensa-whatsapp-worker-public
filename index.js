@@ -264,7 +264,7 @@ client.on('ready', async () => {
                         console.log("Fetching up to: ", options.limit, " messages...");
                         let messages = await Promise.race([
                             groupChat.fetchMessages(options),
-                            timeoutPromise(120000) // 40-second timeout
+                            timeoutPromise(240000)
                         ]);
                         console.log("Fetched: ", messages.length, " messages");
                         req_count += 1;
