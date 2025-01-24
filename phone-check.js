@@ -1,5 +1,5 @@
 function preprocessPhoneNumbers(phoneNumbersFromDB) {
-    const phoneNumberMap = {};
+    const phoneNumberMap = new Map();
 
     for (const entry of phoneNumbersFromDB) {
         let phoneNumber = entry.phone_number;
@@ -17,18 +17,22 @@ function preprocessPhoneNumbers(phoneNumbersFromDB) {
             const numberWithoutNinthDigit = phoneNumber.slice(0, 4) + phoneNumber.slice(5);
             const numberWithNinthDigit = phoneNumber.slice(0, 4) + '9' + phoneNumber.slice(4);
 
-            phoneNumberMap[phoneNumber] = phoneNumberMap[phoneNumber] || [];
-            phoneNumberMap[phoneNumber].push(entry);
+            const addToMap = (num) => {
+                if (!phoneNumberMap.has(num)) {
+                    phoneNumberMap.set(num, []);
+                }
+                phoneNumberMap.get(num).push(entry);
+            };
 
-            phoneNumberMap[numberWithoutNinthDigit] = phoneNumberMap[numberWithoutNinthDigit] || [];
-            phoneNumberMap[numberWithoutNinthDigit].push(entry);
-
-            phoneNumberMap[numberWithNinthDigit] = phoneNumberMap[numberWithNinthDigit] || [];
-            phoneNumberMap[numberWithNinthDigit].push(entry);
+            addToMap(phoneNumber);
+            addToMap(numberWithoutNinthDigit);
+            addToMap(numberWithNinthDigit);
         } else {
             // Add as-is for non-Brazilian numbers
-            phoneNumberMap[phoneNumber] = phoneNumberMap[phoneNumber] || [];
-            phoneNumberMap[phoneNumber].push(entry);
+            if (!phoneNumberMap.has(phoneNumber)) {
+                phoneNumberMap.set(phoneNumber, []);
+            }
+            phoneNumberMap.get(phoneNumber).push(entry);
         }
     }
 
@@ -36,7 +40,7 @@ function preprocessPhoneNumbers(phoneNumbersFromDB) {
 }
 
 function checkPhoneNumber(phoneNumberMap, inputPhoneNumber) {
-    const matchedEntries = phoneNumberMap[inputPhoneNumber] || [];
+    const matchedEntries = phoneNumberMap.get(inputPhoneNumber) || [];
 
     // Decide based on collected matched entries
     if (matchedEntries.length > 0) {
