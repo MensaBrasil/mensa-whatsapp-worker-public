@@ -241,27 +241,46 @@ client.on('ready', async () => {
                 console.log("History synced for group: ", groupName);
                 console.log("Fetching messages for group: ", groupName);
                 let allMessages = [];
-                const batchSize = 100;
-                let lastMessageId = null;
+                const initialBatchSize = 100;
+                let currentBatchSize = initialBatchSize;
                 let hasMoreMessages = true;
 
-                while (hasMoreMessages) {
-                    const options = { limit: batchSize };
-                    if (lastMessageId) {
-                        options.before = lastMessageId;
-                    }
-                    const messages = await groupChat.fetchMessages(options);
-                    if (messages.length > 0) {
-                        allMessages = messages.concat(allMessages);
-                        lastMessageId = messages[0].id._serialized;
-                    }
-                    hasMoreMessages = messages.length === batchSize;
-                }
-                allMessages.reverse();
+                const timeoutPromise = (ms) => 
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms));
 
+                let lastMessageTimestampInDb = await getLastMessageTimestamp(groupId);
+
+                while (hasMoreMessages) {
+                    try {
+                        const options = { limit: currentBatchSize };
+                        const messages = await Promise.race([
+                            groupChat.fetchMessages(options),
+                            timeoutPromise(40000) // 40-second timeout
+                        ]);
+
+                        if (messages.length > 0) {
+                            allMessages = messages.concat(allMessages);
+                            const oldestMessage = messages[messages.length - 1];
+
+                            // Check if the oldest message timestamp is older than the last saved timestamp
+                            if (oldestMessage.timestamp < lastMessageTimestampInDb) {
+                                hasMoreMessages = false;
+                            } else {
+                                // Increase batch size for subsequent fetches to reduce API calls
+                                currentBatchSize = Math.min(currentBatchSize * 2, 1000);
+                            }
+                        } else {
+                            hasMoreMessages = false;
+                        }
+                    } catch (error) {
+                        console.error("Error fetching messages:", error);
+                        break;
+                    }
+                }
+
+                allMessages.reverse();
                 console.log("Total messages count: ", allMessages.length);
 
-                let last_message_timestamp_in_db = await getLastMessageTimestamp(groupId);
                 let new_messages = allMessages.filter(message => message.timestamp > last_message_timestamp_in_db);
                 
                 console.log("Processing: ", new_messages.length, " new messages");
