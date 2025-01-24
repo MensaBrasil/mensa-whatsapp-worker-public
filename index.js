@@ -279,9 +279,9 @@ client.on('ready', async () => {
 
                         } else {
                             console.log("Limit reached. Checking timestamps in current batch! batch count: ", req_count);
-                            let messages = messages.filter(message => message.timestamp > last_message_timestamp_in_db);
+                            let filteredMessages = messages.filter(message => message.timestamp > lastMessageTimestampInDb);
                             console.log("Timestamp Limit reached. Stopping fetching messages. Sending batch to db...");
-                            await sendMessageBatchToDb(messages);
+                            await sendMessageBatchToDb(filteredMessages);
                             reachedTimestamp = true;
                             break;
                         }
