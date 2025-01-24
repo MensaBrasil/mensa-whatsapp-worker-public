@@ -264,7 +264,7 @@ client.on('ready', async () => {
                         console.log("Fetching up to: ", options.limit, " messages...");
                         let messages = await Promise.race([
                             groupChat.fetchMessages(options),
-                            timeoutPromise(40000) // 40-second timeout
+                            timeoutPromise(120000) // 40-second timeout
                         ]);
                         console.log("Fetched: ", messages.length, " messages");
                         req_count += 1;
@@ -317,29 +317,50 @@ client.on('ready', async () => {
                     }
                 }
 
-                async function sendMessageBatchToDb(messages){
-                    let batch = [];
-                    for (const message of messages) {
-                        const contact = await message.getContact();
-                        const resp = checkPhoneNumber(phoneNumbersFromDB, contact.number);
-                        
-                        if (!resp.found) {
-                            continue;
-                        }
-
-                        const message_id = message.id.id;
-                        const group_id = groupId;
-                        const datetime = new Date(message.timestamp * 1000).toISOString();
+                async function sendMessageBatchToDb(messages) {
+                    console.time("getContact Total Time");
+                    const contacts = await Promise.all(messages.map((message) => message.getContact()));
+                    console.timeEnd("getContact Total Time");
+                
+                    console.time("checkPhoneNumber Total Time");
+                    const checkCache = new Map();
+                    const batch = [];
+                
+                    for (let i = 0; i < messages.length; i++) {
+                        const message = messages[i];
+                        const contact = contacts[i];
                         const phone = contact.number;
-                        const message_type = message.type;
-                        const device_type = message.deviceType;
-
-                        batch.push([message_id, group_id, resp.mb, datetime, phone, message_type, device_type]);
+                
+                        let resp = checkCache.get(phone);
+                        if (!resp) {
+                            resp = checkPhoneNumber(phoneNumbersFromDB, phone);
+                            checkCache.set(phone, resp);
+                        }
+                
+                        if (resp.found) {
+                            const message_id = message.id.id;
+                            const group_id = groupId;
+                            const datetime = new Date(message.timestamp * 1000).toISOString();
+                
+                            batch.push([
+                                message_id,
+                                group_id,
+                                resp.mb,
+                                datetime,
+                                phone,
+                                message.type,
+                                message.deviceType,
+                            ]);
+                        }
                     }
-
+                    console.timeEnd("checkPhoneNumber Total Time");
+                
+                    console.time("DB Insert Time");
                     await insertNewWhatsAppMessages(batch);
-                    console.log(batch.length, " messages added to db!");
-                    return batch.length
+                    console.timeEnd("DB Insert Time");
+                
+                    console.log(`${batch.length} messages added to db!`);
+                    return batch.length;
                 }
 
                 console.log("All messages processed successfully for group: ", groupName, " ~", db_count, " messages added to db!");
