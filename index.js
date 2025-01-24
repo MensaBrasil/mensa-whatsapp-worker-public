@@ -284,6 +284,7 @@ client.on('ready', async () => {
                         if (
                             groupName.includes("JB") &&
                             !groupName.includes("M.JB") &&
+                            !groupName.includes("Resp") &&
                             checkResult.jb_under_10 &&
                             !checkResult.jb_over_10 &&
                             (removeOnlyMode || addAndRemoveMode)
