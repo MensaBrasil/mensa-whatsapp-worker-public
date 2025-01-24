@@ -271,7 +271,7 @@ client.on('ready', async () => {
                             console.log("No messages found. Skipping...");
                             break;
 
-                        } else if ((message.timestamp[0] > lastMessageTimestampInDb) && (message.timestamp[0] > timeLimitTimestamp)){
+                        } else if ((messages.timestamp[0] > lastMessageTimestampInDb) && (messages.timestamp[0] > timeLimitTimestamp)){
                             console.log("Time limit NOT reached in current batch! Batch count: ", req_count);
                             console.log("Sending batch nº", req_count, " to db...");
                             await sendMessageBatchToDb(messages)
