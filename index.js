@@ -269,20 +269,29 @@ client.on('ready', async () => {
                         console.log("Fetched: ", messages.length, " messages");
                         req_count += 1;
 
-                        console.log("Oldest message date: ", await convertTimestampToDate(messages[0].timestamp), " - timestamp: ", messages[0].timestamp);
+                        console.log("Oldest message from this batch date: ", await convertTimestampToDate(messages[0].timestamp), " - timestamp: ", messages[0].timestamp);
+
+                        if ((messages.length < batchSize) && (req_count == 1)){
+                            console.log("First batch reached maximum messages!");
+                            reachedTimestamp = true;
+                            db_count += await sendMessageBatchToDb(messages);
+                            break;
+                        }
 
                         if (req_count > 1){
-                            if (messages.length > batchSize){
-                                messages = messages.slice(0, batchSize);
+                            if (currentBatchSize > messages.length){
+                                console.log("Last batch reached! Batch count: ", req_count);
+                                let difference = (message.lenght - ((req_count-1) * batchSize));
+                                console.log(difference, " remaining messages!");
+                                messages = messages.slice(0, difference);
+                                db_count += await sendMessageBatchToDb(messages);
+                                break;
                             }
                         }
 
-                        if (messages.length < currentBatchSize){
-                            console.log("Last batch reached! Batch count: ", req_count);
-                            let difference = (currentBatchSize + messages.length) - currentBatchSize;
-                            messages = messages.slice(0, difference);
-                            console.log(messages.length, " remaining messages!");
-                            reachedTimestamp = true;
+                        if (messages.length == currentBatchSize) {
+                            console.log("Selecting first ", batchSize, " messages from batch nº", req_count);
+                            messages = messages.slice(0, batchSize);
                         }
 
                         if (messages.length === 0) {
@@ -291,16 +300,14 @@ client.on('ready', async () => {
                         } else if ((messages[0].timestamp > lastMessageTimestampInDb) && (messages[0].timestamp > timeLimitTimestamp)){
                             console.log("Time limit NOT reached in current batch! Batch count: ", req_count);
                             console.log("Sending batch nº", req_count, " with ", messages.length ," messages to db...");
-                            db_count += messages.length;
                             currentBatchSize += batchSize;
-                            await sendMessageBatchToDb(messages)
+                            db_count += await sendMessageBatchToDb(messages)
 
                         } else {
                             console.log("Timestamp limit reached. Checking timestamps in current batch! batch count: ", req_count);
                             let filteredMessages = messages.filter(message => message.timestamp > lastMessageTimestampInDb);
                             console.log(filteredMessages.length, " new messages found! Sending batch to db...");
-                            db_count += filteredMessages.length;
-                            await sendMessageBatchToDb(filteredMessages);
+                            db_count += await sendMessageBatchToDb(filteredMessages);
                             reachedTimestamp = true;
                             break;
                         }
@@ -332,6 +339,7 @@ client.on('ready', async () => {
 
                     await insertNewWhatsAppMessages(batch);
                     console.log(batch.length, " messages added to db!");
+                    return batch.length
                 }
 
                 console.log("All messages processed successfully for group: ", groupName, " ~", db_count, " messages added to db!");
