@@ -243,6 +243,7 @@ client.on('ready', async () => {
                 let currentBatchSize = batchSize;
                 let reachedTimestamp = false;
                 let req_count = 0;
+                let db_count = 0;
 
                 const timeoutPromise = (ms) => 
                 new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms));
@@ -253,7 +254,7 @@ client.on('ready', async () => {
                 while (reachedTimestamp === false) {
                     try {
                         const options = { limit: currentBatchSize };
-                        console.log("Fetching : ", options.limit, " messages...");
+                        console.log("Fetching up to: ", options.limit, " messages...");
                         const messages = await Promise.race([
                             groupChat.fetchMessages(options),
                             timeoutPromise(40000) // 40-second timeout
@@ -274,6 +275,7 @@ client.on('ready', async () => {
                         } else if ((messages[0].timestamp > lastMessageTimestampInDb) && (messages[0].timestamp > timeLimitTimestamp)){
                             console.log("Time limit NOT reached in current batch! Batch count: ", req_count);
                             console.log("Sending batch nº", req_count, " to db...");
+                            db_count += messages.length;
                             currentBatchSize += batchSize;
                             await sendMessageBatchToDb(messages)
 
@@ -281,6 +283,7 @@ client.on('ready', async () => {
                             console.log("Limit reached. Checking timestamps in current batch! batch count: ", req_count);
                             let filteredMessages = messages.filter(message => message.timestamp > lastMessageTimestampInDb);
                             console.log("Timestamp Limit reached. Stopping fetching messages. Sending batch to db...");
+                            db_count += filteredMessages.length;
                             await sendMessageBatchToDb(filteredMessages);
                             reachedTimestamp = true;
                             break;
@@ -312,9 +315,10 @@ client.on('ready', async () => {
                     }
 
                     await insertNewWhatsAppMessages(batch);
+                    console.log(batch.length, " messages added to db!");
                 }
 
-                console.log("All messages processed successfully for group: ", groupName, " ~", req_count*batchSize, " messages added to db!");
+                console.log("All messages processed successfully for group: ", groupName, " ~", db_count, " messages added to db!");
                 
             } catch (error) {
                 console.error(`Error saving messages for ${groupName}: `, error);
