@@ -320,9 +320,9 @@ client.on('ready', async () => {
                 async function sendMessageBatchToDb(messages) {
                     console.time("getContact Total Time");
                     const contacts = await Promise.all(messages.map((message) => message.getContact()));
+                    console.log(messages[0].author)
                     console.timeEnd("getContact Total Time");
-                    console.log(message);
-                    console.log(message.author);
+
                 
                     console.time("checkPhoneNumber Total Time");
                     const checkCache = new Map();
