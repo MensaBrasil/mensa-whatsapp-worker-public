@@ -243,7 +243,7 @@ client.on('ready', async () => {
                 await groupChat.syncHistory()
                 console.log("History synced for group: ", groupName);
                 console.log("Fetching messages for group: ", groupName);
-                const batchSize = 2000;
+                const batchSize = 1000;
                 let currentBatchSize = batchSize;
                 let reachedTimestamp = false;
                 let req_count = 0;
