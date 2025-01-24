@@ -318,20 +318,29 @@ client.on('ready', async () => {
                 }
 
                 async function sendMessageBatchToDb(messages) {
-                    console.time("getContact Total Time");
-                    const contacts = await Promise.all(messages.map((message) => message.getContact()));
-                    console.log(messages[0].author)
-                    console.timeEnd("getContact Total Time");
-
+                    console.time("Extract Phone Numbers Total Time");
+                    const phoneNumbers = messages.map(message => {
+                        // Extract the numeric part before '@'
+                        const author = message.author || null
+                        if (!author) {
+                            console.warn(`Message ID ${message.id.id} has no author or from field.`);
+                            return null;
+                        }
+                        const parts = author.split('@');
+                        if (parts.length !== 2) {
+                            console.warn(`Invalid author format for message ID: ${message.id.id} - Author: ${author}`);
+                            return null;
+                        }
+                        return parts[0];
+                    }).filter(phone => phone !== null); // Remove null entries
+                    console.timeEnd("Extract Phone Numbers Total Time");
                 
                     console.time("checkPhoneNumber Total Time");
                     const checkCache = new Map();
                     const batch = [];
                 
-                    for (let i = 0; i < messages.length; i++) {
-                        const message = messages[i];
-                        const contact = contacts[i];
-                        const phone = contact.number;
+                    for (let i = 0; i < phoneNumbers.length; i++) {
+                        const phone = phoneNumbers[i];
                 
                         let resp = checkCache.get(phone);
                         if (!resp) {
@@ -340,6 +349,7 @@ client.on('ready', async () => {
                         }
                 
                         if (resp.found) {
+                            const message = messages[i];
                             const message_id = message.id.id;
                             const group_id = groupId;
                             const datetime = new Date(message.timestamp * 1000).toISOString();
@@ -358,12 +368,15 @@ client.on('ready', async () => {
                     console.timeEnd("checkPhoneNumber Total Time");
                 
                     console.time("DB Insert Time");
-                    await insertNewWhatsAppMessages(batch);
+                    if (batch.length > 0) {
+                        await insertNewWhatsAppMessages(batch);
+                    }
                     console.timeEnd("DB Insert Time");
                 
                     console.log(`${batch.length} messages added to db!`);
                     return batch.length;
                 }
+                
 
                 console.log("All messages processed successfully for group: ", groupName, " ~", db_count, " messages added to db!");
                 
