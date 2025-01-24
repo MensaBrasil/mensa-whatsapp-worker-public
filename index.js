@@ -277,10 +277,16 @@ client.on('ready', async () => {
                             }
                         }
 
+                        if (messages.length < currentBatchSize){
+                            console.log("Last batch reached! Batch count: ", req_count);
+                            let difference = currentBatchSize - messages.length;
+                            messages = messages.slice(0, difference);
+                            reachedTimestamp = true;
+                        }
+
                         if (messages.length === 0) {
                             console.log("No messages found. Skipping...");
                             break;
-
                         } else if ((messages[0].timestamp > lastMessageTimestampInDb) && (messages[0].timestamp > timeLimitTimestamp)){
                             console.log("Time limit NOT reached in current batch! Batch count: ", req_count);
                             console.log("Sending batch nº", req_count, " with ", messages.length ," messages to db...");
