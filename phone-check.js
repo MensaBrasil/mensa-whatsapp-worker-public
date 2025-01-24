@@ -40,18 +40,24 @@ function checkPhoneNumber(phoneNumberMap, inputPhoneNumber) {
 
     // Decide based on collected matched entries
     if (matchedEntries.length > 0) {
-        let isJovemBrilhante = true;
+        let hasJbUnder10 = false;
+        let hasJbOver10 = false;
+
         for (const entry of matchedEntries) {
-            if (!entry.jovem_brilhante) {
-                isJovemBrilhante = false;
-                break;
+            if (entry.jb_under_10) {
+                hasJbUnder10 = true;
+            }
+            if (entry.jb_over_10) {
+                hasJbOver10 = true;
             }
         }
+
         return {
             found: true,
             status: matchedEntries[0].status,
             mb: matchedEntries[0].registration_id,
-            jovem_brilhante: isJovemBrilhante
+            jb_under_10: hasJbUnder10,
+            jb_over_10: hasJbOver10,
         };
     }
 
