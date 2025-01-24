@@ -243,7 +243,7 @@ client.on('ready', async () => {
                 await groupChat.syncHistory()
                 console.log("History synced for group: ", groupName);
                 console.log("Fetching messages for group: ", groupName);
-                const batchSize = 500;
+                const batchSize = 2000;
                 let currentBatchSize = batchSize;
                 let reachedTimestamp = false;
                 let req_count = 0;
@@ -318,24 +318,19 @@ client.on('ready', async () => {
                 }
 
                 async function sendMessageBatchToDb(messages) {
-                    console.time("Extract Phone Numbers Total Time");
                     const phoneNumbers = messages.map(message => {
                         // Extract the numeric part before '@'
                         const author = message.author || null
                         if (!author) {
-                            console.warn(`Message ID ${message.id.id} has no author or from field.`);
                             return null;
                         }
                         const parts = author.split('@');
                         if (parts.length !== 2) {
-                            console.warn(`Invalid author format for message ID: ${message.id.id} - Author: ${author}`);
                             return null;
                         }
                         return parts[0];
                     }).filter(phone => phone !== null); // Remove null entries
-                    console.timeEnd("Extract Phone Numbers Total Time");
                 
-                    console.time("checkPhoneNumber Total Time");
                     const checkCache = new Map();
                     const batch = [];
                 
@@ -365,13 +360,12 @@ client.on('ready', async () => {
                             ]);
                         }
                     }
-                    console.timeEnd("checkPhoneNumber Total Time");
                 
-                    console.time("DB Insert Time");
+
                     if (batch.length > 0) {
                         await insertNewWhatsAppMessages(batch);
                     }
-                    console.timeEnd("DB Insert Time");
+
                 
                     console.log(`${batch.length} messages added to db!`);
                     return batch.length;
