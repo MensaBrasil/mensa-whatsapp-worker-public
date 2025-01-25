@@ -133,3 +133,4 @@ dist
 .pnp.*
 inactive_numbers.txt
 not_found_numbers.txt
+action_log.csv
