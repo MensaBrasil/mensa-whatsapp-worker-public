@@ -145,6 +145,11 @@ const jbGroupNames = [
 ];
 
 client.on('ready', async () => {
+    
+    client.setAutoDownloadDocuments(false)
+    client.setAutoDownloadAudio(false)
+    client.setAutoDownloadPhotos(false)
+    client.setAutoDownloadVideos(false)
     console.log('Client is ready!');
 
     while (true) {
@@ -243,7 +248,7 @@ client.on('ready', async () => {
                 await groupChat.syncHistory()
                 console.log("History synced for group: ", groupName);
                 console.log("Fetching messages for group: ", groupName);
-                const batchSize = 1000;
+                const batchSize = 8000;
                 let currentBatchSize = batchSize;
                 let reachedTimestamp = false;
                 let req_count = 0;
@@ -253,7 +258,7 @@ client.on('ready', async () => {
                 new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms));
 
                 let lastMessageTimestampInDb = await getLastMessageTimestamp(groupId);
-                let timeLimitTimestamp = Math.floor(new Date().getTime()/1000.0) - (90 * 24 * 60 * 60); // 3 months ago
+                let timeLimitTimestamp = 0;
 
                 console.log("Last message date in db: ", await convertTimestampToDate(lastMessageTimestampInDb), " - timestamp: ", lastMessageTimestampInDb);
                 console.log("Time limit date: ", await convertTimestampToDate(timeLimitTimestamp), " - timestamp: ", timeLimitTimestamp);
