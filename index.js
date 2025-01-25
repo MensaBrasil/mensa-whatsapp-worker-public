@@ -390,7 +390,7 @@ client.on('ready', async () => {
 
                 const groupChat = await client.getChatById(groupId);
                 await groupChat.sendSeen();
-                await delay(10000);
+
 
                 const botChatObj = groupChat.participants.find(chatObj => chatObj.id.user === client.info.wid.user);
                 if (!botChatObj.isAdmin) {
@@ -492,12 +492,10 @@ client.on('ready', async () => {
                     }
                 }
 
-                await delay(10000);
                 console.log(`Finished processing group: ${groupName}`);
             } catch (error) {
                 console.error(`Error processing group ${groupName}:`, error);
             }
-            await delay(10000);
 
 
             const conversations = chats.filter(chat => !chat.isGroup);
