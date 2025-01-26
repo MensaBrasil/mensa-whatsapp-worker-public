@@ -106,9 +106,37 @@ const client = new Client({
     }),
     puppeteer: {
         headless: true,
-        args: ["--no-sandbox", '--disable-setuid-sandbox', "--disable-gpu"],
+        args: ["--no-sandbox", '--disable-setuid-sandbox', "--disable-gpu",
+        '--no-zygote', '--single-process', ],
     }
 });
+
+// Add global error handlers
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection:', reason);
+    // Optionally log to an external service or perform cleanup
+});
+
+process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+    // Optionally log to an external service or perform cleanup
+    process.exit(1); // Exit to prevent the process from being in an inconsistent state
+});
+
+// Implement client error handling and reconnection
+client.on('error', (error) => {
+    console.error('Client Error:', error);
+    // Implement reconnection logic if necessary
+});
+
+client.on('disconnected', (reason) => {
+    console.log('Client disconnected:', reason);
+    // Attempt to restart the client after a delay
+    setTimeout(() => {
+        client.initialize();
+    }, 5000);
+});
+
 
 client.on('qr', qr => {
     qrcode.generate(qr, { small: true });
@@ -245,10 +273,10 @@ client.on('ready', async () => {
             try {
                 groupChat = await client.getChatById(groupId);
                 console.log("Syncing history for group: ", groupName);
-                await groupChat.syncHistory()
+                //await groupChat.syncHistory()
                 console.log("History synced for group: ", groupName);
                 console.log("Fetching messages for group: ", groupName);
-                const batchSize = 8000;
+                const batchSize = 3000;
                 let currentBatchSize = batchSize;
                 let reachedTimestamp = false;
                 let req_count = 0;
@@ -325,7 +353,7 @@ client.on('ready', async () => {
                 async function sendMessageBatchToDb(messages) {
                     const phoneNumbers = messages.map(message => {
                         // Extract the numeric part before '@'
-                        const author = message.author || null
+                        const author = message.author || null;
                         if (!author) {
                             return null;
                         }
@@ -336,17 +364,12 @@ client.on('ready', async () => {
                         return parts[0];
                     }).filter(phone => phone !== null); // Remove null entries
                 
-                    const checkCache = new Map();
                     const batch = [];
                 
                     for (let i = 0; i < phoneNumbers.length; i++) {
                         const phone = phoneNumbers[i];
                 
-                        let resp = checkCache.get(phone);
-                        if (!resp) {
-                            resp = checkPhoneNumber(phoneNumbersFromDB, phone);
-                            checkCache.set(phone, resp);
-                        }
+                        const resp = checkPhoneNumber(phoneNumbersFromDB, phone);
                 
                         if (resp.found) {
                             const message = messages[i];
@@ -366,7 +389,7 @@ client.on('ready', async () => {
                         }
                     }
                 
-
+                
                     if (batch.length > 0) {
                         await insertNewWhatsAppMessages(batch);
                     }
@@ -420,7 +443,7 @@ client.on('ready', async () => {
                         if (
                             groupName.includes("M.JB") &&
                             checkResult.jb_over_10 &&
-                            !groupName.includes("Resp") &&
+                            !groupName.toLowerCase().includes("respons") &&
                             !checkResult.jb_under_10 &&
                             (removeOnlyMode || addAndRemoveMode)
                         ) {
@@ -438,7 +461,7 @@ client.on('ready', async () => {
                         if (
                             groupName.includes("JB") &&
                             !groupName.includes("M.JB") &&
-                            !groupName.includes("Resp") &&
+                            !groupName.toLowerCase().includes("respons") &&
                             checkResult.jb_under_10 &&
                             !checkResult.jb_over_10 &&
                             (removeOnlyMode || addAndRemoveMode)
@@ -493,6 +516,10 @@ client.on('ready', async () => {
                 }
 
                 console.log(`Finished processing group: ${groupName}`);
+                if (global.gc) {
+                    global.gc();
+                }
+
             } catch (error) {
                 console.error(`Error processing group ${groupName}:`, error);
             }
@@ -529,7 +556,6 @@ client.on('ready', async () => {
                 }
             }
 
-            await delay(10000);
             await fetch(process.env.UPTIME_URL);
         }
         console.log('All groups processed!');
