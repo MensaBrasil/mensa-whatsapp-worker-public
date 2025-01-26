@@ -106,6 +106,7 @@ const client = new Client({
     }),
     puppeteer: {
         headless: true,
+        executablePath: '/usr/bin/google-chrome-stable',
         args: ["--no-sandbox", '--disable-setuid-sandbox', "--disable-gpu",
         '--no-zygote', '--single-process', ],
     }
@@ -295,10 +296,7 @@ client.on('ready', async () => {
                     try {
                         let options = { limit: currentBatchSize };
                         console.log("Fetching up to: ", options.limit, " messages...");
-                        let messages = await Promise.race([
-                            groupChat.fetchMessages(options),
-                            timeoutPromise(240000)
-                        ]);
+                        let messages = await groupChat.fetchMessages(options);
                         console.log("Fetched: ", messages.length, " messages");
                         req_count += 1;
 
@@ -342,6 +340,9 @@ client.on('ready', async () => {
                             console.log(filteredMessages.length, " new messages found! Sending batch to db...");
                             db_count += await sendMessageBatchToDb(filteredMessages);
                             reachedTimestamp = true;
+                            messages = null;
+                            filteredMessages = null;
+                            
                             break;
                         }
                     } catch (error) {
