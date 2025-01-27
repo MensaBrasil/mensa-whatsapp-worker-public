@@ -285,8 +285,8 @@ client.on('ready', async () => {
                 let lastMessageTimestampInDb = await getLastMessageTimestamp(groupId);
                 let timeLimitTimestamp = 0;
 
-                console.log("Last message date in db: ", await convertTimestampToDate(lastMessageTimestampInDb), " - timestamp: ", lastMessageTimestampInDb);
-                console.log("Time limit date: ", await convertTimestampToDate(timeLimitTimestamp), " - timestamp: ", timeLimitTimestamp);
+                console.log("Last message date in db: ", (await convertTimestampToDate(lastMessageTimestampInDb)).toLocaleDateString("pt-BR"), " - timestamp: ", lastMessageTimestampInDb);
+                console.log("Time limit date: ", (await convertTimestampToDate(timeLimitTimestamp)).toLocaleDateString("pt-BR"), " - timestamp: ", timeLimitTimestamp);
 
                 while (reachedTimestamp === false) {
                     try {
@@ -296,7 +296,7 @@ client.on('ready', async () => {
                         console.log("Fetched: ", messages.length, " messages");
                         req_count += 1;
 
-                        console.log("Oldest message from this batch date: ", await convertTimestampToDate(messages[0].timestamp), " - timestamp: ", messages[0].timestamp);
+                        console.log("Oldest message from this batch date: ", (await convertTimestampToDate(messages[0].timestamp)).toLocaleDateString("pt-BR"), " - timestamp: ", messages[0].timestamp);
 
                         if ((messages.length < batchSize) && (req_count == 1)){
                             console.log("First batch reached maximum messages!");
