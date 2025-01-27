@@ -101,13 +101,10 @@ function sendTelegramNotification(groupName, member, action, reason) {
 }
 
 const client = new Client({
-    authStrategy: new LocalAuth({
-        dataPath: '.wpp_session'
-    }),
+    authStrategy: new LocalAuth(),
     puppeteer: {
-        headless: true,
-        args: ["--no-sandbox", '--disable-setuid-sandbox', "--disable-gpu",
-        '--no-zygote', '--single-process', ],
+        headless: "new",
+	args: ["--no-sandbox", '--disable-setuid-sandbox', "--disable-gpu"],
     }
 });
 
