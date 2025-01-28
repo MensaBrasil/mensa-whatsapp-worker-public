@@ -474,6 +474,23 @@ client.on('ready', async () => {
                             }
                         }
 
+                        if (
+                            (!groupName.includes("JB") && !jbGroupNames.includes(groupName)) && 
+                            (checkResult.jb_under_10 || checkResult.jb_over_10) && 
+                            (removeOnlyMode || addAndRemoveMode)
+                        ) {
+                            console.log(`Removing ${member} (JB) from non-JB group ${groupName}.`);
+                            if (!scanMode) {
+                                const removed = await removeParticipantByPhoneNumber(client, groupId, member);
+                                if (removed) {
+                                    logAction(groupName, member, 'Removal', 'User is JB in non-JB group');
+                                    await recordUserExitFromGroup(member, groupId, 'JB in non-JB group');
+                                    await delay(300000); 
+                                }
+                            }
+                        }
+                        
+
                         if (checkResult.status === 'Inactive' && (removeOnlyMode || addAndRemoveMode)) {
                             console.log(`Number ${member}, MB ${checkResult.mb} is inactive.`);
                             if (!scanMode) {
