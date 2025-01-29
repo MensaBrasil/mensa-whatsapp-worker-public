@@ -104,7 +104,7 @@ const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
         headless: "new",
-	args: ["--no-sandbox", '--disable-setuid-sandbox', "--disable-gpu"],
+        args: ["--no-sandbox", '--disable-setuid-sandbox', "--disable-gpu"],
     }
 });
 
@@ -169,8 +169,36 @@ const jbGroupNames = [
     "MB | Xadrez",
 ];
 
+const JBRemovalRules = [
+    {
+        groupCheck: (groupName) =>
+            groupName.includes("M.JB") &&
+            !groupName.includes("R. JB"),
+        condition: (checkResult) =>
+            checkResult.jb_over_10 && !checkResult.jb_under_10,
+        actionMessage: 'User is JB over 10 in M.JB group'
+    },
+    {
+        groupCheck: (groupName) =>
+            groupName.includes("JB") &&
+            !groupName.includes("M.JB") &&
+            !groupName.includes("R. JB"),
+        condition: (checkResult) =>
+            checkResult.jb_under_10 && !checkResult.jb_over_10,
+        actionMessage: 'User is JB under 10 in JB group'
+    },
+    {
+        groupCheck: (groupName) =>
+            !groupName.includes("JB") &&
+            !jbGroupNames.includes(groupName),
+        condition: (checkResult) =>
+            checkResult.jb_under_10 || checkResult.jb_over_10,
+            actionMessage: 'User is JB in non-JB group',
+    },
+];
+
 client.on('ready', async () => {
-    
+
     client.setAutoDownloadDocuments(false)
     client.setAutoDownloadAudio(false)
     client.setAutoDownloadPhotos(false)
@@ -249,7 +277,7 @@ client.on('ready', async () => {
                 console.log('No phone numbers found in the database. Exiting.');
                 process.exit(0);
             }
-            
+
             const checkResult = checkPhoneNumber(phoneNumbersFromDB, '447474660572');
             if (!checkResult.found) {
                 console.log('Number 447474660572 not found in the database. Sanity check failed. Exiting.');
@@ -338,7 +366,7 @@ client.on('ready', async () => {
                             reachedTimestamp = true;
                             messages = null;
                             filteredMessages = null;
-                            
+
                             break;
                         }
                     } catch (error) {
@@ -360,20 +388,20 @@ client.on('ready', async () => {
                         }
                         return parts[0];
                     }).filter(phone => phone !== null); // Remove null entries
-                
+
                     const batch = [];
-                
+
                     for (let i = 0; i < phoneNumbers.length; i++) {
                         const phone = phoneNumbers[i];
-                
+
                         const resp = checkPhoneNumber(phoneNumbersFromDB, phone);
-                
+
                         if (resp.found) {
                             const message = messages[i];
                             const message_id = message.id.id;
                             const group_id = groupId;
                             const datetime = new Date(message.timestamp * 1000).toISOString();
-                
+
                             batch.push([
                                 message_id,
                                 group_id,
@@ -385,20 +413,20 @@ client.on('ready', async () => {
                             ]);
                         }
                     }
-                
-                
+
+
                     if (batch.length > 0) {
                         await insertNewWhatsAppMessages(batch);
                     }
 
-                
+
                     console.log(`${batch.length} messages added to db!`);
                     return batch.length;
                 }
-                
+
 
                 console.log("All messages processed successfully for group: ", groupName, " ~", db_count, " messages added to db!");
-                
+
             } catch (error) {
                 console.error(`Error saving messages for ${groupName}: `, error);
             }
@@ -436,60 +464,24 @@ client.on('ready', async () => {
                             logAction(groupName, member, 'Entry', 'New to group');
                         }
 
-
-                        if (
-                            groupName.includes("M.JB") &&
-                            checkResult.jb_over_10 &&
-                            !groupName.toLowerCase().includes("respons") &&
-                            !checkResult.jb_under_10 &&
-                            (removeOnlyMode || addAndRemoveMode)
-                        ) {
-                            console.log(`Removing ${member} (JB >=10) from M.JB group.`);
-                            if (!scanMode) {
-                                const removed = await removeParticipantByPhoneNumber(client, groupId, member);
-                                if (removed) {
-                                    logAction(groupName, member, 'Removal', 'User is JB over 10 in M.JB group');
-                                    await recordUserExitFromGroup(member, groupId, 'JB over 10 in M.JB group');
-                                    await delay(300000);
+                        for (const rule of JBRemovalRules) {
+                            if (
+                                rule.groupCheck(groupName) &&
+                                rule.condition(checkResult) &&
+                                (removeOnlyMode || addAndRemoveMode)
+                            ) {
+                                console.log(`Removing ${member} (${rule.actionMessage}) from ${groupName}.`);
+                                if (!scanMode) {
+                                    const removed = await removeParticipantByPhoneNumber(client, groupId, member);
+                                    if (removed) {
+                                        logAction(groupName, member, 'Removal', rule.actionMessage);
+                                        await recordUserExitFromGroup(member, groupId, rule.actionMessage);
+                                        await delay(300000);
+                                    }
                                 }
+
                             }
                         }
-
-                        if (
-                            groupName.includes("JB") &&
-                            !groupName.includes("M.JB") &&
-                            !groupName.toLowerCase().includes("respons") &&
-                            checkResult.jb_under_10 &&
-                            !checkResult.jb_over_10 &&
-                            (removeOnlyMode || addAndRemoveMode)
-                        ) {
-                            console.log(`Removing ${member} (JB <10) from JB group.`);
-                            if (!scanMode) {
-                                const removed = await removeParticipantByPhoneNumber(client, groupId, member);
-                                if (removed) {
-                                    logAction(groupName, member, 'Removal', 'User is JB under 10 in JB group');
-                                    await recordUserExitFromGroup(member, groupId, 'JB under 10 in JB group');
-                                    await delay(300000);
-                                }
-                            }
-                        }
-
-                        if (
-                            (!groupName.includes("JB") && !jbGroupNames.includes(groupName)) && 
-                            (checkResult.jb_under_10 || checkResult.jb_over_10) && 
-                            (removeOnlyMode || addAndRemoveMode)
-                        ) {
-                            console.log(`Removing ${member} (JB) from non-JB group ${groupName}.`);
-                            if (!scanMode) {
-                                const removed = await removeParticipantByPhoneNumber(client, groupId, member);
-                                if (removed) {
-                                    logAction(groupName, member, 'Removal', 'User is JB in non-JB group');
-                                    await recordUserExitFromGroup(member, groupId, 'JB in non-JB group');
-                                    await delay(300000); 
-                                }
-                            }
-                        }
-                        
 
                         if (checkResult.status === 'Inactive' && (removeOnlyMode || addAndRemoveMode)) {
                             console.log(`Number ${member}, MB ${checkResult.mb} is inactive.`);
