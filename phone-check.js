@@ -46,6 +46,7 @@ function checkPhoneNumber(phoneNumberMap, inputPhoneNumber) {
     if (matchedEntries.length > 0) {
         let hasJbUnder10 = false;
         let hasJbOver10 = false;
+        let hasAdult = false;
 
         for (const entry of matchedEntries) {
             if (entry.jb_under_10) {
@@ -53,6 +54,9 @@ function checkPhoneNumber(phoneNumberMap, inputPhoneNumber) {
             }
             if (entry.jb_over_10) {
                 hasJbOver10 = true;
+            }
+            if (entry.is_adult) {
+                hasAdult = true;
             }
         }
 
@@ -62,6 +66,7 @@ function checkPhoneNumber(phoneNumberMap, inputPhoneNumber) {
             mb: matchedEntries[0].registration_id,
             jb_under_10: hasJbUnder10,
             jb_over_10: hasJbOver10,
+            is_adult: hasAdult,
         };
     }
 

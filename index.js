@@ -464,8 +464,10 @@ client.on('ready', async () => {
                             await recordUserEntryToGroup(checkResult.mb, member, groupId, checkResult.status);
                             logAction(groupName, member, 'Entry', 'New to group');
                         }
-
-                        for (const rule of JBRemovalRules) {
+                        if (checkResult.is_adult || (checkResult.jb_under_10 && checkResult.jb_over_10)) {
+                            console.log(`Skipping JB removal for ${member} (adult or ambiguous JB status).`);
+                        } else {
+                            for (const rule of JBRemovalRules){
                             if (
                                 rule.groupCheck(groupName) &&
                                 rule.condition(checkResult) &&
