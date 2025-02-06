@@ -194,7 +194,7 @@ const JBRemovalRules = [
             !jbGroupNames.includes(groupName),
         condition: (checkResult) =>
             checkResult.jb_under_10 || checkResult.jb_over_10,
-            actionMessage: 'User is JB in non-JB group',
+        actionMessage: 'User is JB in non-JB group',
     },
 ];
 
@@ -308,8 +308,8 @@ client.on('ready', async () => {
                 let req_count = 0;
                 let db_count = 0;
 
-                const timeoutPromise = (ms) => 
-                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms));
+                const timeoutPromise = (ms) =>
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms));
 
                 let lastMessageTimestampInDb = await getLastMessageTimestamp(groupId);
                 let timeLimitTimestamp = 0;
@@ -327,15 +327,15 @@ client.on('ready', async () => {
 
                         console.log("Oldest message from this batch date: ", (await convertTimestampToDate(messages[0].timestamp)).toLocaleDateString("pt-BR"), " - timestamp: ", messages[0].timestamp);
 
-                        if ((messages.length < batchSize) && (req_count == 1)){
+                        if ((messages.length < batchSize) && (req_count == 1)) {
                             console.log("First batch reached maximum messages!");
                             reachedTimestamp = true;
                             db_count += await sendMessageBatchToDb(messages);
                             break;
                         }
 
-                        if (req_count > 1){
-                            if (currentBatchSize > messages.length){
+                        if (req_count > 1) {
+                            if (currentBatchSize > messages.length) {
                                 console.log("Last batch reached! Batch count: ", req_count);
                                 let difference = messages.length - ((req_count - 1) * batchSize);
                                 console.log(difference, " remaining messages!");
@@ -353,9 +353,9 @@ client.on('ready', async () => {
                         if (messages.length === 0) {
                             console.log("No messages found. Skipping...");
                             break;
-                        } else if ((messages[0].timestamp > lastMessageTimestampInDb) && (messages[0].timestamp > timeLimitTimestamp)){
+                        } else if ((messages[0].timestamp > lastMessageTimestampInDb) && (messages[0].timestamp > timeLimitTimestamp)) {
                             console.log("Time limit NOT reached in current batch! Batch count: ", req_count);
-                            console.log("Sending batch nº", req_count, " with ", messages.length ," messages to db...");
+                            console.log("Sending batch nº", req_count, " with ", messages.length, " messages to db...");
                             currentBatchSize += batchSize;
                             db_count += await sendMessageBatchToDb(messages)
 
@@ -464,23 +464,26 @@ client.on('ready', async () => {
                             await recordUserEntryToGroup(checkResult.mb, member, groupId, checkResult.status);
                             logAction(groupName, member, 'Entry', 'New to group');
                         }
-
-                        for (const rule of JBRemovalRules) {
-                            if (
-                                rule.groupCheck(groupName) &&
-                                rule.condition(checkResult) &&
-                                (removeOnlyMode || addAndRemoveMode)
-                            ) {
-                                console.log(`Removing ${member} (${rule.actionMessage}) from ${groupName}.`);
-                                if (!scanMode) {
-                                    const removed = await removeParticipantByPhoneNumber(client, groupId, member);
-                                    if (removed) {
-                                        logAction(groupName, member, 'Removal', rule.actionMessage);
-                                        await recordUserExitFromGroup(member, groupId, rule.actionMessage);
-                                        await delay(300000);
+                        if (checkResult.is_adult || (checkResult.jb_under_10 && checkResult.jb_over_10)) {
+                            console.log(`Skipping JB removal for ${member} (adult or ambiguous JB status).`);
+                        } else {
+                            for (const rule of JBRemovalRules) {
+                                if (
+                                    rule.groupCheck(groupName) &&
+                                    rule.condition(checkResult) &&
+                                    (removeOnlyMode || addAndRemoveMode)
+                                ) {
+                                    console.log(`Removing ${member} (${rule.actionMessage}) from ${groupName}.`);
+                                    if (!scanMode) {
+                                        const removed = await removeParticipantByPhoneNumber(client, groupId, member);
+                                        if (removed) {
+                                            logAction(groupName, member, 'Removal', rule.actionMessage);
+                                            await recordUserExitFromGroup(member, groupId, rule.actionMessage);
+                                            await delay(300000);
+                                        }
                                     }
-                                }
 
+                                }
                             }
                         }
 
