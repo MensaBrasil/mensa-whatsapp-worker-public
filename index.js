@@ -105,6 +105,7 @@ const client = new Client({
     puppeteer: {
         headless: "new",
         args: ["--no-sandbox", '--disable-setuid-sandbox', "--disable-gpu"],
+        protocolTimeout: 1200000
     }
 });
 
