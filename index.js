@@ -298,9 +298,9 @@ client.on('ready', async () => {
 
             try {
                 groupChat = await client.getChatById(groupId);
-                console.log("Syncing history for group: ", groupName);
+                // console.log("Syncing history for group: ", groupName);
                 //await groupChat.syncHistory()
-                console.log("History synced for group: ", groupName);
+                // console.log("History synced for group: ", groupName);
                 console.log("Fetching messages for group: ", groupName);
                 const batchSize = 3000;
                 let currentBatchSize = batchSize;
@@ -308,8 +308,8 @@ client.on('ready', async () => {
                 let req_count = 0;
                 let db_count = 0;
 
-                const timeoutPromise = (ms) =>
-                    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms));
+                // const timeoutPromise = (ms) =>
+                //     new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms));
 
                 let lastMessageTimestampInDb = await getLastMessageTimestamp(groupId);
                 let timeLimitTimestamp = 0;
@@ -330,7 +330,8 @@ client.on('ready', async () => {
                         if ((messages.length < batchSize) && (req_count == 1)) {
                             console.log("First batch reached maximum messages!");
                             reachedTimestamp = true;
-                            db_count += await sendMessageBatchToDb(messages);
+                            let filteredMessages = messages.filter(message => message.timestamp > lastMessageTimestampInDb);
+                            db_count += await sendMessageBatchToDb(filteredMessages);
                             break;
                         }
 
@@ -340,7 +341,8 @@ client.on('ready', async () => {
                                 let difference = messages.length - ((req_count - 1) * batchSize);
                                 console.log(difference, " remaining messages!");
                                 messages = messages.slice(0, difference);
-                                db_count += await sendMessageBatchToDb(messages);
+                                let filteredMessages = messages.filter(message => message.timestamp > lastMessageTimestampInDb);
+                                db_count += await sendMessageBatchToDb(filteredMessages);
                                 break;
                             }
                         }
