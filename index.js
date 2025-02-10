@@ -301,20 +301,20 @@ client.on('ready', async () => {
                     return date;
                 }
 
-                try {
-                    groupChat = await client.getChatById(groupId);
-                    console.log("Syncing history for group: ", groupName);
-                    //await groupChat.syncHistory()
-                    console.log("History synced for group: ", groupName);
-                    console.log("Fetching messages for group: ", groupName);
-                    const batchSize = 3000;
-                    let currentBatchSize = batchSize;
-                    let reachedTimestamp = false;
-                    let req_count = 0;
-                    let db_count = 0;
+            try {
+                groupChat = await client.getChatById(groupId);
+                // console.log("Syncing history for group: ", groupName);
+                //await groupChat.syncHistory()
+                // console.log("History synced for group: ", groupName);
+                console.log("Fetching messages for group: ", groupName);
+                const batchSize = 3000;
+                let currentBatchSize = batchSize;
+                let reachedTimestamp = false;
+                let req_count = 0;
+                let db_count = 0;
 
-                    const timeoutPromise = (ms) =>
-                        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms));
+                // const timeoutPromise = (ms) =>
+                //     new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms));
 
                     let lastMessageTimestampInDb = await getLastMessageTimestamp(groupId);
                     let timeLimitTimestamp = 0;
@@ -332,23 +332,25 @@ client.on('ready', async () => {
 
                             console.log("Oldest message from this batch date: ", (await convertTimestampToDate(messages[0].timestamp)).toLocaleDateString("pt-BR"), " - timestamp: ", messages[0].timestamp);
 
-                            if ((messages.length < batchSize) && (req_count == 1)) {
-                                console.log("First batch reached maximum messages!");
-                                reachedTimestamp = true;
-                                db_count += await sendMessageBatchToDb(messages);
+                        if ((messages.length < batchSize) && (req_count == 1)) {
+                            console.log("First batch reached maximum messages!");
+                            reachedTimestamp = true;
+                            let filteredMessages = messages.filter(message => message.timestamp > lastMessageTimestampInDb);
+                            db_count += await sendMessageBatchToDb(filteredMessages);
+                            break;
+                        }
+
+                        if (req_count > 1) {
+                            if (currentBatchSize > messages.length) {
+                                console.log("Last batch reached! Batch count: ", req_count);
+                                let difference = messages.length - ((req_count - 1) * batchSize);
+                                console.log(difference, " remaining messages!");
+                                messages = messages.slice(0, difference);
+                                let filteredMessages = messages.filter(message => message.timestamp > lastMessageTimestampInDb);
+                                db_count += await sendMessageBatchToDb(filteredMessages);
                                 break;
                             }
-
-                            if (req_count > 1) {
-                                if (currentBatchSize > messages.length) {
-                                    console.log("Last batch reached! Batch count: ", req_count);
-                                    let difference = messages.length - ((req_count - 1) * batchSize);
-                                    console.log(difference, " remaining messages!");
-                                    messages = messages.slice(0, difference);
-                                    db_count += await sendMessageBatchToDb(messages);
-                                    break;
-                                }
-                            }
+                        }
 
                             if (messages.length == currentBatchSize) {
                                 console.log("Selecting first ", batchSize, " messages from batch nº", req_count);
