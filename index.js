@@ -13,6 +13,7 @@ const { createObjectCsvWriter } = require('csv-writer');
 const readline = require('readline');
 const { triggerTwilioOrRemove } = require('./twilio');
 const TelegramBot = require('node-telegram-bot-api'); // Telegram bot API
+const { report } = require('process');
 require('dotenv').config();
 
 const csvWriter = createObjectCsvWriter({
@@ -582,6 +583,10 @@ client.on('ready', async () => {
             await fetch(process.env.UPTIME_URL);
         }
         console.log('All groups processed!');
+        if (reportMode) {
+            console.log('Report created, exiting...');
+            process.exit(0);
+        }
     }
 });
 
