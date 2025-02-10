@@ -145,9 +145,10 @@ const addOnlyMode = process.argv.includes('--add-only');
 const removeOnlyMode = process.argv.includes('--remove-only');
 const addAndRemoveMode = process.argv.includes('--add-and-remove');
 const checkAuth = process.argv.includes('--check-auth');
+const reportMode = process.argv.includes('--report');
 
-if (!scanMode && !addOnlyMode && !removeOnlyMode && !addAndRemoveMode && !checkAuth) {
-    console.log('No mode specified. Please provide a mode: --scan, --add-only, --remove-only, --add-and-remove or --check-auth');
+if (!scanMode && !addOnlyMode && !removeOnlyMode && !addAndRemoveMode && !checkAuth && !reportMode) {
+    console.log('No mode specified. Please provide a mode: --scan, --add-only, --remove-only, --add-and-remove, --check-auth or --report');
     process.exit(0);
 }
 
@@ -161,6 +162,8 @@ if (scanMode) {
     console.log('Add-and-remove mode enabled. Additions and removals will be made to/from the groups.');
 } else if (checkAuth) {
     console.log('Check-auth mode enabled. Create a CSV file with authorization status of members that requested to join groups.');
+} else if (reportMode) {
+    console.log('Report mode enabled. Changes will not be made to the groups.');
 } else {
     console.log('!!!!!!Scan mode DISABLED. Changes will be made to the groups.!!!!!!!');
 }
@@ -291,145 +294,147 @@ client.on('ready', async () => {
 
             // Save messages data for all groups to the database.
 
-            async function convertTimestampToDate(timestamp) {
-                let date = new Date(timestamp * 1000);
-                return date;
-            }
+            if (!reportMode) {
+                async function convertTimestampToDate(timestamp) {
+                    let date = new Date(timestamp * 1000);
+                    return date;
+                }
 
-            try {
-                groupChat = await client.getChatById(groupId);
-                console.log("Syncing history for group: ", groupName);
-                //await groupChat.syncHistory()
-                console.log("History synced for group: ", groupName);
-                console.log("Fetching messages for group: ", groupName);
-                const batchSize = 3000;
-                let currentBatchSize = batchSize;
-                let reachedTimestamp = false;
-                let req_count = 0;
-                let db_count = 0;
+                try {
+                    groupChat = await client.getChatById(groupId);
+                    console.log("Syncing history for group: ", groupName);
+                    //await groupChat.syncHistory()
+                    console.log("History synced for group: ", groupName);
+                    console.log("Fetching messages for group: ", groupName);
+                    const batchSize = 3000;
+                    let currentBatchSize = batchSize;
+                    let reachedTimestamp = false;
+                    let req_count = 0;
+                    let db_count = 0;
 
-                const timeoutPromise = (ms) =>
-                    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms));
+                    const timeoutPromise = (ms) =>
+                        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms));
 
-                let lastMessageTimestampInDb = await getLastMessageTimestamp(groupId);
-                let timeLimitTimestamp = 0;
+                    let lastMessageTimestampInDb = await getLastMessageTimestamp(groupId);
+                    let timeLimitTimestamp = 0;
 
-                console.log("Last message date in db: ", (await convertTimestampToDate(lastMessageTimestampInDb)).toLocaleDateString("pt-BR"), " - timestamp: ", lastMessageTimestampInDb);
-                console.log("Time limit date: ", (await convertTimestampToDate(timeLimitTimestamp)).toLocaleDateString("pt-BR"), " - timestamp: ", timeLimitTimestamp);
+                    console.log("Last message date in db: ", (await convertTimestampToDate(lastMessageTimestampInDb)).toLocaleDateString("pt-BR"), " - timestamp: ", lastMessageTimestampInDb);
+                    console.log("Time limit date: ", (await convertTimestampToDate(timeLimitTimestamp)).toLocaleDateString("pt-BR"), " - timestamp: ", timeLimitTimestamp);
 
-                while (reachedTimestamp === false) {
-                    try {
-                        let options = { limit: currentBatchSize };
-                        console.log("Fetching up to: ", options.limit, " messages...");
-                        let messages = await groupChat.fetchMessages(options);
-                        console.log("Fetched: ", messages.length, " messages");
-                        req_count += 1;
+                    while (reachedTimestamp === false) {
+                        try {
+                            let options = { limit: currentBatchSize };
+                            console.log("Fetching up to: ", options.limit, " messages...");
+                            let messages = await groupChat.fetchMessages(options);
+                            console.log("Fetched: ", messages.length, " messages");
+                            req_count += 1;
 
-                        console.log("Oldest message from this batch date: ", (await convertTimestampToDate(messages[0].timestamp)).toLocaleDateString("pt-BR"), " - timestamp: ", messages[0].timestamp);
+                            console.log("Oldest message from this batch date: ", (await convertTimestampToDate(messages[0].timestamp)).toLocaleDateString("pt-BR"), " - timestamp: ", messages[0].timestamp);
 
-                        if ((messages.length < batchSize) && (req_count == 1)) {
-                            console.log("First batch reached maximum messages!");
-                            reachedTimestamp = true;
-                            db_count += await sendMessageBatchToDb(messages);
-                            break;
-                        }
-
-                        if (req_count > 1) {
-                            if (currentBatchSize > messages.length) {
-                                console.log("Last batch reached! Batch count: ", req_count);
-                                let difference = messages.length - ((req_count - 1) * batchSize);
-                                console.log(difference, " remaining messages!");
-                                messages = messages.slice(0, difference);
+                            if ((messages.length < batchSize) && (req_count == 1)) {
+                                console.log("First batch reached maximum messages!");
+                                reachedTimestamp = true;
                                 db_count += await sendMessageBatchToDb(messages);
                                 break;
                             }
-                        }
 
-                        if (messages.length == currentBatchSize) {
-                            console.log("Selecting first ", batchSize, " messages from batch nº", req_count);
-                            messages = messages.slice(0, batchSize);
-                        }
+                            if (req_count > 1) {
+                                if (currentBatchSize > messages.length) {
+                                    console.log("Last batch reached! Batch count: ", req_count);
+                                    let difference = messages.length - ((req_count - 1) * batchSize);
+                                    console.log(difference, " remaining messages!");
+                                    messages = messages.slice(0, difference);
+                                    db_count += await sendMessageBatchToDb(messages);
+                                    break;
+                                }
+                            }
 
-                        if (messages.length === 0) {
-                            console.log("No messages found. Skipping...");
+                            if (messages.length == currentBatchSize) {
+                                console.log("Selecting first ", batchSize, " messages from batch nº", req_count);
+                                messages = messages.slice(0, batchSize);
+                            }
+
+                            if (messages.length === 0) {
+                                console.log("No messages found. Skipping...");
+                                break;
+                            } else if ((messages[0].timestamp > lastMessageTimestampInDb) && (messages[0].timestamp > timeLimitTimestamp)) {
+                                console.log("Time limit NOT reached in current batch! Batch count: ", req_count);
+                                console.log("Sending batch nº", req_count, " with ", messages.length, " messages to db...");
+                                currentBatchSize += batchSize;
+                                db_count += await sendMessageBatchToDb(messages)
+
+                            } else {
+                                console.log("Timestamp limit reached. Checking timestamps in current batch! batch count: ", req_count);
+                                let filteredMessages = messages.filter(message => message.timestamp > lastMessageTimestampInDb);
+                                console.log(filteredMessages.length, " new messages found! Sending batch to db...");
+                                db_count += await sendMessageBatchToDb(filteredMessages);
+                                reachedTimestamp = true;
+                                messages = null;
+                                filteredMessages = null;
+
+                                break;
+                            }
+                        } catch (error) {
+                            console.error("Error fetching messages:", error);
                             break;
-                        } else if ((messages[0].timestamp > lastMessageTimestampInDb) && (messages[0].timestamp > timeLimitTimestamp)) {
-                            console.log("Time limit NOT reached in current batch! Batch count: ", req_count);
-                            console.log("Sending batch nº", req_count, " with ", messages.length, " messages to db...");
-                            currentBatchSize += batchSize;
-                            db_count += await sendMessageBatchToDb(messages)
-
-                        } else {
-                            console.log("Timestamp limit reached. Checking timestamps in current batch! batch count: ", req_count);
-                            let filteredMessages = messages.filter(message => message.timestamp > lastMessageTimestampInDb);
-                            console.log(filteredMessages.length, " new messages found! Sending batch to db...");
-                            db_count += await sendMessageBatchToDb(filteredMessages);
-                            reachedTimestamp = true;
-                            messages = null;
-                            filteredMessages = null;
-
-                            break;
                         }
-                    } catch (error) {
-                        console.error("Error fetching messages:", error);
-                        break;
                     }
+
+                    async function sendMessageBatchToDb(messages) {
+                        const phoneNumbers = messages.map(message => {
+                            // Extract the numeric part before '@'
+                            const author = message.author || null;
+                            if (!author) {
+                                return null;
+                            }
+                            const parts = author.split('@');
+                            if (parts.length !== 2) {
+                                return null;
+                            }
+                            return parts[0];
+                        }).filter(phone => phone !== null); // Remove null entries
+
+                        const batch = [];
+
+                        for (let i = 0; i < phoneNumbers.length; i++) {
+                            const phone = phoneNumbers[i];
+
+                            const resp = checkPhoneNumber(phoneNumbersFromDB, phone);
+
+                            if (resp.found) {
+                                const message = messages[i];
+                                const message_id = message.id.id;
+                                const group_id = groupId;
+                                const datetime = new Date(message.timestamp * 1000).toISOString();
+
+                                batch.push([
+                                    message_id,
+                                    group_id,
+                                    resp.mb,
+                                    datetime,
+                                    phone,
+                                    message.type,
+                                    message.deviceType,
+                                ]);
+                            }
+                        }
+
+
+                        if (batch.length > 0) {
+                            await insertNewWhatsAppMessages(batch);
+                        }
+
+
+                        console.log(`${batch.length} messages added to db!`);
+                        return batch.length;
+                    }
+
+
+                    console.log("All messages processed successfully for group: ", groupName, " ~", db_count, " messages added to db!");
+
+                } catch (error) {
+                    console.error(`Error saving messages for ${groupName}: `, error);
                 }
-
-                async function sendMessageBatchToDb(messages) {
-                    const phoneNumbers = messages.map(message => {
-                        // Extract the numeric part before '@'
-                        const author = message.author || null;
-                        if (!author) {
-                            return null;
-                        }
-                        const parts = author.split('@');
-                        if (parts.length !== 2) {
-                            return null;
-                        }
-                        return parts[0];
-                    }).filter(phone => phone !== null); // Remove null entries
-
-                    const batch = [];
-
-                    for (let i = 0; i < phoneNumbers.length; i++) {
-                        const phone = phoneNumbers[i];
-
-                        const resp = checkPhoneNumber(phoneNumbersFromDB, phone);
-
-                        if (resp.found) {
-                            const message = messages[i];
-                            const message_id = message.id.id;
-                            const group_id = groupId;
-                            const datetime = new Date(message.timestamp * 1000).toISOString();
-
-                            batch.push([
-                                message_id,
-                                group_id,
-                                resp.mb,
-                                datetime,
-                                phone,
-                                message.type,
-                                message.deviceType,
-                            ]);
-                        }
-                    }
-
-
-                    if (batch.length > 0) {
-                        await insertNewWhatsAppMessages(batch);
-                    }
-
-
-                    console.log(`${batch.length} messages added to db!`);
-                    return batch.length;
-                }
-
-
-                console.log("All messages processed successfully for group: ", groupName, " ~", db_count, " messages added to db!");
-
-            } catch (error) {
-                console.error(`Error saving messages for ${groupName}: `, error);
             }
 
             try {
@@ -464,6 +469,7 @@ client.on('ready', async () => {
                             await recordUserEntryToGroup(checkResult.mb, member, groupId, checkResult.status);
                             logAction(groupName, member, 'Entry', 'New to group');
                         }
+
                         if (checkResult.is_adult || (checkResult.jb_under_10 && checkResult.jb_over_10)) {
                             console.log(`Skipping JB removal for ${member} (adult or ambiguous JB status).`);
                         } else {
@@ -471,25 +477,31 @@ client.on('ready', async () => {
                                 if (
                                     rule.groupCheck(groupName) &&
                                     rule.condition(checkResult) &&
-                                    (removeOnlyMode || addAndRemoveMode)
+                                    (removeOnlyMode || addAndRemoveMode || reportMode)
                                 ) {
-                                    console.log(`Removing ${member} (${rule.actionMessage}) from ${groupName}.`);
-                                    if (!scanMode) {
-                                        const removed = await removeParticipantByPhoneNumber(client, groupId, member);
-                                        if (removed) {
-                                            logAction(groupName, member, 'Removal', rule.actionMessage);
-                                            await recordUserExitFromGroup(member, groupId, rule.actionMessage);
-                                            await delay(300000);
+                                    if (reportMode) {
+                                        console.log(`REPORT: Number ${member}, MB ${checkResult.mb} matches JB removal rule: ${rule.actionMessage} from group ${groupName}`);
+                                    } else {
+                                        console.log(`Removing ${member} (${rule.actionMessage}) from ${groupName}.`);
+                                        if (!scanMode && !reportMode) {
+                                            const removed = await removeParticipantByPhoneNumber(client, groupId, member);
+                                            if (removed) {
+                                                logAction(groupName, member, 'Removal', rule.actionMessage);
+                                                await recordUserExitFromGroup(member, groupId, rule.actionMessage);
+                                                await delay(300000);
+                                            }
                                         }
                                     }
-
                                 }
                             }
                         }
 
-                        if (checkResult.status === 'Inactive' && (removeOnlyMode || addAndRemoveMode)) {
-                            console.log(`Number ${member}, MB ${checkResult.mb} is inactive.`);
-                            if (!scanMode) {
+                        if (checkResult.status === 'Inactive' && (removeOnlyMode || addAndRemoveMode || reportMode)) {
+                            if (reportMode) {
+                                console.log(`REPORT: Number ${member}, MB ${checkResult.mb} is inactive in group ${groupName}`);
+                            }
+                            if (!scanMode && !reportMode) {
+                                console.log(`Number ${member}, MB ${checkResult.mb} is inactive.`);
                                 const shouldRemove = await triggerTwilioOrRemove(member, "mensa_inactive");
                                 if (shouldRemove) {
                                     const removed = await removeParticipantByPhoneNumber(client, groupId, member);
@@ -501,11 +513,13 @@ client.on('ready', async () => {
                                 }
                             }
                         }
-
                     } else {
                         if (member !== '+33681604260' && member !== '18653480874' && member !== '36705346911' && member !== '351926855059' && member !== '447863603673' && member !== '4915122324805' && member !== '62999552046' && member !== '15142676652' && member !== "556299552046" && member !== '447782796843' && member !== '555496875059' && member !== '34657489744' && member !== '5511914206718' && (removeOnlyMode || addAndRemoveMode)) {
-                            console.log(`Number ${member} not found in the database.`);
-                            if (!scanMode) {
+                            if (reportMode) {
+                                console.log(`REPORT: Number ${member}, MB ${checkResult.mb} is not found in the database in group ${groupName}`);
+                            }
+                            if (!scanMode && !reportMode) {
+                                console.log(`Number ${member} not found in the database.`);
                                 const shouldRemove = await triggerTwilioOrRemove(member, "mensa_not_found");
                                 if (shouldRemove) {
                                     const removed = await removeParticipantByPhoneNumber(client, groupId, member);
@@ -518,6 +532,7 @@ client.on('ready', async () => {
                             }
                         }
                     }
+
                     if (reason) {
                         if (!scanMode) {
                             await recordUserExitFromGroup(member, groupId, reason);
@@ -529,12 +544,10 @@ client.on('ready', async () => {
                 if (global.gc) {
                     global.gc();
                 }
-
-            } catch (error) {
+            }
+            catch (error) {
                 console.error(`Error processing group ${groupName}:`, error);
             }
-
-
             const conversations = chats.filter(chat => !chat.isGroup);
             const queue = await getWhatsappQueue(groupId);
             const last8DigitsFromChats = conversations.map(chat => chat.id.user).map(number => number.slice(-8));
