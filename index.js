@@ -301,20 +301,20 @@ client.on('ready', async () => {
                     return date;
                 }
 
-            try {
-                groupChat = await client.getChatById(groupId);
-                // console.log("Syncing history for group: ", groupName);
-                //await groupChat.syncHistory()
-                // console.log("History synced for group: ", groupName);
-                console.log("Fetching messages for group: ", groupName);
-                const batchSize = 3000;
-                let currentBatchSize = batchSize;
-                let reachedTimestamp = false;
-                let req_count = 0;
-                let db_count = 0;
+                try {
+                    groupChat = await client.getChatById(groupId);
+                    // console.log("Syncing history for group: ", groupName);
+                    //await groupChat.syncHistory()
+                    // console.log("History synced for group: ", groupName);
+                    console.log("Fetching messages for group: ", groupName);
+                    const batchSize = 3000;
+                    let currentBatchSize = batchSize;
+                    let reachedTimestamp = false;
+                    let req_count = 0;
+                    let db_count = 0;
 
-                // const timeoutPromise = (ms) =>
-                //     new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms));
+                    // const timeoutPromise = (ms) =>
+                    //     new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms));
 
                     let lastMessageTimestampInDb = await getLastMessageTimestamp(groupId);
                     let timeLimitTimestamp = 0;
@@ -332,25 +332,25 @@ client.on('ready', async () => {
 
                             console.log("Oldest message from this batch date: ", (await convertTimestampToDate(messages[0].timestamp)).toLocaleDateString("pt-BR"), " - timestamp: ", messages[0].timestamp);
 
-                        if ((messages.length < batchSize) && (req_count == 1)) {
-                            console.log("First batch reached maximum messages!");
-                            reachedTimestamp = true;
-                            let filteredMessages = messages.filter(message => message.timestamp > lastMessageTimestampInDb);
-                            db_count += await sendMessageBatchToDb(filteredMessages);
-                            break;
-                        }
-
-                        if (req_count > 1) {
-                            if (currentBatchSize > messages.length) {
-                                console.log("Last batch reached! Batch count: ", req_count);
-                                let difference = messages.length - ((req_count - 1) * batchSize);
-                                console.log(difference, " remaining messages!");
-                                messages = messages.slice(0, difference);
+                            if ((messages.length < batchSize) && (req_count == 1)) {
+                                console.log("First batch reached maximum messages!");
+                                reachedTimestamp = true;
                                 let filteredMessages = messages.filter(message => message.timestamp > lastMessageTimestampInDb);
                                 db_count += await sendMessageBatchToDb(filteredMessages);
                                 break;
                             }
-                        }
+
+                            if (req_count > 1) {
+                                if (currentBatchSize > messages.length) {
+                                    console.log("Last batch reached! Batch count: ", req_count);
+                                    let difference = messages.length - ((req_count - 1) * batchSize);
+                                    console.log(difference, " remaining messages!");
+                                    messages = messages.slice(0, difference);
+                                    let filteredMessages = messages.filter(message => message.timestamp > lastMessageTimestampInDb);
+                                    db_count += await sendMessageBatchToDb(filteredMessages);
+                                    break;
+                                }
+                            }
 
                             if (messages.length == currentBatchSize) {
                                 console.log("Selecting first ", batchSize, " messages from batch nº", req_count);
@@ -455,10 +455,12 @@ client.on('ready', async () => {
                     continue;
                 }
 
-                for (const previousMember of previousMembers) {
-                    if (!currentMembers.includes(previousMember)) {
-                        await recordUserExitFromGroup(previousMember, groupId, 'Left group');
-                        logAction(groupName, previousMember, 'Exit', 'Left group');
+                if (!reportMode) {
+                    for (const previousMember of previousMembers) {
+                        if (!currentMembers.includes(previousMember)) {
+                            await recordUserExitFromGroup(previousMember, groupId, 'Left group');
+                            logAction(groupName, previousMember, 'Exit', 'Left group');
+                        }
                     }
                 }
 
@@ -467,10 +469,12 @@ client.on('ready', async () => {
                     let reason = null;
 
                     if (checkResult.found) {
-                        if (!previousMembers.includes(member)) {
-                            console.log(`Number ${member}, MB ${checkResult.mb} is new to the group.`);
-                            await recordUserEntryToGroup(checkResult.mb, member, groupId, checkResult.status);
-                            logAction(groupName, member, 'Entry', 'New to group');
+                        if (!reportMode) {
+                            if (!previousMembers.includes(member)) {
+                                console.log(`Number ${member}, MB ${checkResult.mb} is new to the group.`);
+                                await recordUserEntryToGroup(checkResult.mb, member, groupId, checkResult.status);
+                                logAction(groupName, member, 'Entry', 'New to group');
+                            }
                         }
 
                         if (checkResult.is_adult || (checkResult.jb_under_10 && checkResult.jb_over_10)) {
@@ -536,7 +540,7 @@ client.on('ready', async () => {
                         }
                     }
 
-                    if (reason) {
+                    if (reason && !reportMode) {
                         if (!scanMode) {
                             await recordUserExitFromGroup(member, groupId, reason);
                         }
@@ -554,7 +558,7 @@ client.on('ready', async () => {
             const conversations = chats.filter(chat => !chat.isGroup);
             const queue = await getWhatsappQueue(groupId);
             const last8DigitsFromChats = conversations.map(chat => chat.id.user).map(number => number.slice(-8));
-            if (!scanMode && (addOnlyMode || addAndRemoveMode)) {
+            if ((!scanMode && (addOnlyMode || addAndRemoveMode) && !reportMode)) {
                 for (const request of queue.rows) {
                     try {
                         phones = await getMemberPhoneNumbers(request.registration_id);
