@@ -102,13 +102,15 @@ client.once('ready', async () => {
     }
 
     if (addMode) {
-        await addMembersToGroups(client, chats, groups);
+        console.log('Adding members...');
+        await addMembersToGroups(client, chats, groupNames);
     }
 
     if (removeMode) {
         await removeMembersFromGroups(client, chats, groups);
+    }
 
     console.log("All tasks completed. Exiting...");
     process.exit(0);
-    }
+
 });
