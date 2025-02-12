@@ -1,5 +1,3 @@
-// pgsql.js
-
 const {
     Pool
 } = require('pg');
@@ -38,7 +36,7 @@ const getPhoneNumbersWithStatus = async () => {
             END AS jb_under_10,
             CASE
                 WHEN DATE_PART('year', AGE(r.birth_date)) >= 10 
-                     AND DATE_PART('year', AGE(r.birth_date)) < 18 THEN TRUE
+                    AND DATE_PART('year', AGE(r.birth_date)) < 18 THEN TRUE
                 ELSE FALSE
             END AS jb_over_10,
             CASE

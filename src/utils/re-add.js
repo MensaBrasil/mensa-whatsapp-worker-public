@@ -1,6 +1,5 @@
 const { getGroupParticipants } = require('./chat');
 
-
 async function addPhoneNumberToGroup(client, inputPhoneNumber, groupId) {
     try {
         await delay(3000);
@@ -8,7 +7,6 @@ async function addPhoneNumberToGroup(client, inputPhoneNumber, groupId) {
 
         const isBrazilianNumber = phoneNumber.startsWith('55');
         if (isBrazilianNumber) {
-            // Try adding the number as is
             if (await tryAddParticipant(client, phoneNumber, groupId)) {
                 return true;
             } else {
@@ -82,14 +80,6 @@ async function tryAddParticipant(client, phoneNumber, groupId) {
         console.error(`Chat not found for group ID: ${groupId}`);
         return false;
     }
-
-    // const participants = await getGroupParticipants(client, groupId);
-    // const isAlreadyInGroup = participants.some(participant => participant.phone === phoneNumber);
-
-    // if (isAlreadyInGroup) {
-    //     console.log(`${phoneNumber} is already in group with ID: ${groupId}`);
-    //     return true;
-    // }
 
     if (chat.addParticipants) {
         chat.sendSeen();
