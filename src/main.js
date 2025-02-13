@@ -15,25 +15,21 @@ process.on('unhandledRejection', (reason) => {
 });
 
 // Cli args
+const modes = { '--add': 'Add', '--remove': 'Remove', '--scan': 'Scan', '--report': 'Report', '--fetch': 'Fetch Messages' };
+const selected = Object.entries(modes).reduce((acc, [flag, name]) => process.argv.includes(flag) ? acc.concat(name) : acc, []);
+
 const addMode = process.argv.includes('--add');
 const removeMode = process.argv.includes('--remove');
 const scanMode = process.argv.includes('--scan');
 const reportMode = process.argv.includes('--report');
 const fetchMessagesMode = process.argv.includes('--fetch');
 
-if ([addMode, removeMode, scanMode, reportMode, fetchMessagesMode].filter(Boolean).length < 1) {
-    console.log("\x1b[0mYou should select at least 1 service. Exiting...\x1b[97m\nPlease chose from \x1b[32m--add\x1b[0m, \x1b[31m--remove\x1b[0m, \x1b[33m--add-remove\x1b[0m, \x1b[93m--scan\x1b[0m, \x1b[94m--report\x1b[0m, \x1b[96m--fetch\x1b[0m");
+if (!selected.length) {
+    console.log("You should select at least 1 service. Exiting...\nPlease choose from " + Object.keys(modes).join(', '));
     process.exit(1);
 }
 
-const selectedModes = [];
-if (addMode) selectedModes.push('\x1b[32mAdd\x1b[0m');
-if (removeMode) selectedModes.push('\x1b[31mRemove\x1b[0m');
-if (scanMode) selectedModes.push('\x1b[93mScan\x1b[0m');
-if (reportMode) selectedModes.push('\x1b[94mReport\x1b[0m');
-if (fetchMessagesMode) selectedModes.push('\x1b[96mFetch Messages\x1b[0m');
-
-console.log("\x1b[97mServices selected: \x1b[0m", selectedModes.join(', '));
+console.log("Services selected:", selected.join(', '));
 
 // Initialize client
 const client = new Client({
@@ -52,7 +48,7 @@ client.on('qr', qr => {
 client.initialize();
 
 // Main loop
-client.once('ready', async () => {
+client.on('ready', async () => {
 
     client.setAutoDownloadDocuments(false)
     client.setAutoDownloadAudio(false)

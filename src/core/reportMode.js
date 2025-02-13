@@ -76,6 +76,7 @@ async function reportMembersInfo(client, chats, groupNames, phoneNumbersFromDB) 
 
                 if (checkResult.found) {
                     if (checkResult.is_adult || (checkResult.jb_under_10 && checkResult.jb_over_10)) {
+                        console.log(`Skipping JB removal for ${member} (adult or ambiguous JB status).`);
                     } else {
                         for (const rule of JBRemovalRules) {
                             if (rule.groupCheck(groupName) && rule.condition(checkResult)) {

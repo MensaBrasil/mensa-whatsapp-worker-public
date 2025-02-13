@@ -21,7 +21,9 @@ const telegramChatId = process.env.TELEGRAM_CHAT_ID;
 const telegramBot = new TelegramBot(telegramBotToken);
 
 readline.emitKeypressEvents(process.stdin);
-process.stdin.setRawMode(true);
+if (process.stdin.isTTY) {
+    process.stdin.setRawMode(true);
+}
 
 process.stdin.on('keypress', (str, key) => {
     if (key.name === 's') {
@@ -83,12 +85,11 @@ function logAction(groupName, member, action, reason) {
 
 function sendTelegramNotification(groupName, member, action, reason) {
     try {
-        telegramBot.sendMessage(telegramChatId, `Action logged: ${action} - ${member} in ${groupName} reason: ${reason}`)
-            .catch(error => {
-                console.error('Failed to send Telegram notification:');
-            });
+        telegramBot.sendMessage(telegramChatId, `Action logged: ${action} - ${member} in ${groupName} reason: ${reason}`).catch(error => {
+            console.error(`Failed to send Telegram notification: ${error}`);
+        });
     } catch (error) {
-        console.error('Unexpected error in sendTelegramNotification:');
+        console.error(`Unexpected error in sendTelegramNotification: ${error}`);
     }
 }
 
