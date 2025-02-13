@@ -25,8 +25,6 @@ async function addPhoneNumberToGroup(client, inputPhoneNumber, groupId) {
     }
 }
 
-
-
 function getRandomDelay(baseDelay) {
     // Calculate the random variation as 20% of the baseDelay
     const variation = baseDelay * 0.3;
@@ -43,7 +41,6 @@ function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, totalDelay));
 }
 
-
 // Function to normalize phone numbers
 function normalizePhoneNumber(phoneNumber) {
     if (phoneNumber.includes('+')) {
@@ -52,8 +49,6 @@ function normalizePhoneNumber(phoneNumber) {
         return '55' + phoneNumber.replace(/\D/g, ''); // Assume it's Brazilian (55)
     }
 }
-
-
 
 // Function to adjust the Brazilian phone number by adding or removing the '9' digit
 function adjustBrazilianPhoneNumber(phoneNumber) {
@@ -69,7 +64,6 @@ function adjustBrazilianPhoneNumber(phoneNumber) {
     }
     return phoneNumber;
 }
-
 
 // Function to try adding the participant and return success status
 async function tryAddParticipant(client, phoneNumber, groupId) {
@@ -103,8 +97,6 @@ async function tryAddParticipant(client, phoneNumber, groupId) {
         return false;
     }
 }
-
-
 
 module.exports = {
     addPhoneNumberToGroup

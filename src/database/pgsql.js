@@ -237,7 +237,6 @@ async function insertNewWhatsAppMessages(messages) {
     await pool.query(query, values);
 }
 
-
 module.exports = { 
     getPhoneNumbersWithStatus, 
     recordUserExitFromGroup, 

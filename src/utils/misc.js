@@ -1,6 +1,6 @@
 const { createObjectCsvWriter } = require('csv-writer');
-const readline = require('readline');
 const TelegramBot = require('node-telegram-bot-api');
+const readline = require('readline');
 
 const csvWriter = createObjectCsvWriter({
     path: 'action_log.csv',

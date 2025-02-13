@@ -1,7 +1,7 @@
 const { getWhatsappQueue, getMemberPhoneNumbers, registerWhatsappAddFulfilled, registerWhatsappAddAttempt } = require("../database/pgsql");
+const addPhoneNumberToGroup = require("../utils/re-add");
 const { getGroupIdByName } = require("../utils/chat");
 const { logAction, delay } = require("../utils/misc");
-const addPhoneNumberToGroup = require("../utils/re-add");
 
 async function addMembersToGroups(client, chats, groupNames) {
     for (const groupName in groupNames) {
@@ -39,6 +39,7 @@ async function addMembersToGroups(client, chats, groupNames) {
         } catch (error) {
             console.error(`Error adding members to group ${groupName}: ${error.message}`);
         }
+        await fetch(process.env.UPTIME_URL);
     }
 }
 

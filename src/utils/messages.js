@@ -1,9 +1,9 @@
 function getInactiveMessage(phone) {
-    return `Olá, mensan! 👋
+  return `Olá, mensan! 👋
   
 Aqui quem fala é o Zelador, da Mensa Brasil! 🤖
 
-Identifiquei que seu cadastro de associado da Mensa Brasil encontra-se inativo para o telefone ${phoneNumber}.
+Identifiquei que seu cadastro de associado da Mensa Brasil encontra-se inativo para o telefone ${phone}.
 
 Diante disso, te removi automaticamente dos grupos oficiais de WhatsApp da Mensa Brasil.
 
@@ -20,10 +20,10 @@ Já estamos com saudade! Até breve!
 Abraços mensans,
 
 Zelador 🤖`;
-  }
-  
-  function getNotFoundMessage() {
-    return `Olá, mensan! 👋
+}
+
+function getNotFoundMessage() {
+  return `Olá, mensan! 👋
   
 Aqui quem fala é o Zelador, da Mensa Brasil! 🤖
 
@@ -38,12 +38,11 @@ Aguardamos seu e-mail e ficamos à disposição para qualquer dúvida. Lembre-se
 Contamos com você!
 
 Abraços mensans,
-  
+
 Zelador 🤖`;
-  }
-  
-  module.exports = {
-    getInactiveMessage,
-    getNotFoundMessage
-  };
-  
+}
+
+module.exports = {
+  getInactiveMessage,
+  getNotFoundMessage
+};

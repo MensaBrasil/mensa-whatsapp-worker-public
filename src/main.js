@@ -1,11 +1,13 @@
 // Imports
-const qrcode = require('qrcode-terminal');
-const { Client, LocalAuth } = require('whatsapp-web.js');
-const scanGroups = require('./core/scanMode');
-const reportMembersInfo = require('./core/reportMode');
+const { preprocessPhoneNumbers, checkPhoneNumber } = require('./utils/phone-check');
 const fetchMessagesFromGroups = require('./core/fetchMessagesMode');
-const addMembersToGroups = require('./core/addMode');
+const { getPhoneNumbersWithStatus } = require('./database/pgsql');
 const removeMembersFromGroups = require('./core/removeMode');
+const { Client, LocalAuth } = require('whatsapp-web.js');
+const reportMembersInfo = require('./core/reportMode');
+const addMembersToGroups = require('./core/addMode');
+const scanGroups = require('./core/scanMode');
+const qrcode = require('qrcode-terminal');
 
 // Global error handler
 process.on('unhandledRejection', (reason) => {
@@ -93,7 +95,7 @@ client.once('ready', async () => {
     }
 
     if (reportMode) {
-        await reportMembersInfo(client, chats, groups);
+        await reportMembersInfo(client, chats, groupNames, phoneNumbersFromDB);
     }
 
     if (fetchMessagesMode) {
@@ -107,7 +109,8 @@ client.once('ready', async () => {
     }
 
     if (removeMode) {
-        await removeMembersFromGroups(client, chats, groups);
+        console.log('Removing members...');
+        await removeMembersFromGroups(client, groupNames, phoneNumbersFromDB);
     }
 
     console.log("All tasks completed. Exiting...");

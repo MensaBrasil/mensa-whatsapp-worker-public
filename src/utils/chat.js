@@ -118,9 +118,6 @@ async function sendMessageToNumber(client, phoneNumber, message) {
     }
 }
 
-
-
-
 module.exports = {
     printChats,
     getGroupParticipants,

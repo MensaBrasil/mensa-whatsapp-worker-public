@@ -1,7 +1,7 @@
-const { getGroupIdByName } = require("../utils/chat");
 const { getPreviousGroupMembers, recordUserExitFromGroup, recordUserEntryToGroup } = require("../database/pgsql");
 const { checkPhoneNumber } = require("../utils/phone-check");
 const { getGroupParticipants } = require("../utils/chat");
+const { getGroupIdByName } = require("../utils/chat");
 const logAction = require("../utils/misc");
 
 async function scanGroups(client, groupNames, phoneNumbersFromDB) {
@@ -35,6 +35,7 @@ async function scanGroups(client, groupNames, phoneNumbersFromDB) {
             continue;
         }
     }
+    await fetch(process.env.UPTIME_URL);
 }
 
 module.exports = scanGroups;
