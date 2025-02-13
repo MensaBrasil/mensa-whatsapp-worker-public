@@ -21,7 +21,7 @@ const scanMode = process.argv.includes('--scan');
 const reportMode = process.argv.includes('--report');
 const fetchMessagesMode = process.argv.includes('--fetch');
 
-if ([addMode, removeMode, addAndRemoveMode, scanMode, reportMode, fetchMessagesMode].filter(Boolean).length < 1) {
+if ([addMode, removeMode, scanMode, reportMode, fetchMessagesMode].filter(Boolean).length < 1) {
     console.log("\x1b[0mYou should select at least 1 service. Exiting...\x1b[97m\nPlease chose from \x1b[32m--add\x1b[0m, \x1b[31m--remove\x1b[0m, \x1b[33m--add-remove\x1b[0m, \x1b[93m--scan\x1b[0m, \x1b[94m--report\x1b[0m, \x1b[96m--fetch\x1b[0m");
     process.exit(1);
 }
