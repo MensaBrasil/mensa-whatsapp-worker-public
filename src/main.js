@@ -8,6 +8,7 @@ const reportMembersInfo = require('./core/reportMode');
 const addMembersToGroups = require('./core/addMode');
 const scanGroups = require('./core/scanMode');
 const qrcode = require('qrcode-terminal');
+const readline = require('readline');
 
 // Global error handler
 process.on('unhandledRejection', (reason) => {
@@ -31,6 +32,22 @@ if (!selected.length) {
 
 console.log("Services selected:", selected.join(', '));
 
+// Skip delay/quit on keypress
+readline.emitKeypressEvents(process.stdin);
+if (process.stdin.isTTY) {
+    process.stdin.setRawMode(true);
+}
+
+process.stdin.on('keypress', (key) => {
+    if (key.name === 's') {
+        console.log('\nSkipping delay...');
+        skipDelay = true;
+    } else if (key.ctrl && key.name === 'c') {
+        process.exit();
+    }
+});
+
+
 // Initialize client
 const client = new Client({
     authStrategy: new LocalAuth(),
@@ -43,6 +60,12 @@ const client = new Client({
 
 client.on('qr', qr => {
     qrcode.generate(qr, { small: true });
+});
+
+client.on('disconnected', (reason) => {
+    console.log('Client was logged out', reason);
+    stdin.destroy();
+    process.exit(1);
 });
 
 client.initialize();

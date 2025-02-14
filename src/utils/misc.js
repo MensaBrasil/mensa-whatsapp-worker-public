@@ -1,6 +1,5 @@
 const { createObjectCsvWriter } = require('csv-writer');
 const TelegramBot = require('node-telegram-bot-api');
-const readline = require('readline');
 
 const csvWriter = createObjectCsvWriter({
     path: 'action_log.csv',
@@ -14,27 +13,12 @@ const csvWriter = createObjectCsvWriter({
     append: true
 });
 
-let skipDelay = false;
-
 const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN;
 const telegramChatId = process.env.TELEGRAM_CHAT_ID;
 const telegramBot = new TelegramBot(telegramBotToken);
 
-readline.emitKeypressEvents(process.stdin);
-if (process.stdin.isTTY) {
-    process.stdin.setRawMode(true);
-}
-
-process.stdin.on('keypress', (str, key) => {
-    if (key.name === 's') {
-        console.log('\nSkipping delay...');
-        skipDelay = true;
-    } else if (key.ctrl && key.name === 'c') {
-        process.exit();
-    }
-});
-
 async function countdown(ms) {
+    let skipDelay = false;
     const seconds = Math.floor(ms / 1000);
     for (let i = seconds; i > 0; i--) {
         if (skipDelay) {

@@ -1,5 +1,5 @@
 const { getWhatsappQueue, getMemberPhoneNumbers, registerWhatsappAddFulfilled, registerWhatsappAddAttempt } = require("../database/pgsql");
-const addPhoneNumberToGroup = require("../utils/re-add");
+const { addPhoneNumberToGroup } = require("../utils/re-add");
 const { getGroupIdByName } = require("../utils/chat");
 const { logAction, delay } = require("../utils/misc");
 
