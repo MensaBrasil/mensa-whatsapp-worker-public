@@ -1,14 +1,13 @@
 const { getLastMessageTimestamp, insertNewWhatsAppMessages } = require("../database/pgsql");
 const { checkPhoneNumber } = require("../utils/phone-check");
 const convertTimestampToDate = require("../utils/misc");
-const getGroupIdByName = require("../utils/chat");
 
-async function fetchMessagesFromGroups(client, groupNames, phoneNumbersFromDB) {
+async function fetchMessagesFromGroups(client, groups, phoneNumbersFromDB) {
 
-    for (const groupName of groupNames) {
+    for (const group of groups) {
         try {
-            console.log("Fetching messages for group: ", groupName);
-            const groupId = await getGroupIdByName(client, groupName);
+            console.log("Fetching messages for group: ", group.name);
+            const groupId = group.id._serialized;
             const groupChat = await client.getChatById(groupId);
             const batchSize = process.env.BATCH_SIZE || 300;
             let currentBatchSize = batchSize;
@@ -129,12 +128,11 @@ async function fetchMessagesFromGroups(client, groupNames, phoneNumbersFromDB) {
                 console.log(`${batch.length} messages added to db!`);
                 return batch.length;
             }
-            console.log("All messages processed successfully for group: ", groupName, " ~", db_count, " messages added to db!");
+            console.log("All messages processed successfully for group: ", group.name, " ~", db_count, " messages added to db!");
         } catch (error) {
-            console.error(`Error saving messages for ${groupName}: `, error);
+            console.error(`Error saving messages for ${group.name}: `, error);
         }
     }
-    await fetch(process.env.UPTIME_URL);
 }
 
 module.exports = fetchMessagesFromGroups;

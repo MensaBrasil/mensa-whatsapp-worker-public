@@ -8,6 +8,11 @@ process.env.PG_DB_PORT = '5432';
 process.env.PG_DB_NAME = 'test_db';
 process.env.PG_DB_USER = 'test_user';
 process.env.PG_DB_PASSWORD = 'test_password';
+process.env.TWILIO_ACCOUNT_SID = 'ACtestSid';
+process.env.TWILIO_AUTH_TOKEN = 'testAuthToken';
+process.env.TWILIO_FLOW_SID = 'testFlowSid';
+process.env.TWILIO_WHATSApp_NUMBER = '1122334455';
+process.env.CONSTANT_WAITING_PERIOD = '1000';
 
 // Mock process.stdin for tests
 process.stdin = {
@@ -44,13 +49,6 @@ jest.mock('node-telegram-bot-api', () => {
         sendMessage: jest.fn().mockResolvedValue(true)
     }));
 });
-
-// Mock CSV Writer
-jest.mock('csv-writer', () => ({
-    createObjectCsvWriter: jest.fn().mockReturnValue({
-        writeRecords: jest.fn().mockResolvedValue()
-    })
-}));
 
 // Mock PostgreSQL Pool
 jest.mock('pg', () => ({

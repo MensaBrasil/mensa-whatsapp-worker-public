@@ -1,5 +1,5 @@
 const { getWhatsappQueue, getMemberPhoneNumbers } = require("../database/pgsql");
-const { getGroupIdByName, getGroupParticipants } = require("../utils/chat");
+const { getGroupParticipants } = require("../utils/chat");
 const { checkPhoneNumber } = require("../utils/phone-check");
 const { delay } = require("../utils/misc");
 const fs = require('fs');
@@ -37,11 +37,11 @@ const JBRemovalRules = [
     },
 ];
 
-async function reportMembersInfo(client, chats, groupNames, phoneNumbersFromDB) {
+async function reportMembersInfo(client, chats, groups, phoneNumbersFromDB) {
     let details = {};
-    for (const groupName of groupNames) {
+    for (const group of groups) {
         try {
-            const groupId = await getGroupIdByName(client, groupName);
+            const groupId = group.id._serialized;
             const conversations = chats.filter(chat => !chat.isGroup);
             const queue = await getWhatsappQueue(groupId);
             const last8DigitsFromChats = conversations.map(chat => chat.id.user).map(number => number.slice(-8));
@@ -62,7 +62,7 @@ async function reportMembersInfo(client, chats, groupNames, phoneNumbersFromDB) 
                             if (!details[phone]['Pending valid additions']) {
                                 details[phone]['Pending valid additions'] = { 'groups': [] }
                             }
-                            details[phone]['Pending valid additions']['groups'].push(groupName);
+                            details[phone]['Pending valid additions']['groups'].push(group.name);
                         }
                     }
                 } catch (error) {
@@ -79,45 +79,45 @@ async function reportMembersInfo(client, chats, groupNames, phoneNumbersFromDB) 
                         console.log(`Skipping JB removal for ${member} (adult or ambiguous JB status).`);
                     } else {
                         for (const rule of JBRemovalRules) {
-                            if (rule.groupCheck(groupName) && rule.condition(checkResult)) {
-                                console.log(`REPORT: Number ${member}, MB ${checkResult.mb} matches JB removal rule: ${rule.actionMessage} from group ${groupName}`);
+                            if (rule.groupCheck(group.name) && rule.condition(checkResult)) {
+                                console.log(`REPORT: Number ${member}, MB ${checkResult.mb} matches JB removal rule: ${rule.actionMessage} from group ${group.name}`);
                                 if (!details[member]) {
                                     details[member] = {}
                                 }
                                 if (!details[member][rule.actionMessage]) {
                                     details[member][rule.actionMessage] = { 'groups': [] }
                                 }
-                                details[member][rule.actionMessage]['groups'].push(groupName);
+                                details[member][rule.actionMessage]['groups'].push(group.name);
                             }
                         }
                     }
 
                     if (checkResult.status === 'Inactive') {
-                        console.log(`REPORT: Number ${member}, MB ${checkResult.mb} is inactive in group ${groupName}`);
+                        console.log(`REPORT: Number ${member}, MB ${checkResult.mb} is inactive in group ${group.name}`);
                         if (!details[member]) {
                             details[member] = {}
                         }
                         if (!details[member]['inactive']) {
                             details[member]['inactive'] = { 'groups': [] }
                         }
-                        details[member]['inactive']['groups'].push(groupName);
+                        details[member]['inactive']['groups'].push(group.name);
                     }
 
                 } else {
                     if (member !== '+33681604260' && member !== '18653480874' && member !== '36705346911' && member !== '351926855059' && member !== '447863603673' && member !== '4915122324805' && member !== '62999552046' && member !== '15142676652' && member !== "556299552046" && member !== '447782796843' && member !== '555496875059' && member !== '34657489744' && member !== '5511914206718') {
-                        console.log(`REPORT: Number ${member}, MB ${checkResult.mb} is not found in the database in group ${groupName}`);
+                        console.log(`REPORT: Number ${member}, MB ${checkResult.mb} is not found in the database in group ${group.name}`);
                         if (!details[member]) {
                             details[member] = {}
                         }
                         if (!details[member]['not_found']) {
                             details[member]['not_found'] = { 'groups': [] }
                         }
-                        details[member]['not_found']['groups'].push(groupName);
+                        details[member]['not_found']['groups'].push(group.name);
                     }
                 }
             }
         } catch (error) {
-            console.error(`Error processing request in group ${groupName}: ${error.message}`);
+            console.error(`Error processing request in group ${group.name}: ${error.message}`);
         }
     }
     console.log("Summary of report details:");
@@ -208,7 +208,6 @@ async function reportMembersInfo(client, chats, groupNames, phoneNumbersFromDB) 
 
     fs.writeFileSync('report_details.json', JSON.stringify(details, null, 2));
     console.log('\x1b[1mDetailed report saved to:\x1b[0m \x1b[36mreport_details.json\x1b[0m');
-    await fetch(process.env.UPTIME_URL);
     await delay(10);
 }
 module.exports = reportMembersInfo;

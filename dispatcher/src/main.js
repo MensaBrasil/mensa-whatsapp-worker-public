@@ -8,11 +8,11 @@ const reportMembersInfo = require('./core/reportMode');
 const addMembersToGroups = require('./core/addMode');
 const scanGroups = require('./core/scanMode');
 const qrcode = require('qrcode-terminal');
-const readline = require('readline');
 
 // Global error handler
 process.on('unhandledRejection', (reason) => {
     console.error('Unhandled Rejection:', reason);
+    process.exit(1);
 });
 
 // Cli args
@@ -31,22 +31,6 @@ if (!selected.length) {
 }
 
 console.log("Services selected:", selected.join(', '));
-
-// Skip delay/quit on keypress
-readline.emitKeypressEvents(process.stdin);
-if (process.stdin.isTTY) {
-    process.stdin.setRawMode(true);
-}
-
-process.stdin.on('keypress', (key) => {
-    if (key.name === 's') {
-        console.log('\nSkipping delay...');
-        skipDelay = true;
-    } else if (key.ctrl && key.name === 'c') {
-        process.exit();
-    }
-});
-
 
 // Initialize client
 const client = new Client({
@@ -110,26 +94,26 @@ client.on('ready', async () => {
 
     if (scanMode) {
         console.log('Scanning groups...');
-        await scanGroups(client, groupNames, phoneNumbersFromDB);
+        await scanGroups(client, groups, phoneNumbersFromDB);
     }
 
     if (reportMode) {
-        await reportMembersInfo(client, chats, groupNames, phoneNumbersFromDB);
+        await reportMembersInfo(client, chats, groups, phoneNumbersFromDB);
     }
 
     if (fetchMessagesMode) {
         console.log('Fetching messages...');
-        await fetchMessagesFromGroups(client, groupNames, phoneNumbersFromDB);
+        await fetchMessagesFromGroups(client, groups, phoneNumbersFromDB);
     }
 
     if (addMode) {
         console.log('Adding members...');
-        await addMembersToGroups(client, chats, groupNames);
+        await addMembersToGroups(chats, groups);
     }
 
     if (removeMode) {
         console.log('Removing members...');
-        await removeMembersFromGroups(client, groupNames, phoneNumbersFromDB);
+        await removeMembersFromGroups(client, groups, phoneNumbersFromDB);
     }
 
     console.log("All tasks completed. Exiting...");

@@ -19,14 +19,14 @@ describe('CLI Argument Handling', () => {
     });
 
     it('should exit when no mode specified', () => {
-        require('../src/main');
+        require('../../dispatcher/src/main');
         expect(process.exit).toHaveBeenCalledWith(1);
         expect(console.log).toHaveBeenCalledWith(expect.stringContaining('You should select at least 1 service'));
     });
 
     it('should recognize multiple modes', () => {
         process.argv.push('--add', '--scan', '--remove', '--fetch', '--report');
-        require('../src/main');
+        require('../../dispatcher/src/main');
         const logArgs = console.log.mock.calls[0];
         expect(logArgs[0]).toEqual(expect.stringContaining("Services selected:"));
         expect(logArgs[1]).toEqual(expect.stringContaining('Add'));
@@ -41,7 +41,7 @@ describe('Client Initialization', () => {
     it('should create client with correct config', () => {
         process.argv.push('--scan');
         const { Client, LocalAuth } = require('whatsapp-web.js');
-        require('../src/main');
+        require('../../dispatcher/src/main');
 
         expect(Client).toHaveBeenCalledWith({
             authStrategy: expect.any(LocalAuth),

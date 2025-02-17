@@ -1,6 +1,5 @@
-
 const twilio = require('twilio');
-const { getLastCommunication, logCommunication } = require('../database/pgsql'); 
+const { getLastCommunication, logCommunication } = require('../database/pgsql');
 require('dotenv').config();
 
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -62,6 +61,4 @@ async function triggerTwilioOrRemove(phoneNumber, reason) {
     }
 }
 
-module.exports = { 
-    triggerTwilioOrRemove,
-};
+module.exports = triggerTwilioOrRemove;
