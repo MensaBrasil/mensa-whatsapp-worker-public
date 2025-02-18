@@ -1,5 +1,5 @@
-const triggerTwilioOrRemove = require('../../../dispatcher/src/utils/twilio');
-const { getLastCommunication, logCommunication } = require('../../../dispatcher/src/database/pgsql');
+const triggerTwilioOrRemove = require('../../src/utils/twilio');
+const { getLastCommunication, logCommunication } = require('../../src/database/pgsql');
 
 jest.mock('twilio', () => {
     // Create a mock for twilio client which returns a studio stub.
@@ -8,7 +8,7 @@ jest.mock('twilio', () => {
     return jest.fn(() => ({ studio: { v2: { flows: flowsMock } } }));
 });
 
-jest.mock('../../../dispatcher/src/database/pgsql', () => ({
+jest.mock('../../src/database/pgsql', () => ({
     getLastCommunication: jest.fn(),
     logCommunication: jest.fn().mockResolvedValue(undefined)
 }));
@@ -24,6 +24,8 @@ describe('triggerTwilioOrRemove', () => {
     test('should trigger Twilio immediately when no last communication exists', async () => {
         getLastCommunication.mockResolvedValue(null);
         const result = await triggerTwilioOrRemove(testPhone, testReason);
+
+        expect(getLastCommunication).toHaveBeenCalledWith(testPhone);
         expect(logCommunication).toHaveBeenCalledWith(testPhone, testReason);
         expect(result).toBe(true);
     });

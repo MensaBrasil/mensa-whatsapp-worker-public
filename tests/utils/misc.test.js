@@ -1,4 +1,4 @@
-const convertTimestampToDate = require('../../../dispatcher/src/utils/misc');
+const convertTimestampToDate = require('../../src/utils/misc');
 
 describe('convertTimestampToDate', () => {
     test('should correctly convert a Unix timestamp to a Date object', async () => {

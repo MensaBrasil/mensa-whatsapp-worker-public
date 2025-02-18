@@ -16,7 +16,7 @@ const {
     insertNewWhatsAppMessages,
     getLastCommunication,
     logCommunication
-} = require('../../../dispatcher/src/database/pgsql');
+} = require('../../src/database/pgsql');
 
 // Mock the pg Pool
 jest.mock('pg', () => {

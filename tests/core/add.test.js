@@ -1,10 +1,10 @@
-const addMembersToGroups = require('../../../dispatcher/src/core/addMode');
-const { getWhatsappQueue, getMemberPhoneNumbers } = require('../../../dispatcher/src/database/pgsql');
-const sqs_client = require('../../../dispatcher/src/utils/sqs_conn');
+const addMembersToGroups = require('../../src/core/addMode');
+const { getWhatsappQueue, getMemberPhoneNumbers } = require('../../src/database/pgsql');
+const sqs_client = require('../../src/utils/sqs_conn');
 
 // Mock the dependencies
-jest.mock('../../../dispatcher/src/database/pgsql');
-jest.mock('../../../dispatcher/src/utils/sqs_conn');
+jest.mock('../../src/database/pgsql');
+jest.mock('../../src/utils/sqs_conn');
 
 describe('addMembersToGroups', () => {
     const mockGroups = [

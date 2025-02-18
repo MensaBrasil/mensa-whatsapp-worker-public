@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { preprocessPhoneNumbers, checkPhoneNumber } = require('../../../dispatcher/src/utils/phone-check');
+const { preprocessPhoneNumbers, checkPhoneNumber } = require('../../src/utils/phone-check');
 
 describe('preprocessPhoneNumbers', () => {
     it('should normalize phone numbers with a + sign and add Brazilian variations', () => {

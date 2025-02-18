@@ -1,4 +1,4 @@
-const getGroupParticipants = require('../../../dispatcher/src/utils/chat');
+const getGroupParticipants = require('../../src/utils/chat');
 
 // Mock the client object with Jest
 const client = {
