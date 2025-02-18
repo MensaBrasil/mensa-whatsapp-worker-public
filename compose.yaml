@@ -1,7 +1,14 @@
 services:
-  motoserver:
-    image: motoserver/moto:latest
+  redis:
+    image: "redis:latest"
+    container_name: "redis"
     ports:
-      - "3000:3000"
+      - "6379:6379"
     environment:
-      - MOTO_PORT=3000
+      - REDIS_PASSWORD=testpass
+    command: redis-server --requirepass testpass
+#     volumes:
+#       - redis_data:/data
+
+# volumes:
+#   redis_data:

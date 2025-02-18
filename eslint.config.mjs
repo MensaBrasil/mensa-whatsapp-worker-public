@@ -8,5 +8,11 @@ export default [
     "rules": {
       "no-undef": "off"
     }
+  },
+  {
+    "parserOptions": {
+      "sourceType": "module",
+    }
   }
+
 ];

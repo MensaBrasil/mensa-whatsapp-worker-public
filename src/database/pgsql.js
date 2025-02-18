@@ -237,19 +237,19 @@ async function insertNewWhatsAppMessages(messages) {
     await pool.query(query, values);
 }
 
-module.exports = { 
-    getPhoneNumbersWithStatus, 
-    recordUserExitFromGroup, 
-    recordUserEntryToGroup, 
+export {
+    getPhoneNumbersWithStatus,
+    recordUserExitFromGroup,
+    recordUserEntryToGroup,
+    getLastCommunication,
+    logCommunication,
     getPreviousGroupMembers,
     saveGroupsToList,
     getWhatsappQueue,
     registerWhatsappAddAttempt,
-    getMemberPhoneNumbers,
     registerWhatsappAddFulfilled,
-    getLastCommunication,
-    logCommunication,
     getMemberName,
+    getMemberPhoneNumbers,
     getLastMessageTimestamp,
     insertNewWhatsAppMessages
-};
+}

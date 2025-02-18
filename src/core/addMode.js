@@ -1,41 +1,26 @@
-const { getWhatsappQueue, getMemberPhoneNumbers } = require("../database/pgsql");
-const sqs_client = require('../utils/sqs_conn');
+import { getWhatsappQueue } from '../database/pgsql';
+import { send_to_queue } from '../database/redis';
 
-async function addMembersToGroups(chats, groups) {
+async function addMembersToGroups(groups) {
     for (const group of groups) {
         try {
             const groupId = group.id._serialized;
-            const conversations = chats.filter(chat => !chat.isGroup);
             const queue = await getWhatsappQueue(groupId);
-            const last8DigitsFromChats = conversations.map(chat => chat.id.user).map(number => number.slice(-8));
 
             for (const request of queue.rows) {
                 try {
-                    const phones = await getMemberPhoneNumbers(request.registration_id);
-                    for (const phone of phones) {
-                        const new_phone = phone.replace(/\D/g, '');
-                        if (last8DigitsFromChats.includes(new_phone.slice(-8))) {
-                            sqs_client.sendMessage({
-                                QueueUrl: process.env.SQS_URL,
-                                MessageBody: JSON.stringify({
-                                    type: 'add',
-                                    groupId: groupId,
-                                    phone: phone,
-                                    registration_id: request.registration_id
-                                })
-                            });
-                        } else {
-                            throw new Error('Failed to send request to the queue.');
-                        }
-                    }
+                    const object = { type: 'add', registration_id: registration_id, group_id: groupId };
+                    await send_to_queue(object);
+                    console.log(`Sent to queue: type=add, registration_id=${request.registration_id}, group_id=${groupId}, phone_number=${phone_number}`);
                 } catch (error) {
                     console.error(`Error sending request to add: ${request.registration_id} to group: ${error.message}`);
                 }
             }
+
         } catch (error) {
             console.error(`Error adding members to group ${group.name}: ${error.message}`);
         }
     }
 }
 
-module.exports = addMembersToGroups;
+export { addMembersToGroups };

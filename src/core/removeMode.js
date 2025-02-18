@@ -1,7 +1,6 @@
-const getGroupParticipants = require("../utils/chat");
-const { checkPhoneNumber } = require("../utils/phone-check");
-const triggerTwilioOrRemove = require("../utils/twilio");
-const sqs_client = require('../utils/sqs_conn');
+import { getGroupParticipants } from "../utils/chat";
+import { checkPhoneNumber } from "../utils/phone-check";
+import { triggerTwilioOrRemove } from "../utils/twilio";
 require('dotenv').config();
 
 dont_remove = process.env.DONT_REMOVE_NUMBERS.split(',');

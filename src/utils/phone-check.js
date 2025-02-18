@@ -73,4 +73,4 @@ function checkPhoneNumber(phoneNumberMap, inputPhoneNumber) {
     return { found: false };
 }
 
-module.exports = { preprocessPhoneNumbers, checkPhoneNumber };
+export { preprocessPhoneNumbers, checkPhoneNumber };
