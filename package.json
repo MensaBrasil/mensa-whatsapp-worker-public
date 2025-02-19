@@ -1,12 +1,10 @@
 {
-  "name": "mensa-whatsapp-admin",
-  "version": "1.0.0",
+  "name": "mensa-wpp-dispatcher",
+  "version": "0.2.3",
   "description": "O Robô Zelador da Mensa Brasil é um script em JavaScript que automatiza a manutenção e gerenciamento de grupos do WhatsApp associados à Mensa Brasil. Ele verifica a atividade dos membros, remove membros inativos e envia mensagens para números que não foram encontrados na planilha de membros.",
-  "main": "index.js",
+  "main": "src/main.js",
   "scripts": {
-    "lint": "eslint src/",
-    "test": "jest",
-    "test:watch": "jest --watch"
+    "lint": "eslint src/"
   },
   "repository": {
     "type": "git",
@@ -28,32 +26,5 @@
     "redis": "^4.7.0",
     "twilio": "^5.4.4",
     "whatsapp-web.js": "^1.26.1-alpha.3"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.20.0",
-    "eslint": "^9.20.1",
-    "globals": "^15.15.0",
-    "jest": "^29.7.0",
-    "jest-mock-extended": "^3.0.5",
-    "mock-socket": "^9.3.1"
-  },
-  "jest": {
-    "testEnvironment": "node",
-    "setupFilesAfterEnv": [
-      "<rootDir>/tests/setup.js"
-    ],
-    "testMatch": [
-      "**/tests/**/*.test.mjs"
-    ],
-    "collectCoverage": true,
-    "coverageDirectory": "coverage",
-    "coverageReporters": [
-      "text",
-      "lcov"
-    ]
-  },
-  "directories": {
-    "test": "tests"
-  },
-  "keywords": []
+  }
 }
