@@ -43,7 +43,7 @@
       "<rootDir>/tests/setup.js"
     ],
     "testMatch": [
-      "**/tests/**/*.test.js"
+      "**/tests/**/*.test.mjs"
     ],
     "collectCoverage": true,
     "coverageDirectory": "coverage",

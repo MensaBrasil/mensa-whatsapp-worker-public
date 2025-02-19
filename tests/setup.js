@@ -1,4 +1,4 @@
-/* global process, jest, global */
+import { jest } from '@jest/globals';
 
 // Mock environment variables
 process.env.TELEGRAM_BOT_TOKEN = 'test-token';

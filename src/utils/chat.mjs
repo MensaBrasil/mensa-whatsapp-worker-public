@@ -7,9 +7,9 @@ async function getGroupParticipants(client, groupId) {
     return [];
   }
 
-  return groupChat.participants.map(participant => ({
+  return groupChat.participants.map((participant) => ({
     phone: participant.id.user,
-    isAdmin: participant.isAdmin
+    isAdmin: participant.isAdmin,
   }));
 }
 

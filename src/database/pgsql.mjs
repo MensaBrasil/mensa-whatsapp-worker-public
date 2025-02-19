@@ -1,19 +1,19 @@
-const {
-    Pool
-} = require('pg');
-require('dotenv').config();
+import { Pool } from 'pg';
+import { configDotenv } from 'dotenv';
+
+configDotenv();
 
 const pool = new Pool({
-    host: process.env.PG_DB_HOST,
-    port: process.env.PG_DB_PORT,
-    database: process.env.PG_DB_NAME,
-    user: process.env.PG_DB_USER,
-    password: process.env.PG_DB_PASSWORD
+  host: process.env.PG_DB_HOST,
+  port: process.env.PG_DB_PORT,
+  database: process.env.PG_DB_NAME,
+  user: process.env.PG_DB_USER,
+  password: process.env.PG_DB_PASSWORD,
 });
 
 const getPhoneNumbersWithStatus = async () => {
-    const currentDate = new Date().toISOString().split('T')[0]; // Format as YYYY-MM-DD
-    const query = `
+  const currentDate = new Date().toISOString().split('T')[0]; // Format as YYYY-MM-DD
+  const query = `
     WITH MaxExpirationDates AS (
         SELECT
             registration_id,
@@ -63,7 +63,7 @@ const getPhoneNumbersWithStatus = async () => {
             END AS jb_under_10,
             CASE
                 WHEN DATE_PART('year', AGE(reg.birth_date)) >= 10 
-                     AND DATE_PART('year', AGE(reg.birth_date)) < 18 THEN TRUE
+                    AND DATE_PART('year', AGE(reg.birth_date)) < 18 THEN TRUE
                 ELSE FALSE
             END AS jb_over_10,
             CASE
@@ -86,67 +86,72 @@ const getPhoneNumbersWithStatus = async () => {
     WHERE phone_number IS NOT NULL
     GROUP BY phone_number, registration_id;
     `;
-    
-    const { rows } = await pool.query(query, [currentDate]);
-    return rows;
+
+  const { rows } = await pool.query(query, [currentDate]);
+  return rows;
 };
 
 const recordUserExitFromGroup = async (phone_number, group_id, reason) => {
-    const query = `
+  const query = `
         UPDATE member_groups
         SET exit_date = CURRENT_DATE, removal_reason = $3
         WHERE phone_number = $1 AND group_id = $2 AND exit_date IS NULL;
     `;
-    await pool.query(query, [phone_number, group_id, reason]);
+  await pool.query(query, [phone_number, group_id, reason]);
 };
 
-const recordUserEntryToGroup = async (registration_id, phone_number, group_id, status) => {
-    const query = `
+const recordUserEntryToGroup = async (
+  registration_id,
+  phone_number,
+  group_id,
+  status,
+) => {
+  const query = `
         INSERT INTO member_groups (registration_id, phone_number, group_id, status)
         VALUES ($1, $2, $3, $4);
     `;
-    await pool.query(query, [registration_id, phone_number, group_id, status]);
+  await pool.query(query, [registration_id, phone_number, group_id, status]);
 };
 
 async function getLastCommunication(phoneNumber) {
-    const query = `
+  const query = `
         SELECT * FROM whatsapp_comms 
         WHERE phone_number = $1
         ORDER BY timestamp DESC LIMIT 1
     `;
-    const result = await pool.query(query, [phoneNumber]);
-    return result.rows[0];
+  const result = await pool.query(query, [phoneNumber]);
+  return result.rows[0];
 }
 
-
 async function logCommunication(phoneNumber, reason) {
-    const query = `
+  const query = `
         INSERT INTO whatsapp_comms (phone_number, reason, timestamp, status)
         VALUES ($1, $2, NOW(), 'unresolved')
         ON CONFLICT (phone_number, reason) 
         DO UPDATE SET timestamp = NOW(), status = 'unresolved';
     `;
-    await pool.query(query, [phoneNumber, reason]);
+  await pool.query(query, [phoneNumber, reason]);
 }
 
 async function getPreviousGroupMembers(groupId) {
-    const query = 'SELECT phone_number FROM member_groups WHERE group_id = $1 AND exit_date IS NULL';
-    const values = [groupId];
-    const result = await pool.query(query, values);
-    return result.rows.map(row => row.phone_number);
+  const query =
+    'SELECT phone_number FROM member_groups WHERE group_id = $1 AND exit_date IS NULL';
+  const values = [groupId];
+  const result = await pool.query(query, values);
+  return result.rows.map((row) => row.phone_number);
 }
 
 async function saveGroupsToList(groupNames, groupIds) {
-    await pool.query('DELETE FROM group_list');
+  await pool.query('DELETE FROM group_list');
 
-    const query = 'INSERT INTO group_list (group_name, group_id) VALUES ($1, $2)';
-    for (let i = 0; i < groupNames.length; i++) {
-        await pool.query(query, [groupNames[i], groupIds[i]]);
-    }
+  const query = 'INSERT INTO group_list (group_name, group_id) VALUES ($1, $2)';
+  for (let i = 0; i < groupNames.length; i++) {
+    await pool.query(query, [groupNames[i], groupIds[i]]);
+  }
 }
 
 async function getWhatsappQueue(group_id) {
-    const query = `
+  const query = `
         SELECT * 
         FROM group_requests 
         WHERE 
@@ -155,29 +160,31 @@ async function getWhatsappQueue(group_id) {
             AND fulfilled = false 
             AND (last_attempt < NOW() - INTERVAL '1 day' OR last_attempt IS NULL)
     `;
-    return await pool.query(query, [group_id]);
+  return await pool.query(query, [group_id]);
 }
 
 // Register WhatsApp add attempt, incrementing the number of attempts and updating last_attempt
 async function registerWhatsappAddAttempt(request_id) {
-    const query = 'UPDATE group_requests SET no_of_attempts = no_of_attempts + 1, last_attempt = NOW() WHERE id = $1';
-    await pool.query(query, [request_id]);
+  const query =
+    'UPDATE group_requests SET no_of_attempts = no_of_attempts + 1, last_attempt = NOW() WHERE id = $1';
+  await pool.query(query, [request_id]);
 }
 
 // Register that a WhatsApp add was fulfilled and update last_attempt
 async function registerWhatsappAddFulfilled(id) {
-    const query = 'UPDATE group_requests SET fulfilled = true, last_attempt = NOW() WHERE id = $1';
-    await pool.query(query, [id]);
+  const query =
+    'UPDATE group_requests SET fulfilled = true, last_attempt = NOW() WHERE id = $1';
+  await pool.query(query, [id]);
 }
 
 async function getMemberName(registration_id) {
-    const query = 'SELECT name FROM registration WHERE registration_id = $1';
-    const result = await pool.query(query, [registration_id]);
-    return result.rows[0].name;
+  const query = 'SELECT name FROM registration WHERE registration_id = $1';
+  const result = await pool.query(query, [registration_id]);
+  return result.rows[0].name;
 }
 
 async function getMemberPhoneNumbers(registration_id) {
-    const query = `SELECT 
+  const query = `SELECT 
                     phone_number AS phone
                 FROM 
                     phones
@@ -199,12 +206,12 @@ async function getMemberPhoneNumbers(registration_id) {
                     registration_id = $1
                     AND alternative_phone IS NOT NULL;
     `;
-    const result = await pool.query(query, [registration_id]);
-    return result.rows.map(row => row.phone);
+  const result = await pool.query(query, [registration_id]);
+  return result.rows.map((row) => row.phone);
 }
 
 async function getLastMessageTimestamp(groupId) {
-    const query = `select
+  const query = `select
                         extract(EPOCH
                     from
                         MAX(timestamp))::INT as unix_timestamp
@@ -213,14 +220,14 @@ async function getLastMessageTimestamp(groupId) {
                     where
                         group_id = $1`;
 
-    const result = await pool.query(query, [groupId]);
-    return result.rows[0]?.unix_timestamp || 0;
+  const result = await pool.query(query, [groupId]);
+  return result.rows[0]?.unix_timestamp || 0;
 }
 
 async function insertNewWhatsAppMessages(messages) {
-    if (messages.length === 0) return;
+  if (messages.length === 0) return;
 
-    const query = `
+  const query = `
     INSERT INTO whatsapp_messages (
         message_id,
         group_id,
@@ -233,23 +240,23 @@ async function insertNewWhatsAppMessages(messages) {
     VALUES ${messages.map((_, index) => `($${index * 7 + 1}, $${index * 7 + 2}, $${index * 7 + 3}, $${index * 7 + 4}, $${index * 7 + 5}, $${index * 7 + 6}, $${index * 7 + 7})`).join(', ')}
     `;
 
-    const values = messages.flat();
-    await pool.query(query, values);
+  const values = messages.flat();
+  await pool.query(query, values);
 }
 
 export {
-    getPhoneNumbersWithStatus,
-    recordUserExitFromGroup,
-    recordUserEntryToGroup,
-    getLastCommunication,
-    logCommunication,
-    getPreviousGroupMembers,
-    saveGroupsToList,
-    getWhatsappQueue,
-    registerWhatsappAddAttempt,
-    registerWhatsappAddFulfilled,
-    getMemberName,
-    getMemberPhoneNumbers,
-    getLastMessageTimestamp,
-    insertNewWhatsAppMessages
+  getPhoneNumbersWithStatus,
+  recordUserExitFromGroup,
+  recordUserEntryToGroup,
+  getLastCommunication,
+  logCommunication,
+  getPreviousGroupMembers,
+  saveGroupsToList,
+  getWhatsappQueue,
+  registerWhatsappAddAttempt,
+  registerWhatsappAddFulfilled,
+  getMemberName,
+  getMemberPhoneNumbers,
+  getLastMessageTimestamp,
+  insertNewWhatsAppMessages,
 };
