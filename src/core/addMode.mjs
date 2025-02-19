@@ -1,5 +1,5 @@
-import { getWhatsappQueue } from '../database/pgsql';
-import { send_to_queue } from '../database/redis';
+import { getWhatsappQueue } from '../database/pgsql.mjs';
+import { send_to_queue } from '../database/redis.mjs';
 
 async function addMembersToGroups(groups) {
     for (const group of groups) {
@@ -9,11 +9,11 @@ async function addMembersToGroups(groups) {
 
             for (const request of queue.rows) {
                 try {
-                    const object = { type: 'add', registration_id: registration_id, group_id: groupId };
+                    const object = { type: 'add', registration_id: request.registration_id, group_id: groupId };
                     await send_to_queue(object);
-                    console.log(`Sent to queue: type=add, registration_id=${request.registration_id}, group_id=${groupId}, phone_number=${phone_number}`);
+                    console.log(`Sent to queue: type=add, registration_id=${request.registration_id}, group_id=${groupId}`);
                 } catch (error) {
-                    console.error(`Error sending request to add: ${request.registration_id} to group: ${error.message}`);
+                    console.error(`Error sending request to add: ${request.registration_id} to group: ${groupId} - ${error.message}`);
                 }
             }
 

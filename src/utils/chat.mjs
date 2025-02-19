@@ -13,4 +13,4 @@ async function getGroupParticipants(client, groupId) {
   }));
 }
 
-module.exports = getGroupParticipants;
+export { getGroupParticipants };

@@ -130,16 +130,16 @@ async function logCommunication(phoneNumber, reason) {
 }
 
 async function getPreviousGroupMembers(groupId) {
-    const query = `SELECT phone_number FROM member_groups WHERE group_id = $1 AND exit_date IS NULL`;
+    const query = 'SELECT phone_number FROM member_groups WHERE group_id = $1 AND exit_date IS NULL';
     const values = [groupId];
     const result = await pool.query(query, values);
     return result.rows.map(row => row.phone_number);
 }
 
 async function saveGroupsToList(groupNames, groupIds) {
-    await pool.query(`DELETE FROM group_list`);
+    await pool.query('DELETE FROM group_list');
 
-    const query = `INSERT INTO group_list (group_name, group_id) VALUES ($1, $2)`;
+    const query = 'INSERT INTO group_list (group_name, group_id) VALUES ($1, $2)';
     for (let i = 0; i < groupNames.length; i++) {
         await pool.query(query, [groupNames[i], groupIds[i]]);
     }
@@ -160,18 +160,18 @@ async function getWhatsappQueue(group_id) {
 
 // Register WhatsApp add attempt, incrementing the number of attempts and updating last_attempt
 async function registerWhatsappAddAttempt(request_id) {
-    const query = `UPDATE group_requests SET no_of_attempts = no_of_attempts + 1, last_attempt = NOW() WHERE id = $1`;
+    const query = 'UPDATE group_requests SET no_of_attempts = no_of_attempts + 1, last_attempt = NOW() WHERE id = $1';
     await pool.query(query, [request_id]);
 }
 
 // Register that a WhatsApp add was fulfilled and update last_attempt
 async function registerWhatsappAddFulfilled(id) {
-    const query = `UPDATE group_requests SET fulfilled = true, last_attempt = NOW() WHERE id = $1`;
+    const query = 'UPDATE group_requests SET fulfilled = true, last_attempt = NOW() WHERE id = $1';
     await pool.query(query, [id]);
 }
 
 async function getMemberName(registration_id) {
-    const query = `SELECT name FROM registration WHERE registration_id = $1`;
+    const query = 'SELECT name FROM registration WHERE registration_id = $1';
     const result = await pool.query(query, [registration_id]);
     return result.rows[0].name;
 }
@@ -230,7 +230,7 @@ async function insertNewWhatsAppMessages(messages) {
         message_type,
         device_type
     )
-    VALUES ${messages.map((_, index) => `($${index * 7 + 1}, $${index * 7 + 2}, $${index * 7 + 3}, $${index * 7 + 4}, $${index * 7 + 5}, $${index * 7 + 6}, $${index * 7 + 7})`).join(", ")}
+    VALUES ${messages.map((_, index) => `($${index * 7 + 1}, $${index * 7 + 2}, $${index * 7 + 3}, $${index * 7 + 4}, $${index * 7 + 5}, $${index * 7 + 6}, $${index * 7 + 7})`).join(', ')}
     `;
 
     const values = messages.flat();
@@ -252,4 +252,4 @@ export {
     getMemberPhoneNumbers,
     getLastMessageTimestamp,
     insertNewWhatsAppMessages
-}
+};

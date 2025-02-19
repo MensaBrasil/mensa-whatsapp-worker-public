@@ -20,7 +20,7 @@ async function send_to_queue(object) {
     try {
         console.log(object);
         await client.connect();
-        await client.rPush("queue", JSON.stringify(object));
+        await client.rPush('queue', JSON.stringify(object));
         await client.disconnect();
     }
     catch (err) {

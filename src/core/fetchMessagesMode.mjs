@@ -1,7 +1,7 @@
-import { getLastMessageTimestamp, insertNewWhatsAppMessages } from "../database/pgsql";
-import { checkPhoneNumber } from "../utils/phone-check";
-import { convertTimestampToDate } from "../utils/misc";
-import { configDotenv } from "dotenv";
+import { getLastMessageTimestamp, insertNewWhatsAppMessages } from '../database/pgsql.mjs';
+import { checkPhoneNumber } from '../utils/phone-check.mjs';
+import { convertTimestampToDate } from '../utils/misc.mjs';
+import { configDotenv } from 'dotenv';
 
 configDotenv();
 
@@ -9,7 +9,7 @@ async function fetchMessagesFromGroups(client, groups, phoneNumbersFromDB) {
 
     for (const group of groups) {
         try {
-            console.log("Fetching messages for group: ", group.name);
+            console.log('Fetching messages for group: ', group.name);
             const groupId = group.id._serialized;
             const groupChat = await client.getChatById(groupId);
             const batchSize = process.env.BATCH_SIZE || 300;
@@ -18,62 +18,62 @@ async function fetchMessagesFromGroups(client, groups, phoneNumbersFromDB) {
             let req_count = 0;
             let db_count = 0;
 
-            let lastMessageTimestampInDb = await getLastMessageTimestamp(groupId);
-            let timeLimitTimestamp = 0;
+            const lastMessageTimestampInDb = await getLastMessageTimestamp(groupId);
+            const timeLimitTimestamp = 0;
 
-            console.log("Last message date in db: ", (await convertTimestampToDate(lastMessageTimestampInDb)).toLocaleDateString("pt-BR"), " - timestamp: ", lastMessageTimestampInDb);
-            console.log("Time limit date: ", (await convertTimestampToDate(timeLimitTimestamp)).toLocaleDateString("pt-BR"), " - timestamp: ", timeLimitTimestamp);
+            console.log('Last message date in db: ', (await convertTimestampToDate(lastMessageTimestampInDb)).toLocaleDateString('pt-BR'), ' - timestamp: ', lastMessageTimestampInDb);
+            console.log('Time limit date: ', (await convertTimestampToDate(timeLimitTimestamp)).toLocaleDateString('pt-BR'), ' - timestamp: ', timeLimitTimestamp);
 
             while (reachedTimestamp === false) {
                 try {
-                    let options = { limit: currentBatchSize };
-                    console.log("Fetching up to: ", options.limit, " messages...");
+                    const options = { limit: currentBatchSize };
+                    console.log('Fetching up to: ', options.limit, ' messages...');
                     let messages = await groupChat.fetchMessages(options);
-                    console.log("Fetched: ", messages.length, " messages");
+                    console.log('Fetched: ', messages.length, ' messages');
                     req_count += 1;
 
-                    console.log("Oldest message from this batch date: ", (await convertTimestampToDate(messages[0].timestamp)).toLocaleDateString("pt-BR"), " - timestamp: ", messages[0].timestamp);
+                    console.log('Oldest message from this batch date: ', (await convertTimestampToDate(messages[0].timestamp)).toLocaleDateString('pt-BR'), ' - timestamp: ', messages[0].timestamp);
 
                     if (messages.length === 0) {
-                        console.log("No messages found. Skipping...");
+                        console.log('No messages found. Skipping...');
                         break;
                     }
 
-                    if ((messages.length < batchSize) && (req_count == 1)) {
-                        console.log("First batch reached maximum messages!");
+                    if ((messages.length < batchSize) && (req_count === 1)) {
+                        console.log('First batch reached maximum messages!');
                         reachedTimestamp = true;
-                        let filteredMessages = messages.filter(message => message.timestamp > lastMessageTimestampInDb);
+                        const filteredMessages = messages.filter(message => message.timestamp > lastMessageTimestampInDb);
                         db_count += await sendMessageBatchToDb(filteredMessages);
                         break;
                     }
 
                     if (req_count > 1) {
                         if (currentBatchSize > messages.length) {
-                            console.log("Last batch reached! Batch count: ", req_count);
-                            let difference = messages.length - ((req_count - 1) * batchSize);
-                            console.log(difference, " remaining messages!");
+                            console.log('Last batch reached! Batch count: ', req_count);
+                            const difference = messages.length - ((req_count - 1) * batchSize);
+                            console.log(difference, ' remaining messages!');
                             messages = messages.slice(0, difference);
-                            let filteredMessages = messages.filter(message => message.timestamp > lastMessageTimestampInDb);
+                            const filteredMessages = messages.filter(message => message.timestamp > lastMessageTimestampInDb);
                             db_count += await sendMessageBatchToDb(filteredMessages);
                             break;
                         }
                     }
 
-                    if (messages.length == currentBatchSize) {
-                        console.log("Selecting first ", batchSize, " messages from batch nº", req_count);
+                    if (messages.length === currentBatchSize) {
+                        console.log('Selecting first ', batchSize, ' messages from batch nº', req_count);
                         messages = messages.slice(0, batchSize);
                     }
 
                     if ((messages[0].timestamp > lastMessageTimestampInDb) && (messages[0].timestamp > timeLimitTimestamp)) {
-                        console.log("Time limit NOT reached in current batch! Batch count: ", req_count);
-                        console.log("Sending batch nº", req_count, " with ", messages.length, " messages to db...");
+                        console.log('Time limit NOT reached in current batch! Batch count: ', req_count);
+                        console.log('Sending batch nº', req_count, ' with ', messages.length, ' messages to db...');
                         currentBatchSize += batchSize;
-                        db_count += await sendMessageBatchToDb(messages)
+                        db_count += await sendMessageBatchToDb(messages);
 
                     } else {
-                        console.log("Timestamp limit reached. Checking timestamps in current batch! batch count: ", req_count);
+                        console.log('Timestamp limit reached. Checking timestamps in current batch! batch count: ', req_count);
                         let filteredMessages = messages.filter(message => message.timestamp > lastMessageTimestampInDb);
-                        console.log(filteredMessages.length, " new messages found! Sending batch to db...");
+                        console.log(filteredMessages.length, ' new messages found! Sending batch to db...');
                         db_count += await sendMessageBatchToDb(filteredMessages);
                         reachedTimestamp = true;
                         messages = null;
@@ -82,7 +82,7 @@ async function fetchMessagesFromGroups(client, groups, phoneNumbersFromDB) {
                         break;
                     }
                 } catch (error) {
-                    console.error("Error fetching messages:", error);
+                    console.error('Error fetching messages:', error);
                     break;
                 }
             }
@@ -131,7 +131,7 @@ async function fetchMessagesFromGroups(client, groups, phoneNumbersFromDB) {
                 console.log(`${batch.length} messages added to db!`);
                 return batch.length;
             }
-            console.log("All messages processed successfully for group: ", group.name, " ~", db_count, " messages added to db!");
+            console.log('All messages processed successfully for group: ', group.name, ' ~', db_count, ' messages added to db!');
         } catch (error) {
             console.error(`Error saving messages for ${group.name}: `, error);
         }

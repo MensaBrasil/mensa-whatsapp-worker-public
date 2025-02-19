@@ -1,36 +1,39 @@
-import { getGroupParticipants } from "../utils/chat";
-import { checkPhoneNumber } from "../utils/phone-check";
-import { triggerTwilioOrRemove } from "../utils/twilio";
-require('dotenv').config();
+import { send_to_queue } from '../database/redis.mjs';
+import { getGroupParticipants } from '../utils/chat.mjs';
+import { checkPhoneNumber } from '../utils/phone-check.mjs';
+import { triggerTwilioOrRemove } from '../utils/twilio.mjs';
+import { configDotenv } from 'dotenv';
+
+configDotenv();
 
 dont_remove = process.env.DONT_REMOVE_NUMBERS.split(',');
 
 const jbGroupNames = [
-    "MB | N-SIGs Mensa Brasil",
-    "MB | Xadrez",
+    'MB | N-SIGs Mensa Brasil',
+    'MB | Xadrez',
 ];
 
 const JBRemovalRules = [
     {
         groupCheck: (groupName) =>
-            groupName.includes("M.JB") &&
-            !groupName.includes("R. JB"),
+            groupName.includes('M.JB') &&
+            !groupName.includes('R. JB'),
         condition: (checkResult) =>
             checkResult.jb_over_10 && !checkResult.jb_under_10,
         actionMessage: 'User is JB over 10 in M.JB group'
     },
     {
         groupCheck: (groupName) =>
-            groupName.includes("JB") &&
-            !groupName.includes("M.JB") &&
-            !groupName.includes("R. JB"),
+            groupName.includes('JB') &&
+            !groupName.includes('M.JB') &&
+            !groupName.includes('R. JB'),
         condition: (checkResult) =>
             checkResult.jb_under_10 && !checkResult.jb_over_10,
         actionMessage: 'User is JB under 10 in JB group'
     },
     {
         groupCheck: (groupName) =>
-            !groupName.includes("JB") &&
+            !groupName.includes('JB') &&
             !jbGroupNames.includes(groupName),
         condition: (checkResult) =>
             checkResult.jb_under_10 || checkResult.jb_over_10,
@@ -48,28 +51,24 @@ async function removeMembersFromGroups(client, groups, phoneNumbersFromDB) {
                 const checkResult = checkPhoneNumber(phoneNumbersFromDB, member);
 
                 if (checkResult.found) {
-                    if (checkResult.is_adult || (checkResult.jb_under_10 && checkResult.jb_over_10)) {
-                        console.log(`Skipping JB removal for ${member} (adult or ambiguous JB status).`);
-                    } else {
+                    if (!(checkResult.is_adult || (checkResult.jb_under_10 && checkResult.jb_over_10))) {
                         for (const rule of JBRemovalRules) {
                             if (rule.groupCheck(group.name) && rule.condition(checkResult)) {
-                                sqs_client.sendMessage({
-                                    QueueUrl: process.env.SQS_URL,
-                                    MessageBody: JSON.stringify({
-                                        type: 'remove',
-                                        groupId: groupId,
-                                        phone: checkResult.phone,
-                                        registration_id: checkResult.registration_id,
-                                        reason: rule.actionMessage
-                                    })
-                                });
+                                const object = {
+                                    type: 'remove',
+                                    registration_id: checkResult.registration_id,
+                                    groupId: groupId,
+                                    phone: checkResult.phone,
+                                    reason: rule.actionMessage
+                                };
+                                await send_to_queue(object);
                             }
                         }
                     }
 
                     if (checkResult.status === 'Inactive') {
                         console.log(`Number ${member}, MB ${checkResult.mb} is inactive.`);
-                        const shouldRemove = await triggerTwilioOrRemove(member, "mensa_inactive");
+                        const shouldRemove = await triggerTwilioOrRemove(member, 'mensa_inactive');
                         if (shouldRemove) {
                             sqs_client.sendMessage({
                                 QueueUrl: process.env.SQS_URL,
@@ -107,4 +106,4 @@ async function removeMembersFromGroups(client, groups, phoneNumbersFromDB) {
     }
 }
 
-module.exports = removeMembersFromGroups;
+export { removeMembersFromGroups };

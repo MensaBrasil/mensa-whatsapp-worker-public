@@ -1,13 +1,13 @@
 // Imports
-const { preprocessPhoneNumbers, checkPhoneNumber } = require('./utils/phone-check');
-const fetchMessagesFromGroups = require('./core/fetchMessagesMode');
-const { getPhoneNumbersWithStatus } = require('./database/pgsql');
-const removeMembersFromGroups = require('./core/removeMode');
-const { Client, LocalAuth } = require('whatsapp-web.js');
-const reportMembersInfo = require('./core/reportMode');
-const addMembersToGroups = require('./core/addMode');
-const scanGroups = require('./core/scanMode');
-const qrcode = require('qrcode-terminal');
+import { preprocessPhoneNumbers, checkPhoneNumber } from './utils/phone-check.mjs';
+import { fetchMessagesFromGroups } from './core/fetchMessagesMode.mjs';
+import { getPhoneNumbersWithStatus, saveGroupsToList } from './database/pgsql.mjs';
+import { removeMembersFromGroups } from './core/removeMode.mjs';
+import { Client, LocalAuth } from 'whatsapp-web.js';
+import { reportMembersInfo } from './core/reportMode.mjs';
+import { addMembersToGroups } from './core/addMode.mjs';
+import { scanGroups } from './core/scanMode.mjs';
+import qrcode from 'qrcode-terminal';
 
 // Global error handler
 process.on('unhandledRejection', (reason) => {
@@ -26,18 +26,18 @@ const reportMode = process.argv.includes('--report');
 const fetchMessagesMode = process.argv.includes('--fetch');
 
 if (!selected.length) {
-    console.log("You should select at least 1 service. Exiting...\nPlease choose from " + Object.keys(modes).join(', '));
+    console.log('You should select at least 1 service. Exiting...\nPlease choose from ' + Object.keys(modes).join(', '));
     process.exit(1);
 }
 
-console.log("Services selected:", selected.join(', '));
+console.log('Services selected:', selected.join(', '));
 
 // Initialize client
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
-        headless: "new",
-        args: ["--no-sandbox", '--disable-setuid-sandbox', "--disable-gpu"],
+        headless: 'new',
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu'],
         protocolTimeout: 1200000
     }
 });
@@ -48,7 +48,6 @@ client.on('qr', qr => {
 
 client.on('disconnected', (reason) => {
     console.log('Client was logged out', reason);
-    stdin.destroy();
     process.exit(1);
 });
 
@@ -57,10 +56,10 @@ client.initialize();
 // Main loop
 client.on('ready', async () => {
 
-    client.setAutoDownloadDocuments(false)
-    client.setAutoDownloadAudio(false)
-    client.setAutoDownloadPhotos(false)
-    client.setAutoDownloadVideos(false)
+    client.setAutoDownloadDocuments(false);
+    client.setAutoDownloadAudio(false);
+    client.setAutoDownloadPhotos(false);
+    client.setAutoDownloadVideos(false);
 
     console.log('Client is ready!');
 
@@ -70,7 +69,7 @@ client.on('ready', async () => {
     const groupNames = groups.map(group => group.name);
     const groupIds = groups.map(group => group.id._serialized);
 
-    if ((chats.length == 0) || (groups.length == 0)) {
+    if ((chats.length === 0) || (groups.length === 0)) {
         console.log('No groups found. Exiting.');
         process.exit(1);
     }
@@ -116,7 +115,7 @@ client.on('ready', async () => {
         await removeMembersFromGroups(client, groups, phoneNumbersFromDB);
     }
 
-    console.log("All tasks completed. Exiting...");
+    console.log('All tasks completed. Exiting...');
     process.exit(0);
 
 });
