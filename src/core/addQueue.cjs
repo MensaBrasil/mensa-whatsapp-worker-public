@@ -1,5 +1,5 @@
-import { getWhatsappQueue } from '../database/pgsql.mjs';
-import { send_to_queue, get_all_queue_itens } from '../database/redis.mjs';
+const { getWhatsappQueue } = require('../database/pgsql.cjs');
+const { send_to_queue, get_all_queue_itens } = require('../database/redis.cjs');
 
 async function addMembersToGroups(groups) {
   const current_queue = await get_all_queue_itens();
@@ -36,4 +36,4 @@ async function addMembersToGroups(groups) {
   }
 }
 
-export { addMembersToGroups };
+module.exports = { addMembersToGroups };

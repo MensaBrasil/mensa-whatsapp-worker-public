@@ -1,8 +1,8 @@
-import { getWhatsappQueue, getMemberPhoneNumbers } from '../database/pgsql.mjs';
-import { getGroupParticipants } from '../utils/chat.mjs';
-import { checkPhoneNumber } from '../utils/phone-check.mjs';
-import { configDotenv } from 'dotenv';
-import fs from 'fs';
+const { getWhatsappQueue, getMemberPhoneNumbers } = require('../database/pgsql.cjs');
+const { getGroupParticipants } = require('../utils/chat.cjs');
+const { checkPhoneNumber } = require('../utils/phone-check.cjs');
+const { configDotenv } = require('dotenv');
+const fs = require('fs');
 
 configDotenv();
 
@@ -204,4 +204,5 @@ async function reportMembersInfo(client, chats, groups, phoneNumbersFromDB) {
   fs.writeFileSync('report_details.json', JSON.stringify(details, null, 2));
   console.log('\x1b[1mDetailed report saved to:\x1b[0m \x1b[36mreport_details.json\x1b[0m');
 }
-export { reportMembersInfo };
+
+module.exports = { reportMembersInfo };

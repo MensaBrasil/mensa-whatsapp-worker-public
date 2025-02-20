@@ -1,6 +1,6 @@
-import { getPreviousGroupMembers, recordUserExitFromGroup, recordUserEntryToGroup } from '../database/pgsql.mjs';
-import { checkPhoneNumber } from '../utils/phone-check.mjs';
-import { getGroupParticipants } from '../utils/chat.mjs';
+const { getPreviousGroupMembers, recordUserExitFromGroup, recordUserEntryToGroup } = require('../database/pgsql.cjs');
+const { checkPhoneNumber } = require('../utils/phone-check.cjs');
+const { getGroupParticipants } = require('../utils/chat.cjs');
 
 async function scanGroups(client, groups, phoneNumbersFromDB) {
   for (const group of groups) {
@@ -33,4 +33,4 @@ async function scanGroups(client, groups, phoneNumbersFromDB) {
   }
 }
 
-export { scanGroups };
+module.exports = { scanGroups };

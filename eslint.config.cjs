@@ -1,15 +1,15 @@
-import js from '@eslint/js';
-import globals from 'globals';
+const js = require('@eslint/js');
+const globals = require('globals');
 
-export default [
+module.exports = [
   {
-    files: ['**/*.js', '**/*.mjs'],
+    files: ['**/*.js', '**/*.cjs'],
     languageOptions: {
-      sourceType: 'module',
+      sourceType: 'commonjs',
       ecmaVersion: 'latest',
       globals: {
         ...globals.node,
-        ...globals.es2025
+        ...globals.es2021
       },
     },
     plugins: {},
@@ -21,9 +21,13 @@ export default [
       'no-duplicate-imports': 'error',
       'no-constant-condition': 'warn',
       'no-unreachable': 'error',
+      'no-extra-semi': 'warn',
+      'no-undef-init': 'error',
+      'no-unused-expressions': 'error',
+      'no-use-before-define': 'error',
+      'no-var': 'error',
       'camelcase': 'off',
       'eqeqeq': ['error', 'always'],
-      'no-var': 'error',
       'prefer-const': 'warn',
       'semi': ['error', 'always'],
       'quotes': ['warn', 'single'],

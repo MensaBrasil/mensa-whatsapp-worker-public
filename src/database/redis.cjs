@@ -1,7 +1,7 @@
-import { createClient } from 'redis';
-import dotenv from 'dotenv';
+const { createClient } = require('redis');
+const { configDotenv } = require('dotenv');
 
-dotenv.config();
+configDotenv();
 
 // Create a new Redis client
 
@@ -46,4 +46,4 @@ async function get_all_queue_itens() {
   }
 }
 
-export { send_to_queue, get_all_queue_itens };
+module.exports = { send_to_queue, get_all_queue_itens };

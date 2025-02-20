@@ -75,4 +75,4 @@ function checkPhoneNumber(phoneNumberMap, inputPhoneNumber) {
   return { found: false };
 }
 
-export { preprocessPhoneNumbers, checkPhoneNumber };
+module.exports = { preprocessPhoneNumbers, checkPhoneNumber };

@@ -1,13 +1,13 @@
 // Imports
-import { preprocessPhoneNumbers, checkPhoneNumber } from './utils/phone-check.mjs';
-import { fetchMessagesFromGroups } from './core/fetchMessagesMode.mjs';
-import { getPhoneNumbersWithStatus, saveGroupsToList } from './database/pgsql.mjs';
-import { removeMembersFromGroups } from './core/removeQueue.mjs';
-import { Client, LocalAuth } from 'whatsapp-web.js';
-import { reportMembersInfo } from './core/reportMode.mjs';
-import { addMembersToGroups } from './core/addQueue.mjs';
-import { scanGroups } from './core/scanMode.mjs';
-import qrcode from 'qrcode-terminal';
+const { preprocessPhoneNumbers, checkPhoneNumber } = require('./utils/phone-check.cjs');
+const { fetchMessagesFromGroups } = require('./core/fetchMessagesMode.cjs');
+const { getPhoneNumbersWithStatus, saveGroupsToList } = require('./database/pgsql.cjs');
+const { removeMembersFromGroups } = require('./core/removeQueue.cjs');
+const { Client, LocalAuth } = require('whatsapp-web.js');
+const { reportMembersInfo } = require('./core/reportMode.cjs');
+const { addMembersToGroups } = require('./core/addQueue.cjs');
+const { scanGroups } = require('./core/scanMode.cjs');
+const qrcode = require('qrcode-terminal');
 
 // Global error handler
 process.on('unhandledRejection', (reason) => {

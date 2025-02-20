@@ -3,4 +3,4 @@ async function convertTimestampToDate(timestamp) {
   return date;
 }
 
-export { convertTimestampToDate };
+module.exports = { convertTimestampToDate };

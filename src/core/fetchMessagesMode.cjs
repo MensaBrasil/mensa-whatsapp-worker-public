@@ -1,7 +1,7 @@
-import { getLastMessageTimestamp, insertNewWhatsAppMessages } from '../database/pgsql.mjs';
-import { checkPhoneNumber } from '../utils/phone-check.mjs';
-import { convertTimestampToDate } from '../utils/misc.mjs';
-import { configDotenv } from 'dotenv';
+const { getLastMessageTimestamp, insertNewWhatsAppMessages } = require('../database/pgsql.cjs');
+const { checkPhoneNumber } = require('../utils/phone-check.cjs');
+const { convertTimestampToDate } = require('../utils/misc.cjs');
+const { configDotenv } = require('dotenv');
 
 configDotenv();
 
@@ -22,6 +22,53 @@ async function fetchMessagesFromGroups(client, groups, phoneNumbersFromDB) {
 
       console.log('Last message date in db: ', (await convertTimestampToDate(lastMessageTimestampInDb)).toLocaleDateString('pt-BR'), ' - timestamp: ', lastMessageTimestampInDb);
       console.log('Time limit date: ', (await convertTimestampToDate(timeLimitTimestamp)).toLocaleDateString('pt-BR'), ' - timestamp: ', timeLimitTimestamp);
+
+      async function sendMessageBatchToDb(messages) {
+        const phoneNumbers = messages
+          .map((message) => {
+            // Extract the numeric part before '@'
+            const author = message.author || null;
+            if (!author) {
+              return null;
+            }
+            const parts = author.split('@');
+            if (parts.length !== 2) {
+              return null;
+            }
+            return parts[0];
+          })
+          .filter((phone) => phone !== null); // Remove null entries
+
+        const batch = [];
+
+        for (let i = 0; i < phoneNumbers.length; i++) {
+          const phone = phoneNumbers[i];
+
+          const resp = checkPhoneNumber(phoneNumbersFromDB, phone);
+
+          if (resp.found) {
+            const message = messages[i];
+            const message_id = message.id.id;
+            const group_id = groupId;
+            const datetime = new Date(message.timestamp * 1000).toISOString();
+
+            batch.push([
+              message_id,
+              group_id,
+              resp.mb,
+              datetime,
+              phone,
+              message.type,
+              message.deviceType,
+            ]);
+          }
+        }
+        if (batch.length > 0) {
+          await insertNewWhatsAppMessages(batch);
+        }
+        console.log(`${batch.length} messages added to db!`);
+        return batch.length;
+      }
 
       while (reachedTimestamp === false) {
         try {
@@ -94,57 +141,10 @@ async function fetchMessagesFromGroups(client, groups, phoneNumbersFromDB) {
         }
       }
 
-      async function sendMessageBatchToDb(messages) {
-        const phoneNumbers = messages
-          .map((message) => {
-            // Extract the numeric part before '@'
-            const author = message.author || null;
-            if (!author) {
-              return null;
-            }
-            const parts = author.split('@');
-            if (parts.length !== 2) {
-              return null;
-            }
-            return parts[0];
-          })
-          .filter((phone) => phone !== null); // Remove null entries
-
-        const batch = [];
-
-        for (let i = 0; i < phoneNumbers.length; i++) {
-          const phone = phoneNumbers[i];
-
-          const resp = checkPhoneNumber(phoneNumbersFromDB, phone);
-
-          if (resp.found) {
-            const message = messages[i];
-            const message_id = message.id.id;
-            const group_id = groupId;
-            const datetime = new Date(message.timestamp * 1000).toISOString();
-
-            batch.push([
-              message_id,
-              group_id,
-              resp.mb,
-              datetime,
-              phone,
-              message.type,
-              message.deviceType,
-            ]);
-          }
-        }
-        if (batch.length > 0) {
-          await insertNewWhatsAppMessages(batch);
-        }
-        console.log(`${batch.length} messages added to db!`);
-        return batch.length;
-      }
       console.log('All messages processed successfully for group: ', group.name, ' ~', db_count, ' messages added to db!');
     } catch (error) {
       console.error(`Error saving messages for ${group.name}: `, error);
     }
   }
 }
-
-export { fetchMessagesFromGroups };
+module.exports = { fetchMessagesFromGroups };

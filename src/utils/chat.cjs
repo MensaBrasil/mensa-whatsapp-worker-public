@@ -1,9 +1,7 @@
 async function getGroupParticipants(client, groupId) {
-  // Fetch the GroupChat by its ID
   const groupChat = await client.getChatById(groupId);
 
   if (!groupChat.isGroup) {
-    console.log('Chat is not a group chat');
     return [];
   }
 
@@ -13,4 +11,4 @@ async function getGroupParticipants(client, groupId) {
   }));
 }
 
-export { getGroupParticipants };
+module.exports = { getGroupParticipants };

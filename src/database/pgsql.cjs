@@ -1,5 +1,5 @@
-import { Pool } from 'pg';
-import { configDotenv } from 'dotenv';
+const { Pool } = require('pg');
+const { configDotenv } = require('dotenv');
 
 configDotenv();
 
@@ -244,7 +244,7 @@ async function insertNewWhatsAppMessages(messages) {
   await pool.query(query, values);
 }
 
-export {
+module.exports = {
   getPhoneNumbersWithStatus,
   recordUserExitFromGroup,
   recordUserEntryToGroup,

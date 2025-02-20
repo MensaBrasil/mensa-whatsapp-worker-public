@@ -1,6 +1,6 @@
-import twilio from 'twilio';
-import { getLastCommunication, logCommunication } from '../database/pgsql.mjs';
-import { configDotenv } from 'dotenv';
+const twilio = require('twilio');
+const { getLastCommunication, logCommunication } = require('../database/pgsql.cjs');
+const { configDotenv } = require('dotenv');
 
 configDotenv();
 
@@ -20,13 +20,11 @@ async function triggerTwilioOrRemove(phoneNumber, reason) {
     if (!lastComm || lastComm.reason !== reason) {
       // Trigger Twilio immediately for a new reason or no previous communication
       await logCommunication(phoneNumber, reason);
-      const execution = await twilioClient.studio.v2
-        .flows(flowSid)
-        .executions.create({
-          to: `whatsapp:+${phoneNumber}`,
-          from: `whatsapp:+${twilioWhatsAppNumber}`,
-          parameters: { reason: reason, member_phone: `+${phoneNumber}` },
-        });
+      const execution = await twilioClient.studio.v2.flows(flowSid).executions.create({
+        to: `whatsapp:+${phoneNumber}`,
+        from: `whatsapp:+${twilioWhatsAppNumber}`,
+        parameters: { reason: reason, member_phone: `+${phoneNumber}` },
+      });
 
       console.log(
         `Twilio Flow triggered for ${phoneNumber} with reason: ${reason}, Execution SID: ${execution.sid}`,
@@ -71,4 +69,4 @@ async function triggerTwilioOrRemove(phoneNumber, reason) {
   }
 }
 
-export { triggerTwilioOrRemove };
+module.exports = { triggerTwilioOrRemove };
