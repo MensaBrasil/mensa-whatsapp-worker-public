@@ -228,17 +228,18 @@ async function insertNewWhatsAppMessages(messages) {
   if (messages.length === 0) return;
 
   const query = `
-    INSERT INTO whatsapp_messages (
-        message_id,
-        group_id,
-        registration_id,
-        timestamp,
-        phone,
-        message_type,
-        device_type
-    )
-    VALUES ${messages.map((_, index) => `($${index * 7 + 1}, $${index * 7 + 2}, $${index * 7 + 3}, $${index * 7 + 4}, $${index * 7 + 5}, $${index * 7 + 6}, $${index * 7 + 7})`).join(', ')}
-    `;
+  INSERT INTO whatsapp_messages (
+      message_id,
+      group_id,
+      registration_id,
+      timestamp,
+      phone,
+      message_type,
+      device_type,
+      content
+  )
+  VALUES ${messages.map((_, index) => `($${index * 8 + 1}, $${index * 8 + 2}, $${index * 8 + 3}, $${index * 8 + 4}, $${index * 8 + 5}, $${index * 8 + 6}, $${index * 8 + 7}, $${index * 8 + 8})`).join(", ")}
+  `;
 
   const values = messages.flat();
   await pool.query(query, values);
