@@ -47,6 +47,7 @@ async function removeMembersFromGroups(client, groups, phoneNumbersFromDB) {
       for (const member of groupMembers) {
         const checkResult = checkPhoneNumber(phoneNumbersFromDB, member);
 
+        // Check if item is already in the queue
         if (checkResult.found) {
           const newObj = {
             type: 'remove',
@@ -65,6 +66,7 @@ async function removeMembersFromGroups(client, groups, phoneNumbersFromDB) {
             continue;
           }
 
+          // If it's not in the queue, check if it should be removed
           if (!(checkResult.is_adult || (checkResult.jb_under_10 && checkResult.jb_over_10))) {
             for (const rule of JBRemovalRules) {
               if (rule.groupCheck(group.name) && rule.condition(checkResult)) {

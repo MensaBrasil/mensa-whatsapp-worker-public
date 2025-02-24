@@ -44,23 +44,23 @@ describe('preprocessPhoneNumbers', () => {
             expect(phoneMap.get(num)).toEqual([entries[0]]);
         });
     });
-});
 
-test('should handle non-Brazilian numbers without variations', () => {
-    const entries = [{
-        phone_number: '+1 (555) 123-4567',
-        status: 'active',
-        registration_id: '9999',
-        jb_under_10: false,
-        jb_over_10: false,
-        is_adult: true
-    }];
-    const phoneMap = preprocessPhoneNumbers(entries);
-    const normalized = '15551234567';
-    expect(phoneMap.has(normalized)).toBe(true);
-    expect(phoneMap.get(normalized)).toEqual([entries[0]]);
-});
 
+    test('should handle non-Brazilian numbers without variations', () => {
+        const entries = [{
+            phone_number: '+1 (555) 123-4567',
+            status: 'active',
+            registration_id: '9999',
+            jb_under_10: false,
+            jb_over_10: false,
+            is_adult: true
+        }];
+        const phoneMap = preprocessPhoneNumbers(entries);
+        const normalized = '15551234567';
+        expect(phoneMap.has(normalized)).toBe(true);
+        expect(phoneMap.get(normalized)).toEqual([entries[0]]);
+    });
+});
 
 describe('checkPhoneNumber', () => {
     let phoneNumberMap;

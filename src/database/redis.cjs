@@ -24,7 +24,6 @@ async function send_to_queue(object) {
     await client.disconnect();
   } catch (err) {
     console.log('Error sending data to queue', err);
-    process.exit(1);
   }
 }
 
@@ -42,7 +41,6 @@ async function get_all_queue_itens() {
     }
   } catch (err) {
     console.log('Error receiving data from queue', err);
-    process.exit(1);
   }
 }
 

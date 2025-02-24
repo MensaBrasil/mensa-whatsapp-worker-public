@@ -5,4 +5,5 @@ module.exports = {
   passWithNoTests: true,
   collectCoverage: true,
   collectCoverageFrom: ['src/**/*.cjs'],
-}
+  setupFiles: ['<rootDir>/tests/setEnvVars.js']
+};
