@@ -18,14 +18,10 @@ jest.mock('../../src/utils/misc.cjs', () => ({
 
 describe('fetchMessagesFromGroups', () => {
     const mockClient = {
-        getChatById: jest.fn().mockImplementation((groupId) => ({
+        getChatById: jest.fn().mockImplementation(() => ({
             fetchMessages: jest.fn().mockResolvedValue([]),
         })),
     };
-    const groups = [
-        { id: { _serialized: 'group1' }, name: 'Test Group 1' },
-        { id: { _serialized: 'group2' }, name: 'Test Group 2' },
-    ];
     const phoneNumbersFromDB = new Map();
 
     const mockGroupChat = {
@@ -49,19 +45,19 @@ describe('fetchMessagesFromGroups', () => {
 
         getLastMessageTimestamp.mockResolvedValue(1672531100);
         checkPhoneNumber.mockReturnValue({
-            "found": true,
-            "is_adult": true,
-            "jb_over_10": false,
-            "jb_under_10": false,
-            "mb": "123",
-            "status": "active",
+            'found': true,
+            'is_adult': true,
+            'jb_over_10': false,
+            'jb_under_10': false,
+            'mb': '123',
+            'status': 'active',
         });
         convertTimestampToDate.mockImplementation((timestamp) => new Date(timestamp * 1000));
 
         await fetchMessagesFromGroups(mockClient, mockGroups, mockPhoneNumbersFromDB);
 
         expect(mockClient.getChatById).toHaveBeenCalledWith('group1');
-        expect(mockGroupChat.fetchMessages).toHaveBeenCalledWith({ limit: "300" });
+        expect(mockGroupChat.fetchMessages).toHaveBeenCalledWith({ limit: '300' });
         expect(getLastMessageTimestamp).toHaveBeenCalledWith('group1');
         expect(checkPhoneNumber).toHaveBeenCalledWith(mockPhoneNumbersFromDB, '1234567890');
     });
@@ -78,7 +74,7 @@ describe('fetchMessagesFromGroups', () => {
         await fetchMessagesFromGroups(mockClient, mockGroups, mockPhoneNumbersFromDB);
 
         expect(mockClient.getChatById).toHaveBeenCalledWith('group1');
-        expect(mockGroupChat.fetchMessages).toHaveBeenCalledWith({ limit: "300" });
+        expect(mockGroupChat.fetchMessages).toHaveBeenCalledWith({ limit: '300' });
         expect(getLastMessageTimestamp).toHaveBeenCalledWith('group1');
         expect(insertNewWhatsAppMessages).not.toHaveBeenCalled();
     });
@@ -95,7 +91,7 @@ describe('fetchMessagesFromGroups', () => {
         await fetchMessagesFromGroups(mockClient, mockGroups, mockPhoneNumbersFromDB);
 
         expect(mockClient.getChatById).toHaveBeenCalledWith('group1');
-        expect(mockGroupChat.fetchMessages).toHaveBeenCalledWith({ limit: "300" });
+        expect(mockGroupChat.fetchMessages).toHaveBeenCalledWith({ limit: '300' });
         expect(getLastMessageTimestamp).toHaveBeenCalledWith('group1');
         expect(insertNewWhatsAppMessages).not.toHaveBeenCalled();
     });
@@ -115,12 +111,12 @@ describe('fetchMessagesFromGroups', () => {
         ]);
 
         checkPhoneNumber.mockReturnValue({
-            "found": true,
-            "is_adult": true,
-            "jb_over_10": false,
-            "jb_under_10": false,
-            "mb": "123",
-            "status": "active",
+            'found': true,
+            'is_adult': true,
+            'jb_over_10': false,
+            'jb_under_10': false,
+            'mb': '123',
+            'status': 'active',
         });
 
         const result = checkPhoneNumber(phoneNumberMap, '1234567890');

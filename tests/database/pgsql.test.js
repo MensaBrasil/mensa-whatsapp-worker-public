@@ -119,9 +119,9 @@ describe('Database Functions', () => {
             await saveGroupsToList(groupNames, groupIds);
 
             expect(pool.query).toHaveBeenCalledTimes(3); // 1 DELETE + 2 INSERTs
-            expect(pool.query).toHaveBeenNthCalledWith(1, "DELETE FROM group_list");
-            expect(pool.query).toHaveBeenNthCalledWith(2, "INSERT INTO group_list (group_name, group_id) VALUES ($1, $2)", ['Group1', 1]);
-            expect(pool.query).toHaveBeenNthCalledWith(3, "INSERT INTO group_list (group_name, group_id) VALUES ($1, $2)", ['Group2', 2]);
+            expect(pool.query).toHaveBeenNthCalledWith(1, 'DELETE FROM group_list');
+            expect(pool.query).toHaveBeenNthCalledWith(2, 'INSERT INTO group_list (group_name, group_id) VALUES ($1, $2)', ['Group1', 1]);
+            expect(pool.query).toHaveBeenNthCalledWith(3, 'INSERT INTO group_list (group_name, group_id) VALUES ($1, $2)', ['Group2', 2]);
         });
     });
 
