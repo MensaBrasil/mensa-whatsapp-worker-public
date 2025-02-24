@@ -46,7 +46,7 @@ async function reportMembersInfo(client, chats, groups, phoneNumbersFromDB) {
       const queue = await getWhatsappQueue(groupId);
       const last8DigitsFromChats = conversations.map((chat) => chat.id.user).map((number) => number.slice(-8));
       const participants = await getGroupParticipants(client, groupId);
-      const groupMembers = participants.map((participant) => participant.id._serialized);
+      const groupMembers = participants.map((participant) => participant.phone);
 
       for (const request of queue.rows) {
         try {
