@@ -51,7 +51,7 @@ async function removeMembersFromGroups(client, groups, phoneNumbersFromDB) {
         if (checkResult.found) {
           const newObj = {
             type: 'remove',
-            registration_id: checkResult.registration_id,
+            registration_id: checkResult.mb,
             groupId: groupId,
             phone: checkResult.phone,
           };
@@ -72,7 +72,7 @@ async function removeMembersFromGroups(client, groups, phoneNumbersFromDB) {
               if (rule.groupCheck(group.name) && rule.condition(checkResult)) {
                 const object = {
                   type: 'remove',
-                  registration_id: checkResult.registration_id,
+                  registration_id: checkResult.mb,
                   groupId: groupId,
                   phone: checkResult.phone,
                   reason: rule.actionMessage,
@@ -86,7 +86,7 @@ async function removeMembersFromGroups(client, groups, phoneNumbersFromDB) {
             if (shouldRemove) {
               const object = {
                 type: 'remove',
-                registration_id: checkResult.registration_id,
+                registration_id: checkResult.mb,
                 groupId: groupId,
                 phone: checkResult.phone,
                 reason: 'Inactive',

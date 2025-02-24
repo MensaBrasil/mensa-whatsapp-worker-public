@@ -31,12 +31,12 @@ const getPhoneNumbersWithStatus = async () => {
                 ELSE 'Inactive'
             END AS status,
             CASE
-                WHEN DATE_PART('year', AGE(r.birth_date)) < 10 THEN TRUE
+                WHEN DATE_PART('year', AGE(r.birth_date)) <= 11 THEN TRUE
                 ELSE FALSE
             END AS jb_under_10,
             CASE
                 WHEN DATE_PART('year', AGE(r.birth_date)) >= 10 
-                    AND DATE_PART('year', AGE(r.birth_date)) < 18 THEN TRUE
+                AND DATE_PART('year', AGE(r.birth_date)) < 18 THEN TRUE
                 ELSE FALSE
             END AS jb_over_10,
             CASE
@@ -58,12 +58,12 @@ const getPhoneNumbersWithStatus = async () => {
                 ELSE 'Inactive'
             END AS status,
             CASE
-                WHEN DATE_PART('year', AGE(reg.birth_date)) < 10 THEN TRUE
+                WHEN DATE_PART('year', AGE(reg.birth_date)) <= 11 THEN TRUE
                 ELSE FALSE
             END AS jb_under_10,
             CASE
                 WHEN DATE_PART('year', AGE(reg.birth_date)) >= 10 
-                    AND DATE_PART('year', AGE(reg.birth_date)) < 18 THEN TRUE
+                AND DATE_PART('year', AGE(reg.birth_date)) < 18 THEN TRUE
                 ELSE FALSE
             END AS jb_over_10,
             CASE
