@@ -22,13 +22,16 @@ async function scanGroups(client, groups, phoneNumbersFromDB) {
       for (const member of groupMembers) {
         const checkResult = checkPhoneNumber(phoneNumbersFromDB, member);
         if (!previousMembers.includes(member)) {
-          console.log(`Number ${member}, MB ${checkResult.mb} is new to the group.`);
-          await recordUserEntryToGroup(checkResult.mb, member, groupId, checkResult.status);
+          console.log(`Number ${member}, is new to the group, but no match found in the database.`);
+          if (checkResult.status){
+            console.log(`Number ${member}, MB ${checkResult.mb} is new to the group.`);
+            await recordUserEntryToGroup(checkResult.mb, member, groupId, checkResult.status);
+          }
         }
       }
     } catch (error) {
       console.error(`Error scanning group ${group.name}: ${error.message}`);
-      continue;
+      continue
     }
   }
 }
