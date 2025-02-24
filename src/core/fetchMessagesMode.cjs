@@ -24,20 +24,17 @@ async function fetchMessagesFromGroups(client, groups, phoneNumbersFromDB) {
       console.log('Time limit date: ', (await convertTimestampToDate(timeLimitTimestamp)).toLocaleDateString('pt-BR'), ' - timestamp: ', timeLimitTimestamp);
 
       async function sendMessageBatchToDb(messages) {
-        const phoneNumbers = messages
-          .map((message) => {
-            // Extract the numeric part before '@'
-            const author = message.author || null;
-            if (!author) {
-              return null;
-            }
-            const parts = author.split('@');
-            if (parts.length !== 2) {
-              return null;
-            }
-            return parts[0];
-          })
-          .filter((phone) => phone !== null); // Remove null entries
+        const phoneNumbers = messages.map(message => {
+          const author = message.author || null;
+          if (!author) {
+            return null;
+          }
+          const parts = author.split('@');
+          if (parts.length !== 2) {
+            return null;
+          }
+          return parts[0];
+        }).filter(phone => phone !== null); // Remove null entries
 
         const batch = [];
 
@@ -60,12 +57,15 @@ async function fetchMessagesFromGroups(client, groups, phoneNumbersFromDB) {
               phone,
               message.type,
               message.deviceType,
+              message.type === 'chat' ? message.body : null
             ]);
           }
         }
+
         if (batch.length > 0) {
           await insertNewWhatsAppMessages(batch);
         }
+
         console.log(`${batch.length} messages added to db!`);
         return batch.length;
       }
@@ -78,7 +78,9 @@ async function fetchMessagesFromGroups(client, groups, phoneNumbersFromDB) {
           console.log('Fetched: ', messages.length, ' messages');
           req_count += 1;
 
-          console.log('Oldest message from this batch date: ', (await convertTimestampToDate(messages[0].timestamp)).toLocaleDateString('pt-BR'), ' - timestamp: ', messages[0].timestamp);
+            if (messages[0]) {
+            console.log('Oldest message from this batch date: ', (await convertTimestampToDate(messages[0].timestamp)).toLocaleDateString('pt-BR'), ' - timestamp: ', messages[0].timestamp);
+            }
 
           if (messages.length === 0) {
             console.log('No messages found. Skipping...');
