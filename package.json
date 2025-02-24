@@ -5,7 +5,13 @@
   "main": "src/main.js",
   "scripts": {
     "lint": "eslint src/",
-    "test": "jest"
+    "test": "jest",
+    "report" : "node src/main.js --report",
+    "scan" : "node src/main.js --scan",
+    "fetch" : "node src/main.js --fetch",
+    "add" : "node src/main.js --add",
+    "remove" : "node src/main.js --remove",
+    "passive" : "node src/main.js --scan --report --fetch"
   },
   "repository": {
     "type": "git",
