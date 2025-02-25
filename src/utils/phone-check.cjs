@@ -1,3 +1,13 @@
+/**
+ * Preprocesses a list of phone number entries to handle various formats and create a mapping.
+ * For Brazilian numbers (starting with '55'), it creates variations with and without the ninth digit.
+ * For international numbers, it preserves the format after basic normalization.
+ * 
+ * @param {Array<{phone_number: string}>} phoneNumbersFromDB - Array of objects containing phone numbers
+ * @returns {Map<string, Array<{phone_number: string}>>} A Map where keys are normalized phone numbers
+ *         and values are arrays of original entries that match that number
+ * 
+ */
 function preprocessPhoneNumbers(phoneNumbersFromDB) {
   const phoneNumberMap = new Map();
 
@@ -41,6 +51,18 @@ function preprocessPhoneNumbers(phoneNumbersFromDB) {
   return phoneNumberMap;
 }
 
+/**
+ * Checks a phone number against a map of registered numbers and returns detailed status information
+ * @param {Map<string, Array<Object>>} phoneNumberMap - Map containing phone numbers as keys and arrays of registration entries as values
+ * @param {string} inputPhoneNumber - The phone number to check
+ * @returns {Object} An object containing:
+ *   - found {boolean} - Whether the phone number was found in the map
+ *   - status {string} - [If found] The status from the first matched entry
+ *   - mb {number} - [If found] The registration ID from the first matched entry
+ *   - jb_under_10 {boolean} - [If found] Whether any entry has jb_under_10 flag
+ *   - jb_over_10 {boolean} - [If found] Whether any entry has jb_over_10 flag
+ *   - is_adult {boolean} - [If found] Whether any entry has is_adult flag
+ */
 function checkPhoneNumber(phoneNumberMap, inputPhoneNumber) {
   const matchedEntries = phoneNumberMap.get(inputPhoneNumber) || [];
 

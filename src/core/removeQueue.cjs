@@ -1,5 +1,4 @@
 const { send_to_queue, get_all_queue_itens } = require('../database/redis.cjs');
-const { getGroupParticipants } = require('../utils/chat.cjs');
 const { checkPhoneNumber } = require('../utils/phone-check.cjs');
 const { triggerTwilioOrRemove } = require('../utils/twilio.cjs');
 const { configDotenv } = require('dotenv');
@@ -36,13 +35,13 @@ const JBRemovalRules = [
   },
 ];
 
-async function removeMembersFromGroups(client, groups, phoneNumbersFromDB) {
+async function removeMembersFromGroups(groups, phoneNumbersFromDB) {
   const current_queue = await get_all_queue_itens();
   for (const group of groups) {
     try {
       const groupId = group.id._serialized;
-      const participants = await getGroupParticipants(client, groupId);
-      const groupMembers = participants.map((participant) => participant.id._serialized);
+      const participants = group.participants;
+      const groupMembers = participants.map((participant) => participant.id.user);
 
       for (const member of groupMembers) {
         const checkResult = checkPhoneNumber(phoneNumbersFromDB, member);
@@ -53,7 +52,7 @@ async function removeMembersFromGroups(client, groups, phoneNumbersFromDB) {
             type: 'remove',
             registration_id: checkResult.mb,
             groupId: groupId,
-            phone: checkResult.phone,
+            phone: checkResult.id.user,
           };
 
           if (current_queue.some(item => {
@@ -74,11 +73,11 @@ async function removeMembersFromGroups(client, groups, phoneNumbersFromDB) {
                   type: 'remove',
                   registration_id: checkResult.mb,
                   groupId: groupId,
-                  phone: checkResult.phone,
+                  phone: checkResult.id.user,
                   reason: rule.actionMessage,
                 };
                 await send_to_queue(object);
-                console.log(`Sent to queue: Removal of ${checkResult.phone} from ${group.name} - ${rule.actionMessage}`);
+                console.log(`Sent to queue: Removal of ${checkResult.id.user} from ${group.name} - ${rule.actionMessage}`);
               }
             }
           } else if (checkResult.status === 'Inactive') {
@@ -88,11 +87,11 @@ async function removeMembersFromGroups(client, groups, phoneNumbersFromDB) {
                 type: 'remove',
                 registration_id: checkResult.mb,
                 groupId: groupId,
-                phone: checkResult.phone,
+                phone: checkResult.id.user,
                 reason: 'Inactive',
               };
               await send_to_queue(object);
-              console.log(`Sent to queue: Removal of ${checkResult.phone} from ${group.name} - Inactive`);
+              console.log(`Sent to queue: Removal of ${checkResult.id.user} from ${group.name} - Inactive`);
             }
           }
         } else {

@@ -1,5 +1,4 @@
 const { getWhatsappQueue, getMemberPhoneNumbers } = require('../database/pgsql.cjs');
-const { getGroupParticipants } = require('../utils/chat.cjs');
 const { checkPhoneNumber } = require('../utils/phone-check.cjs');
 const { configDotenv } = require('dotenv');
 const fs = require('fs');
@@ -54,8 +53,9 @@ async function reportMembersInfo(client, chats, groups, phoneNumbersFromDB) {
       const conversations = chats.filter((chat) => !chat.isGroup);
       const queue = await getWhatsappQueue(groupId);
       const last8DigitsFromChats = new Set(conversations.map((chat) => chat.id.user).map((number) => number.slice(-8)));
-      const participants = await getGroupParticipants(client, groupId);
-      const groupMembers = participants.map(participant => participant.phone);
+      const participants = group.participants;
+      const groupMembers = participants.map((participant) => participant.id.user);
+
       const botChatObj = group.participants.find(chatObj => chatObj.id.user === client.info.wid.user);
 
       if (!botChatObj || !botChatObj.isAdmin) {

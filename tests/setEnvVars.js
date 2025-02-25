@@ -1,2 +1,0 @@
-process.env.REDIS_PASSWORD = 'testpass';
-process.env.DONT_REMOVE_NUMBERS = '9876543210', '1987654321', '1234567890', '10987654321';

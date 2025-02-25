@@ -32,7 +32,7 @@ const reportMode = process.argv.includes('--report');
 const fetchMessagesMode = process.argv.includes('--fetch');
 
 if (!selected.length) {
-  console.log('You should select at least 1 service. Exiting...\nPlease choose from ' + Object.keys(modes).join(', '));
+  console.error('You should select at least 1 service. Exiting...\nPlease choose from ' + Object.keys(modes).join(', '));
   process.exit(1);
 }
 
@@ -42,7 +42,7 @@ console.log('Services selected:', selected.join(', '));
 const client = new Client({
   authStrategy: new LocalAuth(),
   puppeteer: {
-    headless: 'new',
+    headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu'],
     protocolTimeout: 1200000,
   },
@@ -53,7 +53,7 @@ client.on('qr', (qr) => {
 });
 
 client.on('disconnected', (reason) => {
-  console.log('Client was logged out', reason);
+  console.error('Client was logged out', reason);
   process.exit(1);
 });
 
@@ -75,7 +75,7 @@ client.on('ready', async () => {
   const groupIds = groups.map((group) => group.id._serialized);
 
   if (chats.length === 0 || groups.length === 0) {
-    console.log('No groups found. Exiting.');
+    console.error('No groups found. Exiting.');
     process.exit(1);
   }
 
@@ -84,23 +84,21 @@ client.on('ready', async () => {
   console.log(`Groups retrieved: ${groups.length}`);
 
   // Initial checks
-  const phoneNumbersFromDB = preprocessPhoneNumbers(
-    await getPhoneNumbersWithStatus(),
-  );
+  const phoneNumbersFromDB = preprocessPhoneNumbers(await getPhoneNumbersWithStatus());
   if (phoneNumbersFromDB.length === 0) {
-    console.log('No phone numbers found in the database. Exiting.');
+    console.error('No phone numbers found in the database. Exiting.');
     process.exit(1);
   }
 
   const checkResult = checkPhoneNumber(phoneNumbersFromDB, '447474660572');
   if (!checkResult.found) {
-    console.log('Number 447474660572 not found in the database. Sanity check failed. Exiting.');
+    console.error('Number 447474660572 not found in the database. Sanity check failed. Exiting.');
     process.exit(1);
   }
 
   if (scanMode) {
     console.log('Scanning groups...');
-    await scanGroups(client, groups, phoneNumbersFromDB);
+    await scanGroups(groups, phoneNumbersFromDB);
   }
 
   if (reportMode) {
@@ -114,12 +112,12 @@ client.on('ready', async () => {
 
   if (addMode) {
     console.log('Adding members...');
-    await addMembersToGroups(chats, groups);
+    await addMembersToGroups(groups);
   }
 
   if (removeMode) {
     console.log('Removing members...');
-    await removeMembersFromGroups(client, groups, phoneNumbersFromDB);
+    await removeMembersFromGroups(groups, phoneNumbersFromDB);
   }
 
   console.log('All tasks completed. Exiting...');
