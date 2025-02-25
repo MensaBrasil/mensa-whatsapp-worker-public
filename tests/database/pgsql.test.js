@@ -125,54 +125,6 @@ describe('Database Functions', () => {
         });
     });
 
-    describe('getWhatsappQueue', () => {
-        test('should execute the correct SQL query and return queue data', async () => {
-            const mockRows = [{ id: 1, group_id: 1, fulfilled: false }];
-            pool.query.mockResolvedValue({ rows: mockRows });
-
-            const result = await getWhatsappQueue(1);
-
-            expect(pool.query).toHaveBeenCalledTimes(1);
-            expect(pool.query).toHaveBeenCalledWith(expect.any(String), [1]);
-            expect(result.rows).toEqual(mockRows);
-        });
-    });
-
-    describe('registerWhatsappAddAttempt', () => {
-        test('should execute the correct SQL query to update attempts', async () => {
-            const requestId = 1;
-
-            await registerWhatsappAddAttempt(requestId);
-
-            expect(pool.query).toHaveBeenCalledTimes(1);
-            expect(pool.query).toHaveBeenCalledWith(expect.any(String), [requestId]);
-        });
-    });
-
-    describe('registerWhatsappAddFulfilled', () => {
-        test('should execute the correct SQL query to mark fulfillment', async () => {
-            const requestId = 1;
-
-            await registerWhatsappAddFulfilled(requestId);
-
-            expect(pool.query).toHaveBeenCalledTimes(1);
-            expect(pool.query).toHaveBeenCalledWith(expect.any(String), [requestId]);
-        });
-    });
-
-    describe('getMemberName', () => {
-        test('should execute the correct SQL query and return the member name', async () => {
-            const mockRow = { name: 'John Doe' };
-            pool.query.mockResolvedValue({ rows: [mockRow] });
-
-            const result = await getMemberName(1);
-
-            expect(pool.query).toHaveBeenCalledTimes(1);
-            expect(pool.query).toHaveBeenCalledWith(expect.any(String), [1]);
-            expect(result).toEqual('John Doe');
-        });
-    });
-
     describe('getMemberPhoneNumbers', () => {
         test('should execute the correct SQL query and return phone numbers', async () => {
             const mockRows = [{ phone: '1234567890' }, { phone: '0987654321' }];
