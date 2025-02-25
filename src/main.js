@@ -71,7 +71,7 @@ client.on('ready', async () => {
   // Initial Setup
   const chats = await client.getChats();
   const allGroups = chats.filter((chat) => (chat.isGroup && !chat.isReadOnly));
-  const groups = allGroups.filter((group) => group.groupMetadata.isParentGroup === false && group.groupMetadata.defaultSubgroup === false)
+  const groups = allGroups.filter((group) => group.groupMetadata.isParentGroup === false && group.groupMetadata.defaultSubgroup === false).sort((a, b) => a.name.localeCompare(b.name));
   const communityGroups = allGroups.filter((group) => group.groupMetadata.isParentGroup === true || group.groupMetadata.defaultSubgroup === true)
   const groupNames = groups.map((group) => group.name);
   const groupIds = groups.map((group) => group.id._serialized);
