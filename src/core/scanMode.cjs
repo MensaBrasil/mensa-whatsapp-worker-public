@@ -1,7 +1,7 @@
 const { getPreviousGroupMembers, recordUserExitFromGroup, recordUserEntryToGroup } = require('../database/pgsql.cjs');
 const { checkPhoneNumber } = require('../utils/phone-check.cjs');
 
-ignoreNumbers = process.env.DONT_REMOVE_NUMBERS || '';
+const ignoreNumbers = process.env.DONT_REMOVE_NUMBERS || '';
 
 async function scanGroups(groups, phoneNumbersFromDB) {
   for (const group of groups) {
