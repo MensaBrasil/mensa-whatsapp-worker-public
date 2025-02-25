@@ -63,7 +63,7 @@ async function reportMembersInfo(client, chats, groups, phoneNumbersFromDB) {
         continue;
       }
 
-      for (const request of queue.rows) {
+      for (const request of queue) {
         try {
           const phones = await getMemberPhoneNumbers(request.registration_id);
           for (const phone of phones) {
