@@ -5,12 +5,11 @@ const { configDotenv } = require('dotenv');
 
 configDotenv();
 
-async function fetchMessagesFromGroups(client, groups, phoneNumbersFromDB) {
+async function fetchMessagesFromGroups(groups, phoneNumbersFromDB) {
   for (const group of groups) {
     try {
       console.log('Fetching messages for group: ', group.name);
       const groupId = group.id._serialized;
-      const groupChat = await client.getChatById(groupId);
       const batchSize = process.env.BATCH_SIZE || 300;
       let currentBatchSize = batchSize;
       let reachedTimestamp = false;
@@ -74,7 +73,7 @@ async function fetchMessagesFromGroups(client, groups, phoneNumbersFromDB) {
         try {
           const options = { limit: currentBatchSize };
           console.log('Fetching up to: ', options.limit, ' messages...');
-          let messages = await groupChat.fetchMessages(options);
+          let messages = await group.fetchMessages(options);
           console.log('Fetched: ', messages.length, ' messages');
           req_count += 1;
 

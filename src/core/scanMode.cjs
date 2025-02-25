@@ -17,12 +17,11 @@ async function scanGroups(groups, phoneNumbersFromDB) {
       for (const previousMember of previousMembers) {
         if (!currentMembers.includes(previousMember)) {
           console.log(`Number ${previousMember} is no longer in the group.`);
-          // await recordUserExitFromGroup(previousMember, groupId, 'Left group');
+          await recordUserExitFromGroup(previousMember, groupId, 'Left group');
         }
       }
       for (const member of groupMembers) {
         if (ignoreNumbers.includes(member)) {
-          console.log(`Number ${member} is ignored by ignore list.`);
           continue;
         }
         const checkResult = checkPhoneNumber(phoneNumbersFromDB, member);
@@ -30,7 +29,7 @@ async function scanGroups(groups, phoneNumbersFromDB) {
           console.log(`Number ${member}, is new to the group, but no match found in the database.`);
           if (checkResult.status){
             console.log(`Number ${member}, MB ${checkResult.mb} is new to the group.`);
-            // await recordUserEntryToGroup(checkResult.mb, member, groupId, checkResult.status);
+            await recordUserEntryToGroup(checkResult.mb, member, groupId, checkResult.status);
           }
         }
       }
