@@ -1,6 +1,8 @@
 const { getPreviousGroupMembers, recordUserExitFromGroup, recordUserEntryToGroup } = require('../database/pgsql.cjs');
 const { checkPhoneNumber } = require('../utils/phone-check.cjs');
 
+ignoreNumbers = process.env.DONT_REMOVE_NUMBERS || '';
+
 async function scanGroups(groups, phoneNumbersFromDB) {
   for (const group of groups) {
     try {
@@ -19,6 +21,10 @@ async function scanGroups(groups, phoneNumbersFromDB) {
         }
       }
       for (const member of groupMembers) {
+        if (ignoreNumbers.includes(member)) {
+          console.log(`Number ${member} is ignored by ignore list.`);
+          continue;
+        }
         const checkResult = checkPhoneNumber(phoneNumbersFromDB, member);
         if (!previousMembers.includes(member)) {
           console.log(`Number ${member}, is new to the group, but no match found in the database.`);
