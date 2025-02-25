@@ -70,7 +70,9 @@ client.on('ready', async () => {
 
   // Initial Setup
   const chats = await client.getChats();
-  const groups = chats.filter((chat) => chat.isGroup && !chat.isReadOnly);
+  const allGroups = chats.filter((chat) => (chat.isGroup && !chat.isReadOnly));
+  const groups = allGroups.filter((group) => group.groupMetadata.isParentGroup === false && group.groupMetadata.defaultSubgroup === false)
+  const communityGroups = allGroups.filter((group) => group.groupMetadata.isParentGroup === true || group.groupMetadata.defaultSubgroup === true)
   const groupNames = groups.map((group) => group.name);
   const groupIds = groups.map((group) => group.id._serialized);
 
