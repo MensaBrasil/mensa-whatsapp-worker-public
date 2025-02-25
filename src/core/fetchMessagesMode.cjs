@@ -19,9 +19,6 @@ async function fetchMessagesFromGroups(groups, phoneNumbersFromDB) {
       const lastMessageTimestampInDb = await getLastMessageTimestamp(groupId);
       const timeLimitTimestamp = 0;
 
-      console.log('Last message date in db: ', (await convertTimestampToDate(lastMessageTimestampInDb)).toLocaleDateString('pt-BR'), ' - timestamp: ', lastMessageTimestampInDb);
-      console.log('Time limit date: ', (await convertTimestampToDate(timeLimitTimestamp)).toLocaleDateString('pt-BR'), ' - timestamp: ', timeLimitTimestamp);
-
       async function sendMessageBatchToDb(messages) {
         const phoneNumbers = messages.map(message => {
           const author = message.author || null;
