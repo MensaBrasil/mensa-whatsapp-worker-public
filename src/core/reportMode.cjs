@@ -6,7 +6,7 @@ const fs = require('fs');
 
 configDotenv();
 
-const dont_remove = process.env.DONT_REMOVE_NUMBERS.split(',');
+const dont_remove = process.env.DONT_REMOVE_NUMBERS ? process.env.DONT_REMOVE_NUMBERS.split(',') : [];
 
 const jbGroupNames = ['MB | N-SIGs Mensa Brasil', 'MB | Xadrez'];
 
@@ -36,6 +36,15 @@ const JBRemovalRules = [
   },
 ];
 
+/**
+ * Generates a report of members valid add requests and removal status on WhatsApp groups.
+ * 
+ * @param {object} client - The WhatsApp client instance.
+ * @param {Array} chats - List of chat objects.
+ * @param {Array} groups - List of group objects.
+ * @param {Array} phoneNumbersFromDB - List of phone numbers from the database.
+ * @returns {Promise<void>} - A promise that resolves when the report is generated.
+ */
 async function reportMembersInfo(client, chats, groups, phoneNumbersFromDB) {
   const details = {};
   for (const group of groups) {
@@ -44,16 +53,22 @@ async function reportMembersInfo(client, chats, groups, phoneNumbersFromDB) {
       const groupId = group.id._serialized;
       const conversations = chats.filter((chat) => !chat.isGroup);
       const queue = await getWhatsappQueue(groupId);
-      const last8DigitsFromChats = conversations.map((chat) => chat.id.user).map((number) => number.slice(-8));
+      const last8DigitsFromChats = new Set(conversations.map((chat) => chat.id.user).map((number) => number.slice(-8)));
       const participants = await getGroupParticipants(client, groupId);
-      const groupMembers = participants.map((participant) => participant.phone);
+      const groupMembers = participants.map(participant => participant.phone);
+      const botChatObj = group.participants.find(chatObj => chatObj.id.user === client.info.wid.user);
+
+      if (!botChatObj || !botChatObj.isAdmin) {
+        console.log(`Bot is not an admin in group ${group.name}. Skipping admin actions.`);
+        continue;
+      }
 
       for (const request of queue.rows) {
         try {
           const phones = await getMemberPhoneNumbers(request.registration_id);
           for (const phone of phones) {
             const new_phone = phone.replace(/\D/g, '');
-            if (last8DigitsFromChats.includes(new_phone.slice(-8))) {
+            if (last8DigitsFromChats.has(new_phone.slice(-8))) {
               if (!details[phone]) {
                 details[phone] = {};
               }
@@ -73,7 +88,7 @@ async function reportMembersInfo(client, chats, groups, phoneNumbersFromDB) {
       for (const member of groupMembers) {
         const checkResult = checkPhoneNumber(phoneNumbersFromDB, member);
 
-        if (checkResult.found) {
+        if (checkResult && checkResult.found) {
           if (!(checkResult.is_adult || (checkResult.jb_under_10 && checkResult.jb_over_10))) {
             for (const rule of JBRemovalRules) {
               if (rule.groupCheck(group.name) && rule.condition(checkResult)) {
@@ -96,7 +111,7 @@ async function reportMembersInfo(client, chats, groups, phoneNumbersFromDB) {
             details[member]['inactive']['groups'].push(group.name);
           }
         } else {
-          if (!dont_remove.includes(member)) {
+          if (dont_remove && !dont_remove.includes(member)) {
             if (!details[member]) {
               details[member] = {};
             }
@@ -201,8 +216,13 @@ async function reportMembersInfo(client, chats, groups, phoneNumbersFromDB) {
     },
   };
 
-  fs.writeFileSync('report_details.json', JSON.stringify(details, null, 2));
-  console.log('\x1b[1mDetailed report saved to:\x1b[0m \x1b[36mreport_details.json\x1b[0m');
+  fs.writeFile('report_details.json', JSON.stringify(details, null, 2), (err) => {
+    if (err) {
+      console.error('Error writing report details to file:', err);
+    } else {
+      console.log('\x1b[1mDetailed report saved to:\x1b[0m \x1b[36mreport_details.json\x1b[0m');
+    }
+  });
 }
 
 module.exports = { reportMembersInfo };
