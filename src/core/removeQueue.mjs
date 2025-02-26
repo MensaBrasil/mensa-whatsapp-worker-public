@@ -1,6 +1,6 @@
 import { configDotenv } from 'dotenv';
 
-import { send_to_queue, get_all_queue_itens } from '../database/redis.mjs';
+import { sendToQueue, getAllFromQueue } from '../database/redis.mjs';
 import { checkPhoneNumber } from '../utils/phone-check.mjs';
 import { triggerTwilioOrRemove } from '../utils/twilio.mjs';
 
@@ -37,7 +37,7 @@ const JBRemovalRules = [
 ];
 
 async function removeMembersFromGroups(groups, phoneNumbersFromDB) {
-  const current_queue = await get_all_queue_itens();
+  const queueItems = [];
   for (const group of groups) {
     try {
       const groupId = group.id._serialized;
@@ -47,26 +47,7 @@ async function removeMembersFromGroups(groups, phoneNumbersFromDB) {
       for (const member of groupMembers) {
         const checkResult = checkPhoneNumber(phoneNumbersFromDB, member);
 
-        // Check if item is already in the queue
         if (checkResult.found) {
-          const newObj = {
-            type: 'remove',
-            registration_id: checkResult.mb,
-            groupId: groupId,
-            phone: checkResult.id.user,
-          };
-
-          if (current_queue.some(item => {
-            const parsed = JSON.parse(item);
-            return parsed.type === newObj.type &&
-              parsed.registration_id === newObj.registration_id &&
-              parsed.groupId === newObj.groupId &&
-              parsed.phone === newObj.phone;
-          })) {
-            continue;
-          }
-
-          // If it's not in the queue, check if it should be removed
           if (!(checkResult.is_adult || (checkResult.jb_under_10 && checkResult.jb_over_10))) {
             for (const rule of JBRemovalRules) {
               if (rule.groupCheck(group.name) && rule.condition(checkResult)) {
@@ -77,8 +58,7 @@ async function removeMembersFromGroups(groups, phoneNumbersFromDB) {
                   phone: checkResult.id.user,
                   reason: rule.actionMessage,
                 };
-                await send_to_queue(object);
-                console.log(`Sent to queue: Removal of ${checkResult.id.user} from ${group.name} - ${rule.actionMessage}`);
+                queueItems.push(object);
               }
             }
           } else if (checkResult.status === 'Inactive') {
@@ -91,8 +71,7 @@ async function removeMembersFromGroups(groups, phoneNumbersFromDB) {
                 phone: checkResult.id.user,
                 reason: 'Inactive',
               };
-              await send_to_queue(object);
-              console.log(`Sent to queue: Removal of ${checkResult.id.user} from ${group.name} - Inactive`);
+              queueItems.push(object);
             }
           }
         } else {
@@ -104,14 +83,30 @@ async function removeMembersFromGroups(groups, phoneNumbersFromDB) {
               phone: member,
               reason: 'Not found in DB',
             };
-            await send_to_queue(object);
-            console.log(`Sent to queue: Removal of ${member} from ${group.name} - Not found in DB`);
+            queueItems.push(object);
           }
         }
       }
     } catch (error) {
       console.error(`Error processing group ${group.name}: ${error}`);
     }
+  }
+  const currentQueue = await getAllFromQueue();
+  const filteredQueueItems = queueItems.filter(
+    (item) =>
+      !currentQueue.some(
+        (i) =>
+          i.type === item.type &&
+          i.registration_id === item.registration_id &&
+          i.groupId === item.groupId &&
+          i.phone === item.phone,
+      ),
+  );
+  const result = await sendToQueue(filteredQueueItems);
+  if (result) {
+    console.log(`Added ${filteredQueueItems.length} removal requests to queue!`);
+  } else {
+    console.error('Error adding requests to queue!');
   }
 }
 
