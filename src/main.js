@@ -1,7 +1,8 @@
 // Imports
 import { configDotenv } from 'dotenv';
 import qrcode from 'qrcode-terminal';
-import { pkg } from 'whatsapp-web.js';
+import pkg from 'whatsapp-web.js';
+const { Client, LocalAuth } = pkg;
 
 import { addMembersToGroups } from './core/addQueue.mjs';
 import { fetchMessagesFromGroups } from './core/fetchMessagesMode.mjs';
@@ -11,7 +12,6 @@ import { scanGroups } from './core/scanMode.mjs';
 import { getPhoneNumbersWithStatus, saveGroupsToList } from './database/pgsql.mjs';
 import { preprocessPhoneNumbers, checkPhoneNumber } from './utils/phone-check.mjs';
 
-const { Client, LocalAuth } = pkg;
 
 configDotenv();
 
