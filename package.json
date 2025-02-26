@@ -3,6 +3,7 @@
   "version": "0.2.3",
   "description": "O Robô Zelador da Mensa Brasil é um script em JavaScript que automatiza a manutenção e gerenciamento de grupos do WhatsApp associados à Mensa Brasil. Ele verifica a atividade dos membros, remove membros inativos e envia mensagens para números que não foram encontrados na planilha de membros.",
   "main": "src/main.js",
+  "type": "module",
   "scripts": {
     "lint": "eslint src/",
     "test": "jest",
