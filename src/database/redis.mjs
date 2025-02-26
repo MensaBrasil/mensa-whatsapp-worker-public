@@ -1,21 +1,44 @@
-const { configDotenv } = require('dotenv');
-const { createClient } = require('redis');
+import { configDotenv } from 'dotenv';
+import { createClient } from 'redis';
 
 configDotenv();
 
-// Create Redis client with password from environment variable
-const redisClient = createClient({
+// Create a new Redis client
+const client = createClient({
   password: process.env.REDIS_PASSWORD,
-  socket: {
-    reconnectStrategy: function (retries) {
-      if (retries > 20) {
-        console.log('Too many attempts to reconnect. Redis connection was terminated');
-        return new Error('Redis connection terminated after too many retries.');
-      } else {
-        return retries * 500;
-      }
-    }
-  }
 });
 
-module.exports = { redisClient };
+client.on('error', (err) => {
+  console.log('Redis Client Error', err);
+  process.exit(1);
+});
+
+// Create a new queue item
+async function send_to_queue(object) {
+  try {
+    console.log(object);
+    await client.connect();
+    await client.rPush('queue', JSON.stringify(object));
+    await client.disconnect();
+  } catch (err) {
+    console.log('Error sending data to queue', err);
+  }
+}
+
+// Get all queue items
+async function get_all_queue_itens() {
+  try {
+    await client.connect();
+    const queue = await client.lRange('queue', 0, -1);
+    await client.disconnect();
+    if (queue.length > 0) {
+      return queue;
+    } else {
+      return [];
+    }
+  } catch (err) {
+    console.log('Error receiving data from queue', err);
+  }
+}
+
+export { send_to_queue, get_all_queue_itens };
