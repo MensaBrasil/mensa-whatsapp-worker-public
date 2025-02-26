@@ -1,7 +1,8 @@
-const { getLastMessageTimestamp, insertNewWhatsAppMessages } = require('../database/pgsql.cjs');
-const { checkPhoneNumber } = require('../utils/phone-check.cjs');
-const { convertTimestampToDate } = require('../utils/misc.cjs');
-const { configDotenv } = require('dotenv');
+import { configDotenv } from 'dotenv';
+
+import { getLastMessageTimestamp, insertNewWhatsAppMessages } from '../database/pgsql.mjs';
+import { convertTimestampToDate } from '../utils/misc.mjs';
+import { checkPhoneNumber } from '../utils/phone-check.mjs';
 
 configDotenv();
 
@@ -145,4 +146,5 @@ async function fetchMessagesFromGroups(groups, phoneNumbersFromDB) {
     }
   }
 }
-module.exports = { fetchMessagesFromGroups };
+
+export { fetchMessagesFromGroups };

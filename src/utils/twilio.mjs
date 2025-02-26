@@ -1,6 +1,7 @@
-const twilio = require('twilio');
-const { getLastCommunication, logCommunication } = require('../database/pgsql.cjs');
-const { configDotenv } = require('dotenv');
+import { configDotenv } from 'dotenv';
+import twilio from 'twilio';
+
+import { getLastCommunication, logCommunication } from '../database/pgsql.mjs';
 
 configDotenv();
 
@@ -69,4 +70,4 @@ async function triggerTwilioOrRemove(phoneNumber, reason) {
   }
 }
 
-module.exports = { triggerTwilioOrRemove };
+export { triggerTwilioOrRemove };

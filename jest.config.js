@@ -4,6 +4,6 @@ module.exports = {
   testPathIgnorePatterns: ['/node_modules/', '/dist/', '/temp_test/'],
   passWithNoTests: true,
   collectCoverage: true,
-  collectCoverageFrom: ['src/**/*.cjs'],
+  collectCoverageFrom: ['src/**/*.mjs'],
   setupFiles: ['<rootDir>/tests/setEnvVars.js']
 };

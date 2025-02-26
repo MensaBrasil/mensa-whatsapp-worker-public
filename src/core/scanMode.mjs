@@ -1,5 +1,5 @@
-const { getPreviousGroupMembers, recordUserExitFromGroup, recordUserEntryToGroup } = require('../database/pgsql.cjs');
-const { checkPhoneNumber } = require('../utils/phone-check.cjs');
+import { getPreviousGroupMembers, recordUserExitFromGroup, recordUserEntryToGroup } from '../database/pgsql.mjs';
+import { checkPhoneNumber } from '../utils/phone-check.mjs';
 
 const ignoreNumbers = process.env.DONT_REMOVE_NUMBERS || '';
 
@@ -39,5 +39,4 @@ async function scanGroups(groups, phoneNumbersFromDB) {
     }
   }
 }
-
-module.exports = { scanGroups };
+export { scanGroups };

@@ -1,7 +1,9 @@
-const { getWhatsappQueue, getMemberPhoneNumbers } = require('../database/pgsql.cjs');
-const { checkPhoneNumber } = require('../utils/phone-check.cjs');
-const { configDotenv } = require('dotenv');
-const fs = require('fs');
+import fs from 'fs';
+
+import { configDotenv } from 'dotenv';
+
+import { getWhatsappQueue, getMemberPhoneNumbers } from '../database/pgsql.mjs';
+import { checkPhoneNumber } from '../utils/phone-check.mjs';
 
 configDotenv();
 
@@ -225,4 +227,4 @@ async function reportMembersInfo(client, chats, groups, phoneNumbersFromDB) {
   });
 }
 
-module.exports = { reportMembersInfo };
+export { reportMembersInfo };

@@ -1,13 +1,17 @@
 // Imports
-const { preprocessPhoneNumbers, checkPhoneNumber } = require('./utils/phone-check.cjs');
-const { fetchMessagesFromGroups } = require('./core/fetchMessagesMode.cjs');
-const { getPhoneNumbersWithStatus, saveGroupsToList } = require('./database/pgsql.cjs');
-const { removeMembersFromGroups } = require('./core/removeQueue.cjs');
-const { Client, LocalAuth } = require('whatsapp-web.js');
-const { reportMembersInfo } = require('./core/reportMode.cjs');
-const { addMembersToGroups } = require('./core/addQueue.cjs');
-const { scanGroups } = require('./core/scanMode.cjs');
-const qrcode = require('qrcode-terminal');
+import { configDotenv } from 'dotenv';
+import qrcode from 'qrcode-terminal';
+import { Client, LocalAuth } from 'whatsapp-web.js';
+
+import { addMembersToGroups } from './core/addQueue.mjs';
+import { fetchMessagesFromGroups } from './core/fetchMessagesMode.mjs';
+import { removeMembersFromGroups } from './core/removeQueue.mjs';
+import { reportMembersInfo } from './core/reportMode.mjs';
+import { scanGroups } from './core/scanMode.mjs';
+import { getPhoneNumbersWithStatus, saveGroupsToList } from './database/pgsql.mjs';
+import { preprocessPhoneNumbers, checkPhoneNumber } from './utils/phone-check.mjs';
+
+configDotenv();
 
 // Global error handler
 process.on('unhandledRejection', (reason) => {
@@ -72,7 +76,7 @@ client.on('ready', async () => {
   const chats = await client.getChats();
   const allGroups = chats.filter((chat) => (chat.isGroup && !chat.isReadOnly));
   const groups = allGroups.filter((group) => group.groupMetadata.isParentGroup === false && group.groupMetadata.defaultSubgroup === false).sort((a, b) => a.name.localeCompare(b.name));
-  // TODO: Implement communityGroups
+  // TODO: Implement communityGroups (Future Project)
   // const communityGroups = allGroups.filter((group) => group.groupMetadata.isParentGroup === true || group.groupMetadata.defaultSubgroup === true);
   const groupNames = groups.map((group) => group.name);
   const groupIds = groups.map((group) => group.id._serialized);
@@ -93,9 +97,9 @@ client.on('ready', async () => {
     process.exit(1);
   }
 
-  const checkResult = checkPhoneNumber(phoneNumbersFromDB, '447474660572');
+  const checkResult = checkPhoneNumber(phoneNumbersFromDB, process.env.SANITY_CHECK);
   if (!checkResult.found) {
-    console.error('Number 447474660572 not found in the database. Sanity check failed. Exiting.');
+    console.error(`Number ${process.env.SANITY_CHECK} not found in the database. Sanity check failed. Exiting.`);
     process.exit(1);
   }
 

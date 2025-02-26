@@ -1,7 +1,8 @@
-const { send_to_queue, get_all_queue_itens } = require('../database/redis.cjs');
-const { checkPhoneNumber } = require('../utils/phone-check.cjs');
-const { triggerTwilioOrRemove } = require('../utils/twilio.cjs');
-const { configDotenv } = require('dotenv');
+import { configDotenv } from 'dotenv';
+
+import { send_to_queue, get_all_queue_itens } from '../database/redis.mjs';
+import { checkPhoneNumber } from '../utils/phone-check.mjs';
+import { triggerTwilioOrRemove } from '../utils/twilio.mjs';
 
 configDotenv();
 
@@ -114,4 +115,4 @@ async function removeMembersFromGroups(groups, phoneNumbersFromDB) {
   }
 }
 
-module.exports = { removeMembersFromGroups };
+export { removeMembersFromGroups };
