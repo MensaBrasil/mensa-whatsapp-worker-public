@@ -6,6 +6,18 @@ import { checkPhoneNumber } from '../utils/phone-check.mjs';
 
 configDotenv();
 
+/**
+ * Fetches and processes messages from multiple WhatsApp groups.
+ * For each group, it retrieves messages in batches and stores filtered ones in the database.
+ * The function filters messages based on phone numbers from the database and message timestamps.
+ * 
+ * @async
+ * @param {Object[]} groups - Array of WhatsApp group objects to fetch messages from
+ * @param {Object[]} phoneNumbersFromDB - Is a map of processed phone numbers from the database
+ * @throws {Error} When there's an error fetching or processing messages from a group
+ * 
+ * @returns {Promise<void>} Resolves when all messages from all groups have been processed
+ */
 async function fetchMessagesFromGroups(groups, phoneNumbersFromDB) {
   for (const group of groups) {
     try {

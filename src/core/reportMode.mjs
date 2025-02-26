@@ -43,7 +43,7 @@ const JBRemovalRules = [
  * @param {object} client - The WhatsApp client instance.
  * @param {Array} chats - List of chat objects.
  * @param {Array} groups - List of group objects.
- * @param {Array} phoneNumbersFromDB - List of phone numbers from the database.
+ * @param {Array} phoneNumbersFromDB - Is a map of processed phone numbers from the database
  * @returns {Promise<void>} - A promise that resolves when the report is generated.
  */
 async function reportMembersInfo(client, chats, groups, phoneNumbersFromDB) {

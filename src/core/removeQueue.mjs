@@ -36,6 +36,23 @@ const JBRemovalRules = [
   },
 ];
 
+/**
+ * Processes groups and their members to identify individuals who should be removed based on various criteria,
+ * then adds removal requests to a queue.
+ * @async
+ * @param {Array<Object>} groups - Array of group objects containing group information and participants
+ * @param {Array<Object>} phoneNumbersFromDB - Is a map of processed phone numbers from the database
+ * @returns {Promise<void>} - Resolves when all groups have been processed
+ * @throws {Error} - Logs error if there's an issue processing a group
+ * The function:
+ * - Checks each group member against database records
+ * - Evaluates removal criteria based on:
+ *   - JB (Jovem Brilhante) membership rules
+ *   - Member activity status
+ *   - Presence in database
+ * - Filters out duplicate queue items
+ * - Adds filtered removal requests to the queue
+ */
 async function removeMembersFromGroups(groups, phoneNumbersFromDB) {
   const queueItems = [];
   for (const group of groups) {

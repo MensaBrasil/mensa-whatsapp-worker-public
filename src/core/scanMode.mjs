@@ -3,6 +3,20 @@ import { checkPhoneNumber } from '../utils/phone-check.mjs';
 
 const ignoreNumbers = process.env.DONT_REMOVE_NUMBERS || '';
 
+/**
+ * Scans WhatsApp groups to track member changes and record entries/exits.
+ * @async
+ * @param {Array<Object>} groups - Array of WhatsApp group objects containing group information and participants
+ * @param {Array<string>} phoneNumbersFromDB - Is a map of processed phone numbers from the database
+ * @throws {Error} Logs error message if scanning fails for a specific group
+ * @description
+ * For each group, this function:
+ * - Gets previous group members
+ * - Identifies current members present in the database
+ * - Records when users leave the group
+ * - Records when new users join the group
+ * - Skips processing for numbers in ignoreNumbers list
+ */
 async function scanGroups(groups, phoneNumbersFromDB) {
   for (const group of groups) {
     try {
@@ -39,4 +53,5 @@ async function scanGroups(groups, phoneNumbersFromDB) {
     }
   }
 }
+
 export { scanGroups };
