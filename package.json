@@ -7,13 +7,13 @@
   "scripts": {
     "lint": "eslint src/",
     "test": "jest",
-    "report": "node --max-old-size=4096 src/main.js --report",
-    "scan": "node --max-old-size=4096 src/main.js --scan",
-    "fetch": "node --max-old-size=4096 src/main.js --fetch",
-    "add": "node --max-old-size=4096 src/main.js --add",
-    "remove": "node --max-old-size=4096 src/main.js --remove",
-    "passive": "node --max-old-size=4096 src/main.js --scan --report --fetch",
-    "complete": "node --max-old-size=4096 src/main.js --scan --report --fetch --add --remove"
+    "report": "node --max-old-space-size=4096 src/main.js --report",
+    "scan": "node --max-old-space-size=4096 src/main.js --scan",
+    "fetch": "node --max-old-space-size=4096 src/main.js --fetch",
+    "add": "node --max-old-space-size=4096 src/main.js --add",
+    "remove": "node --max-old-space-size=4096 src/main.js --remove",
+    "passive": "node --max-old-space-size=4096 src/main.js --scan --report --fetch",
+    "complete": "node --max-old-space-size=4096 src/main.js --scan --report --fetch --add --remove"
   },
   "repository": {
     "type": "git",
