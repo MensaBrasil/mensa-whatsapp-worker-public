@@ -23,7 +23,7 @@ async function processGroups(client) {
     const allGroups = chats.filter((chat) => (chat.isGroup && !chat.isReadOnly));
     const regularGroups = allGroups.filter((group) => !group.groupMetadata.isParentGroup);
     const announceGroups = allGroups.filter((group) => group.groupMetadata.announce && group.groupMetadata.defaultSubgroup);
-    const groups = regularGroups.filter((group) => !announceGroups.find(announceGroup => announceGroup.id._serialized === group.id._serialized)).sort((a, b) => a.name.localeCompare(b.name));
+    const groups = regularGroups.filter((group) => !announceGroups.find(announceGroup => announceGroup.id._serialized === group.id._serialized));
 
     for (const group of groups) {
         if (!group.groupMetadata.parentGroup) {
