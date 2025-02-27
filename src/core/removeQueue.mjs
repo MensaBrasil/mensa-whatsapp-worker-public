@@ -73,7 +73,7 @@ async function removeMembersFromGroups(groups, phoneNumbersFromDB) {
                   type: 'remove',
                   registration_id: checkResult.mb,
                   groupId: groupId,
-                  phone: checkResult.id.user,
+                  phone: member,
                   reason: rule.actionMessage,
                 };
                 queueItems.push(object);
@@ -86,7 +86,7 @@ async function removeMembersFromGroups(groups, phoneNumbersFromDB) {
                 type: 'remove',
                 registration_id: checkResult.mb,
                 groupId: groupId,
-                phone: checkResult.id.user,
+                phone: member,
                 reason: 'Inactive',
                 communityId: group.announceGroup
               };
@@ -108,7 +108,7 @@ async function removeMembersFromGroups(groups, phoneNumbersFromDB) {
         }
       }
     } catch (error) {
-      console.error(`Error processing group ${group.name}: ${error}`);
+      console.error(`Error processing group ${group.name}: ${error} ${error.stack}`);
     }
   }
   await clearQueue('removeQueue');
