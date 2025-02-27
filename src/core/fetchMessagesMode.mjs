@@ -23,7 +23,7 @@ async function fetchMessagesFromGroups(groups, phoneNumbersFromDB) {
     try {
       console.log('Fetching messages for group: ', group.name);
       const groupId = group.id._serialized;
-      const batchSize = process.env.BATCH_SIZE || 300;
+      const batchSize = parseInt(process.env.BATCH_SIZE, 10) || 25;
       let currentBatchSize = batchSize;
       let reachedTimestamp = false;
       let req_count = 0;
