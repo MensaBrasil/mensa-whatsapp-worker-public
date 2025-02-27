@@ -124,5 +124,6 @@ client.on('ready', async () => {
   }
 
   console.log('All tasks completed. Exiting...');
+  await fetch(process.env.UPTIME_URL);
   process.exit(0);
 });
