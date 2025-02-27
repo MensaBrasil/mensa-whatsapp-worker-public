@@ -1,6 +1,6 @@
 import { configDotenv } from 'dotenv';
 
-import { sendToQueue, getAllFromQueue, disconnect } from '../database/redis.mjs';
+import { sendToQueue, getAllFromQueue, disconnect, testRedisConnection } from '../database/redis.mjs';
 import { checkPhoneNumber } from '../utils/phone-check.mjs';
 import { triggerTwilioOrRemove } from '../utils/twilio.mjs';
 
@@ -54,6 +54,7 @@ const JBRemovalRules = [
  * - Adds filtered removal requests to the queue
  */
 async function removeMembersFromGroups(groups, phoneNumbersFromDB) {
+  await testRedisConnection();
   const queueItems = [];
   for (const group of groups) {
     try {

@@ -13,7 +13,6 @@ import { getPhoneNumbersWithStatus, saveGroupsToList } from './database/pgsql.mj
 import { processGroups } from './utils/groups.mjs';
 import { preprocessPhoneNumbers, checkPhoneNumber } from './utils/phone-check.mjs';
 
-
 configDotenv();
 
 // Global error handler

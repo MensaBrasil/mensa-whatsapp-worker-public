@@ -54,6 +54,22 @@ async function disconnect() {
 }
 
 /**
+ * Tests Redis connection and exits process if connection fails
+ * @async
+ * @returns {Promise<void>} Resolves if connection successful, exits process if connection fails
+ */
+async function testRedisConnection() {
+    try {
+        await connect();
+        console.log('Successfully connected to Redis');
+        await disconnect();
+    } catch (error) {
+        console.error('Failed to connect to Redis:', error);
+        process.exit(1);
+    }
+}
+
+/**
  * Sends an array of objects to the Redis queue
  * @async
  * @param {Array<Object>} objArray - Array of objects to send to the queue
@@ -112,4 +128,4 @@ async function clearQueue() {
     }
 }
 
-export { sendToQueue, getAllFromQueue, clearQueue, disconnect };
+export { sendToQueue, getAllFromQueue, clearQueue, testRedisConnection, disconnect };

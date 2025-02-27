@@ -1,5 +1,5 @@
 import { getWhatsappQueue } from '../database/pgsql.mjs';
-import { sendToQueue, getAllFromQueue, disconnect } from '../database/redis.mjs';
+import { sendToQueue, getAllFromQueue, disconnect, testRedisConnection } from '../database/redis.mjs';
 
 /**
  * Processes groups and adds members to a queue for WhatsApp group addition by the workers.
@@ -19,6 +19,7 @@ import { sendToQueue, getAllFromQueue, disconnect } from '../database/redis.mjs'
  * 5. Logs the result of the operation
  */
 async function addMembersToGroups(groups) {
+  await testRedisConnection();
   const queueItems = [];
   for (const group of groups) {
     try {
