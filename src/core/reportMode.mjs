@@ -169,11 +169,12 @@ async function reportMembersInfo(client, chats, groups, phoneNumbersFromDB) {
 
   console.log('\n\x1b[1m=== REMOVAL REPORT SUMMARY ===\x1b[0m');
   console.log(`\x1b[36mTotal chats: ${chats.length}\x1b[0m`);
-  console.log(`\x1b[36mTotal groups processed: ${groups.length}\x1b[0m`);
+  console.log(`\x1b[36mTotal groups processed: ${groups.length}\x1b[0m\n`);
 
-  console.log('\x1b[1mMember Count by Issue:\x1b[0m');
-  console.log(`\x1b[36mTotal unique members affected: ${(Object.keys(details).length) - atleast1PendingAdditionsCount}\x1b[0m\n`);
-  console.log(`\x1b[33m• Inactive status: ${atleast1inactiveCount} members (${totalInactiveCount} total occurrences)`);
+  console.log('\x1b[1mMember Count by Issue:\x1b[0m\n');
+
+  console.log(`\x1b[33m• Total unique members affected: ${(Object.keys(details).length) - atleast1PendingAdditionsCount}`);
+  console.log(`• Inactive status: ${atleast1inactiveCount} members (${totalInactiveCount} total occurrences)`);
   console.log(`• Not in database: ${atleast1notfoundCount} members (${totalNotFoundCount} total occurrences)`);
   console.log(`• JB over 10 in M.JB: ${atleast1JBOver10MJBCount} members (${totalJBOver10MJBCount} total occurrences)`);
   console.log(`• JB under 10 in JB: ${atleast1JBUnder10JBCount} members (${totalJBUnder10JBCount} total occurrences)`);
