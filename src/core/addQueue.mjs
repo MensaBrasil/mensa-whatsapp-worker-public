@@ -1,5 +1,5 @@
 import { getWhatsappQueue } from '../database/pgsql.mjs';
-import { sendToQueue, getAllFromQueue, disconnect, testRedisConnection } from '../database/redis.mjs';
+import { sendToQueue, clearQueue, disconnect, testRedisConnection } from '../database/redis.mjs';
 
 /**
  * Processes groups and adds members to a queue for WhatsApp group addition by the workers.
@@ -47,19 +47,10 @@ async function addMembersToGroups(groups) {
       );
     }
   }
-  const currentQueue = await getAllFromQueue();
-  const filteredQueueItems = queueItems.filter(
-    (item) =>
-      !currentQueue.some(
-        (i) =>
-          i.type === item.type &&
-          i.registration_id === item.registration_id &&
-          i.group_id === item.group_id,
-      ),
-  );
-  const result = await sendToQueue(filteredQueueItems);
+  await clearQueue('addQueue');
+  const result = await sendToQueue(queueItems, 'addQueue');
   if (result) {
-    console.log(`Added ${filteredQueueItems.length} addition requests to queue!`);
+    console.log(`Added ${queueItems.length} addition requests to queue!`);
   } else {
     console.error('Error adding requests to queue!');
   }

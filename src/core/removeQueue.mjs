@@ -1,6 +1,6 @@
 import { configDotenv } from 'dotenv';
 
-import { sendToQueue, getAllFromQueue, disconnect, testRedisConnection } from '../database/redis.mjs';
+import { sendToQueue, clearQueue, disconnect, testRedisConnection } from '../database/redis.mjs';
 import { checkPhoneNumber } from '../utils/phone-check.mjs';
 import { triggerTwilioOrRemove } from '../utils/twilio.mjs';
 
@@ -111,20 +111,10 @@ async function removeMembersFromGroups(groups, phoneNumbersFromDB) {
       console.error(`Error processing group ${group.name}: ${error}`);
     }
   }
-  const currentQueue = await getAllFromQueue();
-  const filteredQueueItems = queueItems.filter(
-    (item) =>
-      !currentQueue.some(
-        (i) =>
-          i.type === item.type &&
-          i.registration_id === item.registration_id &&
-          i.groupId === item.groupId &&
-          i.phone === item.phone,
-      ),
-  );
-  const result = await sendToQueue(filteredQueueItems);
+  await clearQueue('removeQueue');
+  const result = await sendToQueue(queueItems, 'removeQueue');
   if (result) {
-    console.log(`Added ${filteredQueueItems.length} removal requests to queue!`);
+    console.log(`Added ${queueItems.length} removal requests to queue!`);
   } else {
     console.error('Error adding requests to queue!');
   }

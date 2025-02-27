@@ -7,14 +7,15 @@ const client = createClient(
     {
         password: process.env.REDIS_PASSWORD,
         socket: {
-            connectTimeout: 10000,
-            reconnectStrategy: function (retries) {
-                if (retries > 20) {
-                    console.log('Too many attempts to reconnect. Redis connection was terminated');
-                    return new Error('Too many retries.');
-                } else {
-                    return retries * 500;
-                }
+            host: process.env.REDIS_HOST,
+            port: process.env.REDIS_PORT,
+        },
+        retryStrategy: function (times) {
+            if (times > 20) {
+                console.log('Too many attempts to reconnect. Redis connection was terminated');
+                return new Error('Too many retries.');
+            } else {
+                return times * 500;
             }
         }
     }
@@ -72,17 +73,18 @@ async function testRedisConnection() {
 /**
  * Sends an array of objects to the Redis queue
  * @async
+ * @param {string} queueName - Name of the queue to send objects
  * @param {Array<Object>} objArray - Array of objects to send to the queue
  * @returns {Promise<boolean>} True if successful, false otherwise
  */
-async function sendToQueue(objArray) {
+async function sendToQueue(objArray, queueName) {
     try {
         if (!objArray || objArray.length === 0) {
             return false;
         }
         await connect();
         const jsonArray = objArray.map(obj => JSON.stringify(obj));
-        await client.rPush('queue', jsonArray);
+        await client.rPush(queueName, jsonArray);
         return true;
     } catch (error) {
         console.error('Error sending to queue:', error);
@@ -93,9 +95,10 @@ async function sendToQueue(objArray) {
 /**
  * Retrieves and removes all objects from the Redis queue
  * @async
+ * @param {string} queueName - Name of the queue to retrieve objects from
  * @returns {Promise<Array<Object>>} Array of parsed objects from the queue
  */
-async function getAllFromQueue() {
+async function getAllFromQueue(queueName) {
     try {
         await connect();
         const script = `
@@ -103,11 +106,11 @@ async function getAllFromQueue() {
         return elements
         `;
         const elements = await client.eval(script, {
-            keys: ['queue'],
+            keys: [queueName],
         });
         return elements.map(e => JSON.parse(e));
     } catch (error) {
-        console.error('Error getting all from queue:', error);
+        console.error(`Error getting all from ${queueName}:`, error);
         return [];
     }
 }
@@ -115,15 +118,16 @@ async function getAllFromQueue() {
 /**
  * Clear the queue
  * @async
+ * @param {string} queueName - Name of the queue to clear
  * @returns {Promise<boolean>} True if successful, false otherwise
  */
-async function clearQueue() {
+async function clearQueue(queueName) {
     try {
         await connect();
-        await client.del('queue');
+        await client.del(queueName);
         return true;
     } catch (error) {
-        console.error('Error clearing queue:', error);
+        console.error(`Error clearing ${queueName}:`, error);
         return false;
     }
 }
