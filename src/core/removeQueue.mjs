@@ -88,7 +88,7 @@ async function removeMembersFromGroups(groups, phoneNumbersFromDB) {
                 groupId: groupId,
                 phone: member,
                 reason: 'Inactive',
-                communityId: group.announceGroup
+                communityId: group.announceGroup || null,
               };
               queueItems.push(object);
             }
@@ -101,7 +101,7 @@ async function removeMembersFromGroups(groups, phoneNumbersFromDB) {
               groupId: groupId,
               phone: member,
               reason: 'Not found in DB',
-              communityId: group.announceGroup
+              communityId: group.announceGroup || null,
             };
             queueItems.push(object);
           }

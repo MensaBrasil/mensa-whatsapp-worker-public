@@ -12,7 +12,8 @@
     "fetch": "node src/main.js --fetch",
     "add": "node src/main.js --add",
     "remove": "node src/main.js --remove",
-    "passive": "node src/main.js --scan --report --fetch"
+    "passive": "node src/main.js --scan --report --fetch",
+    "complete": "node src/main.js --scan --report --fetch --add --remove"
   },
   "repository": {
     "type": "git",
