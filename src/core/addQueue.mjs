@@ -26,7 +26,7 @@ async function addMembersToGroups(groups) {
       const groupId = group.id._serialized;
       const queue = await getWhatsappQueue(groupId);
 
-      for (const request of queue.rows) {
+      for (const request of queue) {
         try {
           const object = {
             type: 'add',
