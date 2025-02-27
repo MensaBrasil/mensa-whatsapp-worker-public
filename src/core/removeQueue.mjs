@@ -1,6 +1,6 @@
 import { configDotenv } from 'dotenv';
 
-import { sendToQueue, getAllFromQueue } from '../database/redis.mjs';
+import { sendToQueue, getAllFromQueue, disconnect } from '../database/redis.mjs';
 import { checkPhoneNumber } from '../utils/phone-check.mjs';
 import { triggerTwilioOrRemove } from '../utils/twilio.mjs';
 
@@ -87,6 +87,7 @@ async function removeMembersFromGroups(groups, phoneNumbersFromDB) {
                 groupId: groupId,
                 phone: checkResult.id.user,
                 reason: 'Inactive',
+                communityId: group.announceGroup
               };
               queueItems.push(object);
             }
@@ -99,6 +100,7 @@ async function removeMembersFromGroups(groups, phoneNumbersFromDB) {
               groupId: groupId,
               phone: member,
               reason: 'Not found in DB',
+              communityId: group.announceGroup
             };
             queueItems.push(object);
           }
@@ -125,6 +127,7 @@ async function removeMembersFromGroups(groups, phoneNumbersFromDB) {
   } else {
     console.error('Error adding requests to queue!');
   }
+  await disconnect();
 }
 
 export { removeMembersFromGroups };

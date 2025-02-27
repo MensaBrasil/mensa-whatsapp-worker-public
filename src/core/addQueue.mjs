@@ -1,5 +1,5 @@
 import { getWhatsappQueue } from '../database/pgsql.mjs';
-import { sendToQueue, getAllFromQueue } from '../database/redis.mjs';
+import { sendToQueue, getAllFromQueue, disconnect } from '../database/redis.mjs';
 
 /**
  * Processes groups and adds members to a queue for WhatsApp group addition by the workers.
@@ -62,6 +62,7 @@ async function addMembersToGroups(groups) {
   } else {
     console.error('Error adding requests to queue!');
   }
+  await disconnect();
 }
 
 export { addMembersToGroups };

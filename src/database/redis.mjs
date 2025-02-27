@@ -6,17 +6,50 @@ configDotenv();
 const client = createClient(
     {
         password: process.env.REDIS_PASSWORD,
+        socket: {
+            connectTimeout: 10000,
+            reconnectStrategy: function (retries) {
+                if (retries > 20) {
+                    console.log('Too many attempts to reconnect. Redis connection was terminated');
+                    return new Error('Too many retries.');
+                } else {
+                    return retries * 500;
+                }
+            }
+        }
     }
 );
 
-client.on('error', (err) => console.error('Redis Client Error', err));
+client.on('error', (err) => {
+    console.error(err);
+    process.exit(1);
+});
 
 let isConnected = false;
 
+/**
+ * Establishes a connection to the Redis client if not already connected.
+ * Uses a global isConnected flag to prevent multiple connections.
+ * @async
+ * @returns {Promise<void>}
+ */
 async function connect() {
     if (!isConnected) {
         await client.connect();
         isConnected = true;
+    }
+}
+
+/**
+ * Disconnects from the Redis client if a connection exists.
+ * Sets the connection status to false after disconnecting.
+ * @async
+ * @returns {Promise<void>}
+ */
+async function disconnect() {
+    if (isConnected) {
+        await client.quit();
+        isConnected = false;
     }
 }
 
@@ -28,6 +61,9 @@ async function connect() {
  */
 async function sendToQueue(objArray) {
     try {
+        if (!objArray || objArray.length === 0) {
+            return false;
+        }
         await connect();
         const jsonArray = objArray.map(obj => JSON.stringify(obj));
         await client.rPush('queue', jsonArray);
@@ -76,4 +112,4 @@ async function clearQueue() {
     }
 }
 
-export { sendToQueue, getAllFromQueue, clearQueue };
+export { sendToQueue, getAllFromQueue, clearQueue, disconnect };

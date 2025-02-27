@@ -1,8 +1,8 @@
 // Imports
 import { configDotenv } from 'dotenv';
 import qrcode from 'qrcode-terminal';
-import pkg from 'whatsapp-web.js';
-const { Client, LocalAuth } = pkg;
+import WAWebJS from 'whatsapp-web.js';
+const { Client, LocalAuth } = WAWebJS;
 
 import { addMembersToGroups } from './core/addQueue.mjs';
 import { fetchMessagesFromGroups } from './core/fetchMessagesMode.mjs';
@@ -10,6 +10,7 @@ import { removeMembersFromGroups } from './core/removeQueue.mjs';
 import { reportMembersInfo } from './core/reportMode.mjs';
 import { scanGroups } from './core/scanMode.mjs';
 import { getPhoneNumbersWithStatus, saveGroupsToList } from './database/pgsql.mjs';
+import { processGroups } from './utils/groups.mjs';
 import { preprocessPhoneNumbers, checkPhoneNumber } from './utils/phone-check.mjs';
 
 
@@ -75,11 +76,7 @@ client.on('ready', async () => {
   console.log('Client is ready!');
 
   // Initial Setup
-  const chats = await client.getChats();
-  const allGroups = chats.filter((chat) => (chat.isGroup && !chat.isReadOnly));
-  const groups = allGroups.filter((group) => group.groupMetadata.isParentGroup === false && group.groupMetadata.defaultSubgroup === false).sort((a, b) => a.name.localeCompare(b.name));
-  // TODO: Implement communityGroups (Future Project)
-  // const communityGroups = allGroups.filter((group) => group.groupMetadata.isParentGroup === true || group.groupMetadata.defaultSubgroup === true);
+  const { chats, groups } = await processGroups(client);
   const groupNames = groups.map((group) => group.name);
   const groupIds = groups.map((group) => group.id._serialized);
 
@@ -89,8 +86,6 @@ client.on('ready', async () => {
   }
 
   await saveGroupsToList(groupNames, groupIds);
-  console.log(`Total chats retrieved: ${chats.length}`);
-  console.log(`Groups retrieved: ${groups.length}`);
 
   // Initial checks
   const phoneNumbersFromDB = preprocessPhoneNumbers(await getPhoneNumbersWithStatus());
