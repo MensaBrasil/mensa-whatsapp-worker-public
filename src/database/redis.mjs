@@ -70,66 +70,33 @@ async function testRedisConnection() {
     }
 }
 
+
 /**
- * Sends an array of objects to the Redis queue
- * @async
- * @param {string} queueName - Name of the queue to send objects
- * @param {Array<Object>} objArray - Array of objects to send to the queue
- * @returns {Promise<boolean>} True if successful, false otherwise
+ * Retrieves and removes the first item from addQueue
+ * @returns {Promise<{type: string, registration_id: string, group_id: string}|null>} The parsed JSON object from the queue, or null if queue is empty
+ * @throws {Error} If Redis connection fails or JSON parsing fails
  */
-async function sendToQueue(objArray, queueName) {
-    try {
-        if (!objArray || objArray.length === 0) {
-            return false;
-        }
-        await connect();
-        const jsonArray = objArray.map(obj => JSON.stringify(obj));
-        await client.rPush(queueName, jsonArray);
-        return true;
-    } catch (error) {
-        console.error('Error sending to queue:', error);
-        return false;
-    }
+async function getFromAddQueue() {
+    await connect();
+    const queueItem = await client.lPop('addQueue');
+    return queueItem ? JSON.parse(queueItem) : null;
 }
 
 /**
- * Retrieves and removes all objects from the Redis queue
- * @async
- * @param {string} queueName - Name of the queue to retrieve objects from
- * @returns {Promise<Array<Object>>} Array of parsed objects from the queue
+ * Retrieves and removes the first item from removeQueue
+ * @returns {Promise<{
+ * type: string,
+ * registration_id: string,
+ * groupId: string,
+ * phone: string,
+ * reason: string,
+ * communityId: string|null}|null>} The parsed JSON object from the queue, or null if queue is empty
+ * @throws {Error} If Redis connection fails or JSON parsing fails
  */
-async function getAllFromQueue(queueName) {
-    try {
-        await connect();
-        const script = `
-        local elements = redis.call('LRANGE', KEYS[1], 0, -1)
-        return elements
-        `;
-        const elements = await client.eval(script, {
-            keys: [queueName],
-        });
-        return elements.map(e => JSON.parse(e));
-    } catch (error) {
-        console.error(`Error getting all from ${queueName}:`, error);
-        return [];
-    }
+async function getFromRemoveQueue() {
+    await connect();
+    const queueItem = await client.lPop('removeQueue');
+    return queueItem ? JSON.parse(queueItem) : null;
 }
 
-/**
- * Clear the queue
- * @async
- * @param {string} queueName - Name of the queue to clear
- * @returns {Promise<boolean>} True if successful, false otherwise
- */
-async function clearQueue(queueName) {
-    try {
-        await connect();
-        await client.del(queueName);
-        return true;
-    } catch (error) {
-        console.error(`Error clearing ${queueName}:`, error);
-        return false;
-    }
-}
-
-export { sendToQueue, getAllFromQueue, clearQueue, testRedisConnection, disconnect };
+export { getFromAddQueue, getFromRemoveQueue, testRedisConnection };
