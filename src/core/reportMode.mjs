@@ -175,6 +175,8 @@ async function reportMembersInfo(client, chats, groups, phoneNumbersFromDB) {
   }
 
   console.log('\n\x1b[1m=== REMOVAL REPORT SUMMARY ===\x1b[0m');
+  console.log(`\x1b[36mTotal chats: ${chats.length}\x1b[0m`);
+  console.log(`\x1b[36mTotal groups processed: ${groups.length}\x1b[0m`);
   console.log(`\x1b[36mTotal unique members affected: ${(Object.keys(details).length) - atleast1PendingAdditionsCount}\x1b[0m\n`);
 
   console.log('\x1b[1mMember Count by Issue:\x1b[0m');
