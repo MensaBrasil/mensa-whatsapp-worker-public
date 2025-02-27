@@ -65,7 +65,7 @@ async function removeMembersFromGroups(groups, phoneNumbersFromDB) {
       for (const member of groupMembers) {
         const checkResult = checkPhoneNumber(phoneNumbersFromDB, member);
 
-        if (checkResult.found) {
+        if (checkResult && checkResult.found) {
           if (!(checkResult.is_adult || (checkResult.jb_under_10 && checkResult.jb_over_10))) {
             for (const rule of JBRemovalRules) {
               if (rule.groupCheck(group.name) && rule.condition(checkResult)) {

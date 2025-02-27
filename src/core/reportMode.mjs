@@ -58,13 +58,6 @@ async function reportMembersInfo(client, chats, groups, phoneNumbersFromDB) {
       const participants = group.participants;
       const groupMembers = participants.map((participant) => participant.id.user);
 
-      const botChatObj = group.participants.find(chatObj => chatObj.id.user === client.info.wid.user);
-
-      if (!botChatObj || !botChatObj.isAdmin) {
-        console.log(`Bot is not an admin in group ${group.name}. Skipping admin actions.`);
-        continue;
-      }
-
       for (const request of queue) {
         try {
           const phones = await getMemberPhoneNumbers(request.registration_id);
