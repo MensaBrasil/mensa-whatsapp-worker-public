@@ -22,26 +22,4 @@ jobs:
       run: npm install
 
     - name: Run tests
-      env:
-        PG_DB_HOST: localhost
-        PG_DB_PORT: 5432
-        PG_DB_NAME: test
-        PG_DB_USER: test
-        PG_DB_PASSWORD: test
-        TWILIO_ACCOUNT_SID: test
-        TWILIO_AUTH_TOKEN: test
-        TWILIO_FLOW_SID: test
-        TWILIO_WHATSAPP_NUMBER: test
-        TELEGRAM_BOT_TOKEN: test
-        TELEGRAM_CHAT_ID: test
-        FB_TOKEN: test
-        UPTIME_URL: test
-        BATCH_SIZE: 300
-        DONT_REMOVE_NUMBERS: "+55123456789,+5545678945,55123454789,55546548723"
-        AWS_ACCESS_KEY_ID: testid
-        AWS_SECRET_ACCESS_KEY: testkey
-        AWS_REGION: us-east-1
-        AWS_ENDPOINT: http://localhost:3000
-        SQS_QUEUE_URL: http://localhost:3000/123456789012/testQueue
-
       run: npm test

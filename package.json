@@ -1,5 +1,5 @@
 {
-  "name": "mensa-wpp-dispatcher",
+  "name": "mensa-wpp-worker",
   "version": "0.2.3",
   "description": "O Robô Zelador da Mensa Brasil é um script em JavaScript que automatiza a manutenção e gerenciamento de grupos do WhatsApp associados à Mensa Brasil. Ele verifica a atividade dos membros, remove membros inativos e envia mensagens para números que não foram encontrados na planilha de membros.",
   "main": "src/main.js",
@@ -7,19 +7,13 @@
   "scripts": {
     "lint": "eslint src/",
     "test": "jest",
-    "report": "node --max-old-space-size=4096 src/main.js --report",
-    "scan": "node --max-old-space-size=4096 src/main.js --scan",
-    "fetch": "node --max-old-space-size=4096 src/main.js --fetch",
-    "add": "node --max-old-space-size=4096 src/main.js --add",
-    "remove": "node --max-old-space-size=4096 src/main.js --remove",
-    "passive": "node --max-old-space-size=4096 src/main.js --scan --report --fetch",
-    "complete": "node --max-old-space-size=4096 src/main.js --scan --report --fetch --add --remove"
+    "start" : "node src/main.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Associacao-Mensa-Brasil/mensa-whatsapp-admin.git"
   },
-  "author": "Mensa Brasil Dev Team",
+  "author": "Hiago Teixeira (hiagodevsolutions@gmail.com)",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/Associacao-Mensa-Brasil/mensa-whatsapp-admin/issues"
@@ -27,12 +21,10 @@
   "homepage": "https://github.com/Associacao-Mensa-Brasil/mensa-whatsapp-admin#readme",
   "dependencies": {
     "dotenv": "^16.4.7",
-    "node-telegram-bot-api": "^0.66.0",
     "pg": "^8.13.3",
     "pgsql": "^1.0.0",
     "qrcode-terminal": "^0.12.0",
     "redis": "^4.7.0",
-    "twilio": "^5.4.5",
     "whatsapp-web.js": "^1.26.1-alpha.3"
   },
   "devDependencies": {
