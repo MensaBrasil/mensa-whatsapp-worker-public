@@ -70,7 +70,6 @@ async function testRedisConnection() {
     }
 }
 
-
 /**
  * Retrieves and removes the first item from addQueue
  * @returns {Promise<{type: string, registration_id: string, group_id: string}|null>} The parsed JSON object from the queue, or null if queue is empty

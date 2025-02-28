@@ -2,9 +2,18 @@
 import { configDotenv } from 'dotenv';
 import qrcode from 'qrcode-terminal';
 import WAWebJS from 'whatsapp-web.js';
+
+import { processAddQueue } from './core/addTask.mjs';
+import { processRemoveQueue } from './core/removeTask.mjs';
+import { delay } from './utils/misc.mjs';
 const { Client, LocalAuth } = WAWebJS;
 
 configDotenv();
+
+const addDelay = Number(process.env.ADD_DELAY) || 15;
+const removeDelay = Number(process.env.REMOVE_DELAY) || 10;
+const delayOffset = Number(process.env.DELAY_OFFSET) || 3;
+const uptimeUrl = process.env.UPTIME_URL;
 
 // Global error handler
 process.on('unhandledRejection', (reason) => {
@@ -42,7 +51,20 @@ client.on('ready', async () => {
 
   console.log('Client is ready!');
 
-  console.log('All tasks completed. Exiting...');
-  await fetch(process.env.UPTIME_URL);
-  process.exit(0);
+  // Main loop
+  while (true) {
+    const addResult = await processAddQueue(client);
+    if (addResult) {
+      delay(addDelay, delayOffset);
+    } else {
+      delay(0.25, 0);
+    }
+    const removeResult = await processRemoveQueue(client);
+    if (removeResult) {
+      delay(removeDelay, delayOffset);
+    } else {
+      delay(0.25, 0);
+    }
+    await fetch(uptimeUrl);
+  }
 });
