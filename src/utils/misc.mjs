@@ -59,7 +59,7 @@ async function getSerializedPhone(client, phone) {
     return matchingChat.id._serialized;
   }
 
-  // Checking if the number is brazilian and has the country code
+  // Checking if the number is brazilian and has the country code and has 9th digit
   if (phone.startsWith('55')) {
 
     // Assuming the number have region code and adding the 9th digit
