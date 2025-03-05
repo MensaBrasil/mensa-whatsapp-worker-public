@@ -87,8 +87,20 @@ async function getMemberPhoneNumbers(registration_id) {
   return result.rows.map((row) => row.phone);
 }
 
+/**
+ * Updates a group request status to fulfilled in the database.
+ * @async
+ * @param {number} id - The ID of the group request to update.
+ * @returns {Promise<void>} A promise that resolves when the update is complete.
+ */
+async function registerWhatsappAddFulfilled(id) {
+  const query = `UPDATE group_requests SET fulfilled = true, last_attempt = NOW() WHERE id = $1`;
+  await pool.query(query, [id]);
+}
+
 export {
   recordUserExitFromGroup,
   recordUserEntryToGroup,
   getMemberPhoneNumbers,
+  registerWhatsappAddFulfilled
 };

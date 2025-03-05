@@ -1,6 +1,6 @@
 import WAWebJS from 'whatsapp-web.js'; // eslint-disable-line no-unused-vars
 
-import { getMemberPhoneNumbers , recordUserEntryToGroup } from '../database/pgsql.mjs';
+import { getMemberPhoneNumbers , recordUserEntryToGroup, registerWhatsappAddFulfilled } from '../database/pgsql.mjs';
 import { getFromAddQueue, testRedisConnection } from '../database/redis.mjs';
 import { addMemberToGroup } from '../utils/clientOperations.mjs';
 
@@ -30,6 +30,7 @@ async function processAddQueue(client) {
             if (addResult.added) {
                 console.log(`Member ${phone} added to group ${item.group_id}`);
                 await recordUserEntryToGroup(item.registration_id, phone, item.group_id, 'Active');
+                await registerWhatsappAddFulfilled(item.request_id);
                 return true;
             }
             if (addResult.isInviteV4Sent) {
