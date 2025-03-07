@@ -49,7 +49,7 @@ client.on('ready', async () => {
   client.setAutoDownloadPhotos(false);
   client.setAutoDownloadVideos(false);
 
-  console.log('Client is ready!');
+  console.log('Zelador worker is ready!');
 
   // Main loop
   while (true) {
