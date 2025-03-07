@@ -86,7 +86,7 @@ async function removeMemberFromGroup(client, phone, groupId, communityId = false
         const participantId = group.participants.find(participant => participant.id._serialized.includes(phone)).id._serialized;
         if (!participantId) {
             console.log(`Participant ${phone} not found in group ${groupId}`);
-            return { added: false, isInviteV4Sent: false};
+            return { removed: false, removalType: null};
         }
 
         console.log(`Trying to remove member ${phone} from group ${groupId}`);
@@ -97,7 +97,7 @@ async function removeMemberFromGroup(client, phone, groupId, communityId = false
 
         return { removed: false, removalType: null };
     } catch (error) {
-        console.error(`Error removing member ${phone} from group ${groupId}: ${error}`);
+        console.error(`Error removing member ${phone} from group ${groupId}: ${error} ${error.stack}`);
         return { removed: false, removalType: null };
     }
 }
