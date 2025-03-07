@@ -22,7 +22,7 @@ async function processAddQueue(client) {
     const chats = await client.getChats();
     const conversations = chats.filter(chat => !chat.isGroup);
     const last8DigitsFromChats = conversations.map(chat => chat.id.user).map(number => number.slice(-8));
-    const memberPhones = (await getMemberPhoneNumbers(item.registration_id)).map(phone => phone.replace(/\D/g, ''));
+    const memberPhones = await getMemberPhoneNumbers(item.registration_id);
     
     const group = await client.getChatById(item.group_id);
     const botChatObj = group.participants.find(chatObj => chatObj.id.user === client.info.wid.user);
@@ -33,7 +33,8 @@ async function processAddQueue(client) {
     }
 
     for (const phone of memberPhones) {
-        if (last8DigitsFromChats.includes(phone.slice(-8))) {
+        const newPhone = phone.replace(/\D/g, '');
+        if (last8DigitsFromChats.includes(newPhone.slice(-8))) {
             const addResult = await addMemberToGroup(client, phone, item.group_id);
             if (addResult.added) {
                 console.log(`Member ${phone} added to group ${item.group_id}`);
