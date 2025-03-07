@@ -25,7 +25,7 @@ async function processAddQueue(client) {
     const memberPhones = (await getMemberPhoneNumbers(item.registration_id)).map(phone => phone.replace(/\D/g, ''));
     for (const phone of memberPhones) {
         if (last8DigitsFromChats.includes(phone.slice(-8))) {
-            const addResult = addMemberToGroup(client, phone, item.group_id);
+            const addResult = await addMemberToGroup(client, phone, item.group_id);
             if (addResult.added) {
                 console.log(`Member ${phone} added to group ${item.group_id}`);
                 await recordUserEntryToGroup(item.registration_id, phone, item.group_id, 'Active');
