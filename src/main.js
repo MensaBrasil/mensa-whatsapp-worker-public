@@ -15,6 +15,21 @@ const removeDelay = Number(process.env.REMOVE_DELAY) || 10;
 const delayOffset = Number(process.env.DELAY_OFFSET) || 3;
 const uptimeUrl = process.env.UPTIME_URL;
 
+// Mode select
+let addMode = process.argv.includes('--add');
+let removeMode = process.argv.includes('--remove');
+
+if (!addMode && !removeMode) {
+  console.log("Normal mode selected! Additions and removals will be processed.");
+  addMode = true;
+  removeMode = true;
+} else if (addMode && !removeMode) {
+  console.log("Add mode selected! Only additions will be processed.");
+}
+else if (!addMode && removeMode) {
+  console.log("Remove mode selected! Only removals will be processed.");
+}
+
 // Global error handler
 process.on('unhandledRejection', (reason) => {
   console.error('Unhandled Rejection:', reason);
@@ -53,17 +68,21 @@ client.on('ready', async () => {
 
   // Main loop
   while (true) {
-    const addResult = await processAddQueue(client);
-    if (addResult) {
-      delay(addDelay, delayOffset);
-    } else {
-      delay(0.25, 0);
+    if (addMode) {
+      const addResult = await processAddQueue(client);
+      if (addResult) {
+        delay(addDelay, delayOffset);
+      } else {
+        delay(0.25, 0);
+      }
     }
-    const removeResult = await processRemoveQueue(client);
-    if (removeResult) {
-      delay(removeDelay, delayOffset);
-    } else {
-      delay(0.25, 0);
+    if (removeMode) {
+      const removeResult = await processRemoveQueue(client);
+      if (removeResult) {
+        delay(removeDelay, delayOffset);
+      } else {
+        delay(0.25, 0);
+      }
     }
     await fetch(uptimeUrl);
   }

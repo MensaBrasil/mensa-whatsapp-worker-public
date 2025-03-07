@@ -7,7 +7,9 @@
   "scripts": {
     "lint": "eslint src/",
     "test": "jest",
-    "start" : "node --max-old-space-size=4096 src/main.js"
+    "start" : "node --max-old-space-size=4096 src/main.js",
+    "add": "node --max-old-space-size=4096 src/main.js --add",
+    "remove": "node --max-old-space-size=4096 src/main.js --remove"
   },
   "repository": {
     "type": "git",
