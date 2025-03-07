@@ -1,7 +1,7 @@
 import WAWebJS from 'whatsapp-web.js'; // eslint-disable-line no-unused-vars
 
 import { recordUserExitFromGroup } from '../database/pgsql.mjs';
-import { getFromRemoveQueue, testRedisConnection } from '../database/redis.mjs';
+import { getFromRemoveQueue } from '../database/redis.mjs';
 import { removeMemberFromGroup } from '../utils/clientOperations.mjs';
 
 /**
@@ -14,7 +14,6 @@ import { removeMemberFromGroup } from '../utils/clientOperations.mjs';
  * const success = await processRemoveQueue(client);
  */
 async function processRemoveQueue(client) {
-    await testRedisConnection();
     const item = await getFromRemoveQueue();
     if (!item) {
         console.log('No items in the removeQueue');

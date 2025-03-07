@@ -25,19 +25,23 @@ async function addMemberToGroup(client, phone, groupId) {
         if (serializePhone) {
             console.log(`Trying to add member ${phone} --> ${serializePhone} to group ${groupId}`);
             const result = await group.addParticipants([serializePhone]);
+            if (!result || !result.serializePhone) {
+                return { added: false, isInviteV4Sent: false };
+            }
             if (result.serializePhone.code === 200 || result.serializePhone.code === 409) {
-                return { added: true, isInviteV4Sent: false};
+                return { added: true, isInviteV4Sent: false };
             }
             if (result.serializePhone.code === 403 && result.serializePhone.isInviteV4Sent) {
-                return { added: false, isInviteV4Sent: true};
+                return { added: false, isInviteV4Sent: true };
             }
+            return { added: false, isInviteV4Sent: false };
         } else {
             console.log(`Phone number ${phone} not found in chats`);
             return { added: false, isInviteV4Sent: false};
         }
 
     } catch (error) {
-        console.error(`Error adding member ${phone} to group ${groupId}: ${error}`);
+        console.error(`Error adding member ${phone} to group ${groupId}: ${error} ${error.stack}`);
         return { added: false, isInviteV4Sent: false};
     }
 }

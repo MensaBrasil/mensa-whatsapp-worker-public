@@ -5,6 +5,7 @@ import WAWebJS from 'whatsapp-web.js';
 
 import { processAddQueue } from './core/addTask.mjs';
 import { processRemoveQueue } from './core/removeTask.mjs';
+import { testRedisConnection } from './database/redis.mjs';
 import { delay } from './utils/misc.mjs';
 const { Client, LocalAuth } = WAWebJS;
 
@@ -65,6 +66,7 @@ client.on('ready', async () => {
   client.setAutoDownloadVideos(false);
 
   console.log('Zelador worker is ready!');
+  await testRedisConnection();
 
   // Main loop
   while (true) {
@@ -72,16 +74,12 @@ client.on('ready', async () => {
       const addResult = await processAddQueue(client);
       if (addResult) {
         await delay(addDelay, delayOffset);
-      } else {
-        await delay(0.25, 0);
       }
     }
     if (removeMode) {
       const removeResult = await processRemoveQueue(client);
       if (removeResult) {
         await delay(removeDelay, delayOffset);
-      } else {
-        await delay(0.25, 0);
       }
     }
     await fetch(uptimeUrl);

@@ -1,7 +1,7 @@
 import WAWebJS from 'whatsapp-web.js'; // eslint-disable-line no-unused-vars
 
 import { getMemberPhoneNumbers , recordUserEntryToGroup, registerWhatsappAddFulfilled } from '../database/pgsql.mjs';
-import { getFromAddQueue, testRedisConnection } from '../database/redis.mjs';
+import { getFromAddQueue } from '../database/redis.mjs';
 import { addMemberToGroup } from '../utils/clientOperations.mjs';
 
 /**
@@ -14,7 +14,6 @@ import { addMemberToGroup } from '../utils/clientOperations.mjs';
  * const success = await processAddQueue(client);
  */
 async function processAddQueue(client) {
-    await testRedisConnection();
     const item = await getFromAddQueue();
     if (!item) {
         console.log('No items in the addQueue');
@@ -38,6 +37,10 @@ async function processAddQueue(client) {
                 return true;
             }
         }
+        else {
+            console.log(`Member ${phone} not found in the active chat list.`);
+        }
+        console.log(`Could not add ${phone} to group ${item.group_id}`);
         return false;
     }
     return false;
