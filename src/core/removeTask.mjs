@@ -19,12 +19,6 @@ async function processRemoveQueue(client) {
         console.log('No items in the removeQueue');
         return false;
     }
-    const group = await client.getChatById(item.groupId);
-    const botChatObj = group.participants.find(chatObj => chatObj.id.user === client.info.wid.user);
-
-    if (!botChatObj.isAdmin){
-        console.log(`Bot is not admin on group: ${group.name} id: ${item.groupId} skipping removal of member ${item.registration_id}`);
-    }
 
     console.log(`Processing removal of member ${item.registration_id} with phone ${item.phone} from group ${item.groupId}...`);
     const result = await removeMemberFromGroup(client, item.phone, item.groupId, item.communityId);
