@@ -23,6 +23,15 @@ async function processAddQueue(client) {
     const conversations = chats.filter(chat => !chat.isGroup);
     const last8DigitsFromChats = conversations.map(chat => chat.id.user).map(number => number.slice(-8));
     const memberPhones = (await getMemberPhoneNumbers(item.registration_id)).map(phone => phone.replace(/\D/g, ''));
+    
+    const group = await client.getChatById(item.group_id);
+    const botChatObj = group.participants.find(chatObj => chatObj.id.user === client.info.wid.user);
+
+    if (!botChatObj.isAdmin) {
+        console.log(`Bot is not an admin in group ${group.name} id: ${item.group_id} skipping...`);
+        return false;
+    }
+
     for (const phone of memberPhones) {
         if (last8DigitsFromChats.includes(phone.slice(-8))) {
             const addResult = await addMemberToGroup(client, phone, item.group_id);
