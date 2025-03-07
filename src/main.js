@@ -20,14 +20,14 @@ let addMode = process.argv.includes('--add');
 let removeMode = process.argv.includes('--remove');
 
 if (!addMode && !removeMode) {
-  console.log("Normal mode selected! Additions and removals will be processed.");
+  console.log('Normal mode selected! Additions and removals will be processed.');
   addMode = true;
   removeMode = true;
 } else if (addMode && !removeMode) {
-  console.log("Add mode selected! Only additions will be processed.");
+  console.log('Add mode selected! Only additions will be processed.');
 }
 else if (!addMode && removeMode) {
-  console.log("Remove mode selected! Only removals will be processed.");
+  console.log('Remove mode selected! Only removals will be processed.');
 }
 
 // Global error handler
@@ -71,17 +71,17 @@ client.on('ready', async () => {
     if (addMode) {
       const addResult = await processAddQueue(client);
       if (addResult) {
-        delay(addDelay, delayOffset);
+        await delay(addDelay, delayOffset);
       } else {
-        delay(0.25, 0);
+        await delay(0.25, 0);
       }
     }
     if (removeMode) {
       const removeResult = await processRemoveQueue(client);
       if (removeResult) {
-        delay(removeDelay, delayOffset);
+        await delay(removeDelay, delayOffset);
       } else {
-        delay(0.25, 0);
+        await delay(0.25, 0);
       }
     }
     await fetch(uptimeUrl);
