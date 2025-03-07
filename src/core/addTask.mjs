@@ -24,33 +24,33 @@ async function processAddQueue(client) {
     const last8DigitsFromChats = conversations.map(chat => chat.id.user).map(number => number.slice(-8));
     const memberPhones = await getMemberPhoneNumbers(item.registration_id);
     
-    const group = await client.getChatById(item.group_id);
+    const group = await client.getChatById(item.groupId);
     const botChatObj = group.participants.find(chatObj => chatObj.id.user === client.info.wid.user);
 
     if (!botChatObj.isAdmin) {
-        console.log(`Bot is not an admin in group ${group.name} id: ${item.group_id} skipping...`);
+        console.log(`Bot is not an admin in group ${group.name} id: ${item.groupId} skipping...`);
         return false;
     }
 
     for (const phone of memberPhones) {
         const newPhone = phone.replace(/\D/g, '');
         if (last8DigitsFromChats.includes(newPhone.slice(-8))) {
-            const addResult = await addMemberToGroup(client, phone, item.group_id);
+            const addResult = await addMemberToGroup(client, phone, item.groupId);
             if (addResult.added) {
-                console.log(`Member ${phone} added to group ${item.group_id}`);
-                await recordUserEntryToGroup(item.registration_id, phone, item.group_id, 'Active');
+                console.log(`Member ${phone} added to group ${item.groupId}`);
+                await recordUserEntryToGroup(item.registration_id, phone, item.groupId, 'Active');
                 await registerWhatsappAddFulfilled(item.request_id);
                 return true;
             }
             if (addResult.isInviteV4Sent) {
-                console.log(`Member can't be added to groups from someone that is not in the contact list.\nInvite link sent to ${phone} for group ${item.group_id}`);
+                console.log(`Member can't be added to groups from someone that is not in the contact list.\nInvite link sent to ${phone} for group ${item.groupId}`);
                 return true;
             }
         }
         else {
             console.log(`Member ${phone} not found in the active chat list.`);
         }
-        console.log(`Could not add ${phone} to group ${item.group_id}`);
+        console.log(`Could not add ${phone} to group ${item.groupId}`);
         return false;
     }
     return false;
