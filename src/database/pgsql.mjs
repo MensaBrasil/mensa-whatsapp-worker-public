@@ -94,7 +94,7 @@ async function getMemberPhoneNumbers(registration_id) {
  * @returns {Promise<void>} A promise that resolves when the update is complete.
  */
 async function registerWhatsappAddFulfilled(id) {
-  const query = 'UPDATE group_requests SET fulfilled = true, last_attempt = NOW() WHERE id = $1';
+  const query = 'UPDATE group_requests SET fulfilled = true, last_attempt = NOW(), updated_at = NOW() WHERE id = $1';
   await pool.query(query, [id]);
 }
 
@@ -105,7 +105,7 @@ async function registerWhatsappAddFulfilled(id) {
  * @returns {Promise<void>} A promise that resolves when the update is complete.
  */
 async function registerWhatsappAddAttempt(id) {
-  const query = 'UPDATE group_requests SET no_of_attempts = no_of_attempts + 1, last_attempt = NOW() WHERE id = $1';
+  const query = 'UPDATE group_requests SET no_of_attempts = no_of_attempts + 1, last_attempt = NOW(), updated_at = NOW() WHERE id = $1';
   await pool.query(query, [id]);
 }
 
