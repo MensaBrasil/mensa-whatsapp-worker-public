@@ -61,53 +61,38 @@ async function addMemberToGroup(client, phone, groupId) {
  * @param {WAWebJS.Client} client  - The WhatsApp client instance
  * @param {string} phone - The phone number of the member to remove
  * @param {string} groupId - The ID of the group to remove the member from
- * @param {string|boolean} [communityId=false] - The ID of the community to remove the member from (optional)
- * @returns {Promise<Object>} An object containing:
- *   - removed: {boolean} Whether the member was successfully removed
- *   - removalType: {string|null} The type of removal ('Community', 'Group', or null if failed)
+ * @returns {Promise<{
+ *   removed: boolean,
+ *   groupName: string | null
+ * }>} Result object where:
+ *   - removed: true if member was successfully removed
+ *   - groupName: name of the group or null if group not found/error occurred
  * @throws {Error} When there's an error during the removal process
  */
-async function removeMemberFromGroup(client, phone, groupId, communityId = false) {
+async function removeMemberFromGroup(client, phone, groupId) {
     try {
         const group = await client.getChatById(groupId);
-        if (communityId !== null && communityId !== undefined && communityId) {
-            const community = await client.getChatById(communityId);
-            if (!community) {
-                console.log(`Community ${communityId} not found... Skipping community removal.`);
-            } else {
-                const participantId = community.participants.find(participant => participant.id._serialized.includes(phone)).id._serialized;
-                if (!participantId) {
-                    console.log(`Participant ${phone} not found in community ${communityId}`);
-                }
-                console.log(`Trying to remove member ${phone} from community ${communityId}`);
-                const result = await community.removeParticipants([participantId]);
-                if (result.status === 200) {
-                    return { removed: true, removalType: 'Community' };
-                }
-            }
-        }
-
         if (!group) {
             console.log(`Group ${groupId} not found`);
-            return { removed: false, removalType: null };
+            return { removed: false, groupName: null};
         }
 
         const participantId = group.participants.find(participant => participant.id._serialized.includes(phone)).id._serialized;
         if (!participantId) {
-            console.log(`Participant ${phone} not found in group ${groupId}`);
-            return { removed: false, removalType: null };
+            console.log(`Participant ${phone} not found in group ${groupId} -> ${group.name}`);
+            return { removed: false, groupName: group.name};
         }
 
-        console.log(`Trying to remove member ${phone} from group ${groupId}`);
+        console.log(`Trying to remove member ${phone} from group ${groupId} -> ${group.name}`);
         const result = await group.removeParticipants([participantId]);
         if (result.status === 200) {
-            return { removed: true, removalType: 'Group' };
+            return { removed: true, groupName: group.name};
         }
 
-        return { removed: false, removalType: null };
+        return { removed: false, groupName: group.name};
     } catch (error) {
         console.error(`Error removing member ${phone} from group ${groupId}: ${error} ${error.stack}`);
-        return { removed: false, removalType: null };
+        return { removed: false, groupName: null};
     }
 }
 

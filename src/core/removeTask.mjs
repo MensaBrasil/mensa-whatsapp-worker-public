@@ -21,15 +21,10 @@ async function processRemoveQueue(client) {
     }
 
     console.log(`Processing removal of member ${item.registration_id} with phone ${item.phone} from group ${item.groupId}...`);
-    const result = await removeMemberFromGroup(client, item.phone, item.groupId, item.communityId);
+    const result = await removeMemberFromGroup(client, item.phone, item.groupId);
 
-    if (result.removed && result.removalType === 'Community') {
-        console.log(`Member ${item.phone} successfully removed from ${result.removalType} ${item.communityId}`);
-        await recordUserExitFromGroup(item.phone, item.communityId, item.reason);
-        return true;
-    }
-    else if (result.removed && result.removalType === 'Group') {
-        console.log(`Member ${item.phone} successfully removed from ${result.removalType} ${item.groupId}`);
+    if (result.removed) {
+        console.log(`Member ${item.phone} successfully removed from ${item.groupId} -> ${result.groupName} for reason: ${item.reason}`);
         await recordUserExitFromGroup(item.phone, item.groupId, item.reason);
         return true;
     }
