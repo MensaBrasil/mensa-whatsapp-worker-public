@@ -8,9 +8,14 @@ import { getSerializedPhone } from './misc.mjs';
  * @param {WAWebJS.Client} client - The WhatsApp client instance
  * @param {string} phone - The phone number of the member to add
  * @param {string} groupId - The ID of the group to add the member to
- * @returns {Promise<Object>} Object containing:
- *   - added {boolean} - Whether the member was successfully added
- *   - isInviteV4Sent {boolean} - Whether an invite link was sent instead
+ * @returns {Promise<{
+ *   added: boolean,
+ *   isInviteV4Sent: boolean,
+ *   alreadyInGroup: boolean
+ * }>} Result object where:
+ *   - added: true if member was successfully added
+ *   - isInviteV4Sent: true if an invite link was sent instead
+ *   - alreadyInGroup: true if member is already in the group
  * @throws {Error} When there's an error adding the member to the group
  */
 async function addMemberToGroup(client, phone, groupId) {
@@ -18,7 +23,7 @@ async function addMemberToGroup(client, phone, groupId) {
         const group = await client.getChatById(groupId);
         if (!group) {
             console.log(`Group ${groupId} not found`);
-            return { added: false, isInviteV4Sent: false};
+            return { added: false, isInviteV4Sent: false , alreadyInGroup : false};
         }
 
         const serializePhone = await getSerializedPhone(client, phone);
@@ -27,23 +32,26 @@ async function addMemberToGroup(client, phone, groupId) {
             const result = await group.addParticipants([serializePhone]);
             console.log(`Add member result: ${JSON.stringify(result)}`);
             if (!result || !result[serializePhone]) {
-                return { added: false, isInviteV4Sent: false };
+                return { added: false, isInviteV4Sent: false , alreadyInGroup : false};
             }
-            if (result[serializePhone].code === 200 || result[serializePhone].code === 409) {
-                return { added: true, isInviteV4Sent: false };
+            if (result[serializePhone].code === 200) {
+                return { added: true, isInviteV4Sent: false , alreadyInGroup : false};
+            }
+            if (result[serializePhone].code === 409) {
+                return { added: false, isInviteV4Sent: false , alreadyInGroup : true};
             }
             if (result[serializePhone].code === 403 && result[serializePhone].isInviteV4Sent) {
-                return { added: false, isInviteV4Sent: true };
+                return { added: false, isInviteV4Sent: true , alreadyInGroup : false};
             }
-            return { added: false, isInviteV4Sent: false };
+            return { added: false, isInviteV4Sent: false , alreadyInGroup : false};
         } else {
             console.log(`Phone number ${phone} not found in chats`);
-            return { added: false, isInviteV4Sent: false};
+            return { added: false, isInviteV4Sent: false , alreadyInGroup : false};
         }
 
     } catch (error) {
         console.error(`Error adding member ${phone} to group ${groupId}: ${error} ${error.stack}`);
-        return { added: false, isInviteV4Sent: false};
+        return { added: false, isInviteV4Sent: false , alreadyInGroup : false};
     }
 }
 
@@ -87,7 +95,7 @@ async function removeMemberFromGroup(client, phone, groupId, communityId = false
         const participantId = group.participants.find(participant => participant.id._serialized.includes(phone)).id._serialized;
         if (!participantId) {
             console.log(`Participant ${phone} not found in group ${groupId}`);
-            return { removed: false, removalType: null};
+            return { removed: false, removalType: null };
         }
 
         console.log(`Trying to remove member ${phone} from group ${groupId}`);

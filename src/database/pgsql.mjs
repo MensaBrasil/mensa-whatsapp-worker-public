@@ -98,9 +98,21 @@ async function registerWhatsappAddFulfilled(id) {
   await pool.query(query, [id]);
 }
 
+/**
+ * Updates group request to add attempt count and last attempt time.
+ * @async
+ * @param {number} id - The ID of the group request to update.
+ * @returns {Promise<void>} A promise that resolves when the update is complete.
+ */
+async function registerWhatsappAddAttempt(id) {
+  const query = 'UPDATE group_requests SET no_of_attempts = no_of_attempts + 1, last_attempt = NOW() WHERE id = $1';
+  await pool.query(query, [id]);
+}
+
 export {
   recordUserExitFromGroup,
   recordUserEntryToGroup,
   getMemberPhoneNumbers,
-  registerWhatsappAddFulfilled
+  registerWhatsappAddFulfilled,
+  registerWhatsappAddAttempt
 };
