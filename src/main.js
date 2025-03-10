@@ -72,7 +72,7 @@ client.on('ready', async () => {
   while (true) {
     if (addMode) {
       const addResult = await processAddQueue(client);
-      if (addResult) {
+      if (addResult.added) {
         await delay(addDelay, delayOffset);
       }
     }

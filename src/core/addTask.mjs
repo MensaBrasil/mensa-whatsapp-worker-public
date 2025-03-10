@@ -4,20 +4,29 @@ import { getMemberPhoneNumbers , recordUserEntryToGroup, registerWhatsappAddFulf
 import { getFromAddQueue } from '../database/redis.mjs';
 import { addMemberToGroup } from '../utils/clientOperations.mjs';
 
+
 /**
- * Processes one item from the addQueue and returns success or failure
+ * Processes a queue of members to be added to a WhatsApp group
  * @async
  * @param {WAWebJS.Client} client - The WhatsApp Web client
- * @returns {Promise<boolean>} True if the item was successfully processed, false otherwise
- * @example
- * // Process one item from the addQueue
- * const success = await processAddQueue(client);
+ * @returns {Promise<{
+ *   added: boolean,  // Whether the member was successfully added or invite sent
+ *   inviteSent: boolean  // Whether an invite link was sent instead of direct add
+ * }>}
+ * @throws {Error} If there are issues accessing chats or adding members
+ * @description
+ * This function:
+ * 1. Gets next item from add queue
+ * 2. Checks if bot is admin in target group
+ * 3. Gets member phone numbers from registration
+ * 4. Attempts to add members to group or send invite
+ * 5. Records successful additions to database
  */
 async function processAddQueue(client) {
     const item = await getFromAddQueue();
     if (!item) {
         console.log('No items in the addQueue');
-        return false;
+        return {added : false, inviteSent: false };
     }
     const chats = await client.getChats();
     const conversations = chats.filter(chat => !chat.isGroup);
@@ -29,33 +38,33 @@ async function processAddQueue(client) {
 
     if (!botChatObj.isAdmin) {
         console.log(`Bot is not an admin in group ${group.name} id: ${item.group_id} skipping...`);
-        return false;
+        return {added : false, inviteSent: false };
     }
 
     for (const phone of memberPhones) {
         const newPhone = phone.replace(/\D/g, '');
         if (last8DigitsFromChats.includes(newPhone.slice(-8))) {
-            const addResult = await addMemberToGroup(client, phone, item.group_id);
-            if (addResult.added) {
+            const added = await addMemberToGroup(client, phone, item.group_id);
+            if (added.added) {
                 console.log(`Member ${phone} added to group ${item.group_id}`);
                 await recordUserEntryToGroup(item.registration_id, phone, item.group_id, 'Active');
                 await registerWhatsappAddFulfilled(item.request_id);
-                return true;
+                return {added : true, inviteSent: false };
             }
-            if (addResult.isInviteV4Sent) {
+            if (added.isInviteV4Sent) {
                 console.log(`Member can't be added to groups from someone that is not in the contact list.\nInvite link sent to ${phone} for group ${item.group_id}`);
                 await recordUserEntryToGroup(item.registration_id, phone, item.group_id, 'Active');
                 await registerWhatsappAddFulfilled(item.request_id);
-                return true;
+                return {added : false, inviteSent: true };
             }
         }
         else {
             console.log(`Member ${phone} not found in the active chat list.`);
         }
         console.log(`Could not add ${phone} to group ${item.group_id}`);
-        return false;
+        return {added : false, inviteSent: false };
     }
-    return false;
+    return {added : false, inviteSent: false };
 }
 
 export { processAddQueue };
