@@ -26,13 +26,13 @@ async function addMemberToGroup(client, phone, groupId) {
             console.log(`Trying to add member ${phone} --> ${serializePhone} to group ${groupId} --> ${group.name}`);
             const result = await group.addParticipants([serializePhone]);
             console.log(`Add member result: ${JSON.stringify(result)}`);
-            if (!result || !result.serializePhone) {
+            if (!result || !result[serializePhone]) {
                 return { added: false, isInviteV4Sent: false };
             }
-            if (result.serializePhone.code === 200 || result.serializePhone.code === 409) {
+            if (result[serializePhone].code === 200 || result[serializePhone].code === 409) {
                 return { added: true, isInviteV4Sent: false };
             }
-            if (result.serializePhone.code === 403 && result.serializePhone.isInviteV4Sent) {
+            if (result[serializePhone].code === 403 && result[serializePhone].isInviteV4Sent) {
                 return { added: false, isInviteV4Sent: true };
             }
             return { added: false, isInviteV4Sent: false };
