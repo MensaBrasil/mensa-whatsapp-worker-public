@@ -70,7 +70,7 @@ async function addMemberToGroup(client, phone, groupId) {
 async function removeMemberFromGroup(client, phone, groupId, communityId = false) {
     try {
         const group = await client.getChatById(groupId);
-        if (communityId) {
+        if (communityId !== null && communityId !== undefined && communityId) {
             const community = await client.getChatById(communityId);
             if (!community) {
                 console.log(`Community ${communityId} not found... Skipping community removal.`);
