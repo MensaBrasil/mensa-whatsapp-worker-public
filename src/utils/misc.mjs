@@ -59,26 +59,10 @@ async function getSerializedPhone(client, phone) {
     return matchingChat.id._serialized;
   }
 
-  // Checking if the number is brazilian and has the country code and has 9th digit
-  if (phone.startsWith('55')) {
-
-    // Assuming the number have region code and adding the 9th digit
-    if (phone.length === 12) {
-      const newPhone = phone.slice(0, 4) + '9' + phone.slice(4);
-      const matchingChat = conversations.find(chat => chat.id.user && chat.id.user.endsWith(newPhone));
-      if (matchingChat) {
-        return matchingChat.id._serialized;
-      }
-    }
-
-    // If everything fails check until last 8 digits
-    for (let i = phone.length; i >= 8; i--) {
-      const lastDigits = phone.slice(-i);
-      const matchingChat = conversations.find(chat => chat.id.user && chat.id.user.endsWith(lastDigits));
-      if (matchingChat) {
-        return matchingChat.id._serialized;
-      }
-    }
+  // Using last 8 digits to find serialized number
+  const matchingChat8digits = conversations.find(chat => chat.id.user && chat.id.user.endsWith(phone.slice(-8)));
+  if (matchingChat8digits) {
+    return matchingChat8digits.id._serialized;
   }
 
   return false;
