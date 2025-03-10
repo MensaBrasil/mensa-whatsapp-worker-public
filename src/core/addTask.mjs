@@ -44,7 +44,7 @@ async function processAddQueue(client) {
             }
             if (addResult.isInviteV4Sent) {
                 console.log(`Member can't be added to groups from someone that is not in the contact list.\nInvite link sent to ${phone} for group ${item.group_id}`);
-                return true;
+                return false;
             }
         }
         else {
