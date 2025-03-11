@@ -77,7 +77,8 @@ async function removeMemberFromGroup(client, phone, groupId) {
             return { removed: false, groupName: null};
         }
 
-        const participantId = group.participants.find(participant => participant.id._serialized.includes(phone)).id._serialized;
+        const participant = group.participants.find(participant => participant?.id?._serialized?.includes(phone));
+        const participantId = participant?.id?._serialized || false;
         if (!participantId) {
             console.log(`Participant ${phone} not found in group ${groupId} -> ${group.name}`);
             return { removed: false, groupName: group.name};
