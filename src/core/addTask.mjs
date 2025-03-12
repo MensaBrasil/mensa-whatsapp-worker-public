@@ -68,7 +68,7 @@ async function processAddQueue(client) {
         console.log(`Member ${phone} not found in the active chat list.`);
     }
     await registerWhatsappAddAttempt(item.request_id);
-    console.log(`Could not fullfill request: ${item.request_id} by ${item.registration_id} to group ${item.group_id}`);
+    console.log(`Could not fullfill request nº: ${item.request_id} by member: ${item.registration_id} to group ${item.group_id}`);
     return { added: false, inviteSent: false, alreadyInGroup: false };
 }
 
