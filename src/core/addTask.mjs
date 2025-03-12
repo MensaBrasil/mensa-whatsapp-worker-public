@@ -65,13 +65,10 @@ async function processAddQueue(client) {
                 return { added: false, inviteSent: false, alreadyInGroup: true };
             }
         }
-        else {
-            console.log(`Member ${phone} not found in the active chat list.`);
-            await registerWhatsappAddAttempt(item.request_id);
-        }
-        console.log(`Could not add ${phone} to group ${item.group_id}`);
-        return { added: false, inviteSent: false, alreadyInGroup: false };
+        console.log(`Member ${phone} not found in the active chat list.`);
     }
+    await registerWhatsappAddAttempt(item.request_id);
+    console.log(`Could not add ${phone} to group ${item.group_id}`);
     return { added: false, inviteSent: false, alreadyInGroup: false };
 }
 
