@@ -47,7 +47,7 @@ async function processAddQueue(client) {
         if (last8DigitsFromChats.includes(newPhone.slice(-8))) {
             const added = await addMemberToGroup(client, newPhone, item.group_id);
             if (added.added) {
-                console.log(`Phone ${newPhone} added to group ${item.group_id}`);
+                console.log(`Member ${item.registration_id} was added to group ${item.group_id} with phone ${newPhone}`);
                 await recordUserEntryToGroup(item.registration_id, newPhone, item.group_id, 'Active');
                 await registerWhatsappAddFulfilled(item.request_id);
                 return { added: true, inviteSent: false, alreadyInGroup: false };
