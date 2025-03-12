@@ -45,27 +45,27 @@ async function processAddQueue(client) {
     for (const phone of memberPhones) {
         const newPhone = phone.replace(/\D/g, '');
         if (last8DigitsFromChats.includes(newPhone.slice(-8))) {
-            const added = await addMemberToGroup(client, phone, item.group_id);
+            const added = await addMemberToGroup(client, newPhone, item.group_id);
             if (added.added) {
-                console.log(`Member ${phone} added to group ${item.group_id}`);
-                await recordUserEntryToGroup(item.registration_id, phone, item.group_id, 'Active');
+                console.log(`Phone ${newPhone} added to group ${item.group_id}`);
+                await recordUserEntryToGroup(item.registration_id, newPhone, item.group_id, 'Active');
                 await registerWhatsappAddFulfilled(item.request_id);
                 return { added: true, inviteSent: false, alreadyInGroup: false };
             }
             if (added.isInviteV4Sent) {
-                console.log(`Member can't be added to groups from someone that is not in the contact list.\nInvite link sent to ${phone} for group ${item.group_id}`);
-                await recordUserEntryToGroup(item.registration_id, phone, item.group_id, 'Active');
+                console.log(`Member can't be added to groups from someone that is not in the contact list.\nInvite link sent to ${newPhone} for group ${item.group_id}`);
+                await recordUserEntryToGroup(item.registration_id, newPhone, item.group_id, 'Active');
                 await registerWhatsappAddFulfilled(item.request_id);
                 return { added: false, inviteSent: true, alreadyInGroup: false };
             }
             if (added.alreadyInGroup) {
-                console.log(`Member ${phone} is already in group ${item.group_id}`);
-                await recordUserEntryToGroup(item.registration_id, phone, item.group_id, 'Active');
+                console.log(`Phone ${newPhone} is already in group ${item.group_id}`);
+                await recordUserEntryToGroup(item.registration_id, newPhone, item.group_id, 'Active');
                 await registerWhatsappAddFulfilled(item.request_id);
                 return { added: false, inviteSent: false, alreadyInGroup: true };
             }
         }
-        console.log(`Member ${phone} not found in the active chat list.`);
+        console.log(`Phone ${newPhone} not found in the active chat list.`);
     }
     await registerWhatsappAddAttempt(item.request_id);
     console.log(`Could not fullfill request nº: ${item.request_id} by member: ${item.registration_id} to group ${item.group_id}`);
