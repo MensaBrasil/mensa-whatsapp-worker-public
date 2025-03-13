@@ -43,6 +43,7 @@ async function processAddQueue(client) {
     }
 
     for (const phone of memberPhones) {
+        if (!phone) continue;
         const newPhone = phone.replace(/\D/g, '');
         if (last8DigitsFromChats.includes(newPhone.slice(-8))) {
             const added = await addMemberToGroup(client, newPhone, item.group_id);
