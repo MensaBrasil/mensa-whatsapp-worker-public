@@ -1,0 +1,1 @@
+process.env.REDIS_PASSWORD = 'testpass';
