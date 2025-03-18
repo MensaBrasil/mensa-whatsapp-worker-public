@@ -74,12 +74,16 @@ client.on('ready', async () => {
       const addResult = await processAddQueue(client);
       if (addResult.added) {
         await delay(addDelay, delayOffset);
+      } else {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
       }
     }
     if (removeMode) {
       const removeResult = await processRemoveQueue(client);
       if (removeResult) {
         await delay(removeDelay, delayOffset);
+      } else {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
       }
     }
     await fetch(uptimeUrl);
