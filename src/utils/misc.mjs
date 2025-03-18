@@ -23,23 +23,23 @@ function getRandomizedDelay(time, offset = 3) {
 async function delay(time, offset) {
   const delayTime = getRandomizedDelay(time, offset);
   const endTime = Date.now() + delayTime;
-  
+
   console.log(`Waiting for ${delayTime / 1000} seconds...`);
-  
+
   return new Promise((resolve) => {
     const updateDisplay = () => {
       const remainingTime = Math.ceil((endTime - Date.now()) / 1000);
       process.stdout.write(`\rTime left: ${remainingTime} seconds`);
-      
+
       if (remainingTime <= 0) {
         process.stdout.write('\n');
         resolve();
         return;
       }
-      
+
       setTimeout(updateDisplay, 1000);
     };
-    
+
     updateDisplay();
   });
 }
