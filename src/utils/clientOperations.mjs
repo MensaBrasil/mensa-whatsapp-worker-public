@@ -78,7 +78,8 @@ async function removeMemberFromGroup(client, phone, groupId, communityId = false
             if (!community) {
                 console.log(`Community ${communityId} not found... Skipping community removal.`);
             } else {
-                const participantId = community.participants.find(participant => participant.id._serialized.includes(phone)).id._serialized;
+                const participant = community.participants.find(participant => participant?.id?._serialized?.includes(phone));
+                const participantId = participant?.id?._serialized || false;
                 if (!participantId) {
                     console.log(`Participant ${phone} not found in community ${communityId}`);
                 }
@@ -95,7 +96,8 @@ async function removeMemberFromGroup(client, phone, groupId, communityId = false
             return { removed: false, removalType: null, groupName: null };
         }
 
-        const participantId = group.participants.find(participant => participant.id._serialized.includes(phone)).id._serialized;
+        const participant = group.participants.find(participant => participant?.id?._serialized?.includes(phone));
+        const participantId = participant?.id?._serialized || false;
         if (!participantId) {
             console.log(`Participant ${phone} not found in group ${groupId}`);
             return { removed: false, removalType: null, groupName: group.name };
