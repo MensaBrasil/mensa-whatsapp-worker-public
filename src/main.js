@@ -86,6 +86,15 @@ client.on('ready', async () => {
         await new Promise((resolve) => setTimeout(resolve, 2000));
       }
     }
-    await fetch(uptimeUrl);
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+      await fetch(uptimeUrl, { signal: controller.signal });
+
+      clearTimeout(timeoutId);
+    } catch (error) {
+      console.error('Uptime check failed:', error);
+    }
   }
 });
