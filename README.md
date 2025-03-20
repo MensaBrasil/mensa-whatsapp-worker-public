@@ -1,53 +1,59 @@
-# Robô Zelador da Mensa Brasil
+# Worker for Zelador Mensa Brasil
 
-O Robô Zelador da Mensa Brasil é um script em JavaScript que automatiza a manutenção e gerenciamento de grupos do WhatsApp associados à Mensa Brasil. Ele verifica a atividade dos membros, remove membros inativos e envia mensagens para números que não foram encontrados na planilha de membros.
+## Pre-requisites (Linux/Ubuntu 24.04)
 
-## Funcionalidades
+1. Change sample.env file to .env and add the correct required environment variables.
 
-1. **Verificação de Atividade dos Membros**: O robô verifica a atividade dos membros do grupo e remove aqueles que não estão ativos ou transferidos para outro grupo.
+2. Install nvm and node
 
-2. **Notificação de Membros Inativos**: Quando um membro é identificado como inativo, o robô envia uma mensagem personalizada para notificar o membro e, em seguida, remove-o do grupo.
+   ```bash
+   # Download and install nvm:
+   curl -o- <https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.2/install.sh> | bash
 
-3. **Notificação de Números Não Encontrados**: Quando um número de telefone não é encontrado na planilha associada, o robô envia uma mensagem específica para notificar o membro e, em seguida, remove-o do grupo.
+   # in lieu of restarting the shell
+   \. "$HOME/.nvm/nvm.sh"
 
-4. **Autenticação de Google Sheets**: O robô utiliza as credenciais do Google Sheets para acessar a planilha de membros e verificar as informações.
+   # Download and install Node.js
+   nvm install 22
 
-5. **Conexão com Banco de Dados MongoDB**: O robô mantém um registro de mensagens enviadas e membros removidos usando um banco de dados MongoDB.
+   # Verify the Node.js version
+   node -v # Should print "v22.14.0".
+   nvm current # Should print "v22.14.0".
 
-## Pré-requisitos
-
-Antes de executar o robô, você precisará das seguintes configurações:
-
-1. Renomeie o arquivo `.env.staging` para `.env` e configure as variáveis de ambiente necessárias, como `DB_USER`, `DB_PASS`, `DB_NAME`, `DB_HOST`, `GROUP_NAMES` e outras conforme necessário.
-
-2. A planilha associada às informações dos membros deve estar acessível no seguinte link: [Planilha de Membros](https://docs.google.com/spreadsheets/d/1Xw3IRGh2liEfUuH6nYB3n2ylwx-N1GAvlk7id9i_HPA/edit?usp=sharing).
-3. Instale as dependências
-   ```
-   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
-   nvm install 18
-   sudo apt-get install libx11-xcb1 libxcomposite1 libasound2 libatk1.0-0 libatk-bridge2.0-0 libcairo2 libcups2 libdbus-1-3 libexpat1 libfontconfig1 libgbm1 libgcc1 libglib2.0-0 libgtk-3-0 libnspr4 libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6
+   # Verify npm version
+   npm -v # Should print "10.9.2".
    ```
 
-## Desenvolvedores
+3. Install dependencies
 
-- Thiago Santos, MB 2622
-- Maycon Freitas, MB 1897
-- Cadu Fonseca, MB 133
+   ```bash
+   sudo apt-get install -y libatk1.0-0 libatk-bridge2.0-0 libcups2 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libpango-1.0-0 libcairo2 libasound2t64
+   ```
 
-## Executando o Robô
+## Running
 
-1. Instale as dependências do projeto executando `npm install` ou `yarn install`.
+The following commands are available to run the worker:
 
-2. Inicie o robô executando `node nome-do-arquivo.js`, onde `nome-do-arquivo.js` é o nome do arquivo do script (o código fornecido).
+- **Start**: Starts the worker with default settings.
 
-3. O robô irá se conectar ao WhatsApp e começar a realizar as tarefas de zeladoria nos grupos especificados.
+   ```bash
+   npm start
+   # Equivalent to:
+   node --max-old-space-size=1024 src/main.js
+   ```
 
-## Personalização
+- **Add**: Process add queue.
 
-O código do robô pode ser personalizado para atender a requisitos específicos. Consulte os comentários no código para entender como cada parte do script funciona e como adaptá-lo conforme necessário.
+   ```bash
+   npm run add
+   # Equivalent to:
+   node --max-old-space-size=1024 src/main.js --add
+   ```
 
+- **Remove**: Process remove queue.
 
-
-sudo apt-get update
-sudo apt-get install -y libgbm1
-sudo apt-get install libasound2
+   ```bash
+   npm run remove
+   # Equivalent to:
+   node --max-old-space-size=1024 src/main.js --remove
+   ```
