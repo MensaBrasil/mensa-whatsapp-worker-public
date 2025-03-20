@@ -75,7 +75,7 @@ client.on('ready', async () => {
       if (addResult.added) {
         await delay(addDelay, delayOffset);
       } else {
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        await new Promise((resolve) => setTimeout(resolve, 10000));
       }
     }
     if (removeMode) {
@@ -83,7 +83,7 @@ client.on('ready', async () => {
       if (removeResult) {
         await delay(removeDelay, delayOffset);
       } else {
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        await new Promise((resolve) => setTimeout(resolve, 10000));
       }
     }
     try {
