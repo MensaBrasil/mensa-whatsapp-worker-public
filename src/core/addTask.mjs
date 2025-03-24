@@ -10,9 +10,11 @@ import { addMemberToGroup } from '../utils/clientOperations.mjs';
  * @async
  * @param {WAWebJS.Client} client - The WhatsApp Web client
  * @returns {Promise<{
- *  added: boolean,  // Whether the member was successfully added or invite sent
- *  inviteSent: boolean  // Whether an invite link was sent instead of direct add
- *  alreadyInGroup: boolean  // Whether the member was already in the group
+ *  added: boolean,  // Whether the member was successfully added
+ *  inviteSent: boolean,  // Whether an invite link was sent instead of direct add
+ *  alreadyInGroup: boolean,  // Whether the member was already in the group
+ *  processedPhones: number,  // Number of phone numbers successfully processed
+ *  totalPhones: number  // Total number of phone numbers attempted
  * }>}
  * @throws {Error} If there are issues accessing chats or adding members
  * @description
@@ -42,6 +44,19 @@ async function processAddQueue(client) {
         return { added: false, inviteSent: false, alreadyInGroup: false };
     }
 
+    if (!memberPhones.length) {
+        console.log(`No phone numbers found for registration ID: ${item.registration_id}`);
+        return { added: false, inviteSent: false, alreadyInGroup: false };
+    }
+
+    const results = {
+        added: false,
+        inviteSent: false,
+        alreadyInGroup: false,
+        processedPhones: 0,
+        totalPhones: memberPhones.length
+    };
+
     for (const phone of memberPhones) {
         if (!phone) continue;
         const newPhone = phone.replace(/\D/g, '');
@@ -50,27 +65,33 @@ async function processAddQueue(client) {
             if (added.added) {
                 console.log(`Member ${item.registration_id} was added to group ${item.group_id} with phone ${newPhone}`);
                 await recordUserEntryToGroup(item.registration_id, newPhone, item.group_id, 'Active');
-                await registerWhatsappAddFulfilled(item.request_id);
-                return { added: true, inviteSent: false, alreadyInGroup: false };
-            }
-            if (added.isInviteV4Sent) {
+                results.added = true;
+                results.processedPhones++;
+            } else if (added.isInviteV4Sent) {
                 console.log(`Member can't be added to groups from someone that is not in the contact list.\nInvite link sent to ${newPhone} for group ${item.group_id}`);
                 await recordUserEntryToGroup(item.registration_id, newPhone, item.group_id, 'Active');
-                await registerWhatsappAddFulfilled(item.request_id);
-                return { added: false, inviteSent: true, alreadyInGroup: false };
-            }
-            if (added.alreadyInGroup) {
+                results.inviteSent = true;
+                results.processedPhones++;
+            } else if (added.alreadyInGroup) {
                 console.log(`Phone ${newPhone} is already in group ${item.group_id}`);
                 await recordUserEntryToGroup(item.registration_id, newPhone, item.group_id, 'Active');
-                await registerWhatsappAddFulfilled(item.request_id);
-                return { added: false, inviteSent: false, alreadyInGroup: true };
+                results.alreadyInGroup = true;
+                results.processedPhones++;
             }
+        } else {
+            console.log(`Phone ${newPhone} not found in the active chat list.`);
         }
-        console.log(`Phone ${newPhone} not found in the active chat list.`);
+    }
+
+    if (results.processedPhones > 0) {
+        await registerWhatsappAddFulfilled(item.request_id);
+        console.log(`Request nº: ${item.request_id} by member: ${item.registration_id} to group ${item.group_id} was fulfilled
+        with ${results.processedPhones} out of ${results.totalPhones} processed.`);
+        return results;
     }
     await registerWhatsappAddAttempt(item.request_id);
     console.log(`Could not fullfill request nº: ${item.request_id} by member: ${item.registration_id} to group ${item.group_id}`);
-    return { added: false, inviteSent: false, alreadyInGroup: false };
+    return results;
 }
 
 export { processAddQueue };
