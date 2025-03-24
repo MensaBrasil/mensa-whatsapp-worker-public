@@ -42,19 +42,7 @@ const client = new Client({
   authStrategy: new LocalAuth(),
   puppeteer: {
     headless: true,
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--single-process',
-      '--no-zygote',
-      '--disable-gpu',
-      '--disable-extensions',
-      '--js-flags="--max-old-space-size=256"',
-    ],
-    chatCache: [],
-    messageCache: [],
-    mediaCache: false,
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu'],
     protocolTimeout: 1200000,
   },
 });
