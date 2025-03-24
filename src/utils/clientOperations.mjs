@@ -22,7 +22,7 @@ async function addMemberToGroup(client, phone, groupId) {
     try {
         const group = await client.getChatById(groupId);
         if (!group) {
-            console.log(`Group ${groupId} not found`);
+            console.log(`\x1b[31mGroup ${groupId} not found\x1b[0m`);
             return { added: false, isInviteV4Sent: false, alreadyInGroup: false };
         }
 
@@ -30,7 +30,6 @@ async function addMemberToGroup(client, phone, groupId) {
         if (serializePhone) {
             console.log(`Trying to add member ${phone} --> ${serializePhone} to group ${groupId} --> ${group.name}`);
             const result = await group.addParticipants([serializePhone]);
-            console.log(`Add member result: ${JSON.stringify(result)}`);
             if (!result || !result[serializePhone]) {
                 return { added: false, isInviteV4Sent: false, alreadyInGroup: false };
             }
@@ -45,12 +44,12 @@ async function addMemberToGroup(client, phone, groupId) {
             }
             return { added: false, isInviteV4Sent: false, alreadyInGroup: false };
         } else {
-            console.log(`Phone number ${phone} not found in chats`);
+            console.log(`\x1b[33mPhone number ${phone} not found in chats\x1b[0m`);
             return { added: false, isInviteV4Sent: false, alreadyInGroup: false };
         }
 
     } catch (error) {
-        console.error(`Error adding member ${phone} to group ${groupId}: ${error} ${error.stack}`);
+        console.error(`\x1b[31mError adding member ${phone} to group ${groupId}: ${error} ${error.stack}\x1b[0m`);
         return { added: false, isInviteV4Sent: false, alreadyInGroup: false };
     }
 }
@@ -76,14 +75,18 @@ async function removeMemberFromGroup(client, phone, groupId, communityId = false
         if (communityId !== null && communityId !== undefined && communityId) {
             const community = await client.getChatById(communityId);
             if (!community) {
-                console.log(`Community ${communityId} not found... Skipping community removal.`);
+                console.log(`\x1b[33mCommunity ${communityId} not found... Skipping community removal.\x1b[0m`);
             } else {
                 const participant = community.participants.find(participant => participant?.id?._serialized?.includes(phone));
                 const participantId = participant?.id?._serialized || false;
                 if (!participantId) {
-                    console.log(`Participant ${phone} not found in community ${communityId}`);
+                    console.log(`\x1b[33mParticipant ${phone} not found in community ${communityId}\x1b[0m`);
                 }
-                console.log(`Trying to remove member ${phone} from community ${communityId}`);
+                if (participant.isAdmin) {
+                    console.log(`\x1b[33mAdmins can't be removed from communities... Skipping removal of ${phone} from community ${community.name} --> ID: ${communityId}\x1b[0m`);
+                    return { removed: false, removalType: null, groupName: community.name };
+                }
+                console.log(`\x1b[1;37mTrying to remove member ${phone} from community ${communityId}\x1b[0m`);
                 const result = await community.removeParticipants([participantId]);
                 if (result.status === 200) {
                     return { removed: true, removalType: 'Community', groupName: community.name };
@@ -92,18 +95,23 @@ async function removeMemberFromGroup(client, phone, groupId, communityId = false
         }
 
         if (!group) {
-            console.log(`Group ${groupId} not found`);
+            console.log(`\x1b[31mGroup ${groupId} not found\x1b[0m`);
             return { removed: false, removalType: null, groupName: null };
         }
 
         const participant = group.participants.find(participant => participant?.id?._serialized?.includes(phone));
         const participantId = participant?.id?._serialized || false;
         if (!participantId) {
-            console.log(`Participant ${phone} not found in group ${groupId}`);
+            console.log(`\x1b[31mParticipant ${phone} not found in group ${groupId}\x1b[0m`);
             return { removed: false, removalType: null, groupName: group.name };
         }
 
-        console.log(`Trying to remove member ${phone} from group ${groupId}`);
+        if (participant.isAdmin) {
+            console.log(`\x1b[33mAdmins can't be removed from groups... Skipping removal of ${phone} from group ${group.name} --> ID: ${groupId}\x1b[0m`);
+            return { removed: false, removalType: null, groupName: group.name };
+        }
+
+        console.log(`\x1b[1;37mTrying to remove member ${phone} from group ${groupId}\x1b[0m`);
         const result = await group.removeParticipants([participantId]);
         if (result.status === 200) {
             return { removed: true, removalType: 'Group', groupName: group.name };
@@ -111,7 +119,7 @@ async function removeMemberFromGroup(client, phone, groupId, communityId = false
 
         return { removed: false, removalType: null, groupName: group.name };
     } catch (error) {
-        console.error(`Error removing member ${phone} from group ${groupId}: ${error} ${error.stack}`);
+        console.error(`\x1b[31mError removing member ${phone} from group ${groupId}: ${error} ${error.stack}\x1b[0m`);
         return { removed: false, removalType: null, groupName: null };
     }
 }
