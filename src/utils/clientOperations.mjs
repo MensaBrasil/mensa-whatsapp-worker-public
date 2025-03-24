@@ -30,7 +30,6 @@ async function addMemberToGroup(client, phone, groupId) {
         if (serializePhone) {
             console.log(`Trying to add member ${phone} --> ${serializePhone} to group ${groupId} --> ${group.name}`);
             const result = await group.addParticipants([serializePhone]);
-            console.log(`Add member result: ${JSON.stringify(result)}`);
             if (!result || !result[serializePhone]) {
                 return { added: false, isInviteV4Sent: false, alreadyInGroup: false };
             }

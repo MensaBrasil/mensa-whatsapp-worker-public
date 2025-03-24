@@ -85,8 +85,8 @@ async function processAddQueue(client) {
 
     if (results.processedPhones > 0) {
         await registerWhatsappAddFulfilled(item.request_id);
-        console.log(`Request nº: ${item.request_id} by member: ${item.registration_id} to group ${item.group_id} was fulfilled
-        with ${results.processedPhones} out of ${results.totalPhones} processed.`);
+        console.log(`Request nº: ${item.request_id} by member: ${item.registration_id} to group ${item.group_id} was fulfilled!`);
+        console.log(`Added ${results.processedPhones} out of ${results.totalPhones} phone numbers.`);
         return results;
     }
     await registerWhatsappAddAttempt(item.request_id);
