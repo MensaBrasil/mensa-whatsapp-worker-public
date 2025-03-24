@@ -83,6 +83,10 @@ async function removeMemberFromGroup(client, phone, groupId, communityId = false
                 if (!participantId) {
                     console.log(`Participant ${phone} not found in community ${communityId}`);
                 }
+                if (participant.isAdmin) {
+                    console.log(`Admins can't be removed from communities... Skipping removal of ${phone} from community ${communityId}`);
+                    return { removed: false, removalType: null, groupName: community.name };
+                }
                 console.log(`Trying to remove member ${phone} from community ${communityId}`);
                 const result = await community.removeParticipants([participantId]);
                 if (result.status === 200) {
@@ -100,6 +104,11 @@ async function removeMemberFromGroup(client, phone, groupId, communityId = false
         const participantId = participant?.id?._serialized || false;
         if (!participantId) {
             console.log(`Participant ${phone} not found in group ${groupId}`);
+            return { removed: false, removalType: null, groupName: group.name };
+        }
+
+        if (participant.isAdmin) {
+            console.log(`Admins can't be removed from groups... Skipping removal of ${phone} from group ${groupId}`);
             return { removed: false, removalType: null, groupName: group.name };
         }
 
