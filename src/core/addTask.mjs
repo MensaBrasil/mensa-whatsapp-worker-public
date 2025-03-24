@@ -1,9 +1,15 @@
+import { configDotenv } from 'dotenv';
 import WAWebJS from 'whatsapp-web.js'; // eslint-disable-line no-unused-vars
 
 import { getMemberPhoneNumbers, recordUserEntryToGroup, registerWhatsappAddFulfilled, registerWhatsappAddAttempt } from '../database/pgsql.mjs';
 import { getFromAddQueue } from '../database/redis.mjs';
 import { addMemberToGroup } from '../utils/clientOperations.mjs';
+import { delay } from '../utils/misc.mjs';
 
+configDotenv();
+
+const addDelay = Number(process.env.ADD_DELAY) || 15;
+const delayOffset = Number(process.env.DELAY_OFFSET) || 3;
 
 /**
  * Processes a queue of members to be added to a WhatsApp group
@@ -68,6 +74,7 @@ async function processAddQueue(client) {
                 await recordUserEntryToGroup(item.registration_id, newPhone, item.group_id, 'Active');
                 results.added = true;
                 results.processedPhones++;
+                await delay(addDelay, delayOffset);
             } else if (added.isInviteV4Sent) {
                 console.log(`\x1b[32mMember can't be added to groups from someone that is not in the contact list.\nInvite link sent to ${newPhone} for group ${item.group_id}\x1b[0m`);
                 await recordUserEntryToGroup(item.registration_id, newPhone, item.group_id, 'Active');
