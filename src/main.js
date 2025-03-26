@@ -93,7 +93,7 @@ client.on('ready', async () => {
       process.exit(0);
     }
     if (startTime && (currentTime - startTime) < 3600000) {
-      console.log(`Process has been running for ${(currentTime - startTime) / 60000} minutes`);
+      console.log(`Process has been running for ${Math.floor((currentTime - startTime) / 60000)} minutes`);
     }
   }
 });
