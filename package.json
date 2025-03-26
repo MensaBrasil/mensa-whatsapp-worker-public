@@ -7,9 +7,10 @@
   "scripts": {
     "lint": "eslint src/",
     "test": "jest",
-    "start" : "node --max-old-space-size=512 src/main.js",
+    "start": "node --max-old-space-size=512 src/main.js",
     "add": "node --max-old-space-size=512 src/main.js --add",
-    "remove": "node --max-old-space-size=512 src/main.js --remove"
+    "remove": "node --max-old-space-size=512 src/main.js --remove",
+    "loop": "bash -c 'while true; do npm run start; sleep 10; done'"
   },
   "repository": {
     "type": "git",

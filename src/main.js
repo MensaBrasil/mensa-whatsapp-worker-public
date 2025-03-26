@@ -65,6 +65,7 @@ client.on('ready', async () => {
   await testRedisConnection();
 
   // Main loop
+  const startTime = Date.now();
   while (true) {
     if (addMode) {
       await processAddQueue(client);
@@ -83,6 +84,16 @@ client.on('ready', async () => {
       clearTimeout(timeoutId);
     } catch (error) {
       console.error('Uptime check failed:', error);
+    }
+    // Check if the process has been running for more than 1 hour
+    const currentTime = Date.now();
+    if (startTime && (currentTime - startTime) > 3600000) {
+      console.log('Process has been running for more than 1 hour, shutting down...');
+      client.destroy();
+      process.exit(0);
+    }
+    if (startTime && (currentTime - startTime) < 3600000) {
+      console.log(`Process has been running for ${(currentTime - startTime) / 60000} minutes`);
     }
   }
 });
