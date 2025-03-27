@@ -8,7 +8,7 @@
 
    ```bash
    # Download and install nvm:
-   curl -o- <https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.2/install.sh> | bash
+   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.2/install.sh | bash
 
    # in lieu of restarting the shell
    \. "$HOME/.nvm/nvm.sh"
@@ -30,7 +30,7 @@
    sudo apt-get install -y libatk1.0-0 libatk-bridge2.0-0 libcups2 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libpango-1.0-0 libcairo2 libasound2t64
    ```
 
-4. Install package.json dependencis
+4. Install package.json dependencies
 
    ```bash
    npm install
