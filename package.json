@@ -7,9 +7,10 @@
   "scripts": {
     "lint": "eslint src/",
     "test": "jest",
-    "start" : "node --max-old-space-size=512 src/main.js",
+    "start": "node --max-old-space-size=512 src/main.js",
     "add": "node --max-old-space-size=512 src/main.js --add",
-    "remove": "node --max-old-space-size=512 src/main.js --remove"
+    "remove": "node --max-old-space-size=512 src/main.js --remove",
+    "loop": "bash -c 'while true; do npm run start; sleep 10; done'"
   },
   "repository": {
     "type": "git",
@@ -27,7 +28,7 @@
     "pgsql": "^1.0.0",
     "qrcode-terminal": "^0.12.0",
     "redis": "^4.7.0",
-    "whatsapp-web.js": "^1.26.1-alpha.3"
+    "whatsapp-web.js": "^1.27.0"
   },
   "devDependencies": {
     "eslint": "^9.21.0",
