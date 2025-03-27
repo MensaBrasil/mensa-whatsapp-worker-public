@@ -72,7 +72,7 @@ async function addMemberToGroup(client, phone, groupId) {
 async function removeMemberFromGroup(client, phone, groupId, communityId = false) {
     try {
         const group = await client.getChatById(groupId);
-        if (communityId !== null && communityId !== undefined && communityId) {
+        if (communityId) {
             const community = await client.getChatById(communityId);
             if (!community) {
                 console.log(`\x1b[33mCommunity ${communityId} not found... Skipping community removal.\x1b[0m`);
@@ -80,12 +80,12 @@ async function removeMemberFromGroup(client, phone, groupId, communityId = false
                 const participant = community.participants.find(participant => participant?.id?._serialized?.includes(phone));
                 const participantId = participant?.id?._serialized || false;
                 if (!participantId) {
-                    console.log(`\x1b[33mParticipant ${phone} not found in community ${communityId}\x1b[0m`);
+                    console.log(`\x1b[33mParticipant ${phone} not found in community ${community.name} --> ID: ${communityId}\x1b[0m`);
                 } else if (participant.isAdmin) {
                     console.log(`\x1b[33mAdmins can't be removed from communities... Skipping removal of ${phone} from community ${community.name} --> ID: ${communityId}\x1b[0m`);
                     return { removed: false, removalType: null, groupName: community.name };
                 } else {
-                    console.log(`\x1b[1;37mTrying to remove member ${phone} from community ${communityId}\x1b[0m`);
+                    console.log(`\x1b[1;37mTrying to remove member ${phone} from community ${community.name} --> ID: ${communityId}\x1b[0m`);
                     const result = await community.removeParticipants([participantId]);
                     if (result.status === 200) {
                         return { removed: true, removalType: 'Community', groupName: community.name };
@@ -111,7 +111,7 @@ async function removeMemberFromGroup(client, phone, groupId, communityId = false
             return { removed: false, removalType: null, groupName: group.name };
         }
 
-        console.log(`\x1b[1;37mTrying to remove member ${phone} from group ${groupId}\x1b[0m`);
+        console.log(`\x1b[1;37mTrying to remove member ${phone} from group ${group.name} --> ID: ${groupId}\x1b[0m`);
         const result = await group.removeParticipants([participantId]);
         if (result.status === 200) {
             return { removed: true, removalType: 'Group', groupName: group.name };
