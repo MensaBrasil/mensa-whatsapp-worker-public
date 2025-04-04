@@ -6,14 +6,10 @@ import WAWebJS from 'whatsapp-web.js';
 import { processAddQueue } from './core/addTask.mjs';
 import { processRemoveQueue } from './core/removeTask.mjs';
 import { testRedisConnection } from './database/redis.mjs';
-import { delay } from './utils/misc.mjs';
 const { Client, LocalAuth } = WAWebJS;
 
 configDotenv();
 
-const addDelay = Number(process.env.ADD_DELAY) || 15;
-const removeDelay = Number(process.env.REMOVE_DELAY) || 10;
-const delayOffset = Number(process.env.DELAY_OFFSET) || 3;
 const uptimeUrl = process.env.UPTIME_URL;
 
 // Mode select
@@ -69,19 +65,35 @@ client.on('ready', async () => {
   await testRedisConnection();
 
   // Main loop
+  const startTime = Date.now();
   while (true) {
     if (addMode) {
-      const addResult = await processAddQueue(client);
-      if (addResult.added) {
-        await delay(addDelay, delayOffset);
-      }
+      await processAddQueue(client);
+      await new Promise((resolve) => setTimeout(resolve, 10000));
     }
     if (removeMode) {
-      const removeResult = await processRemoveQueue(client);
-      if (removeResult) {
-        await delay(removeDelay, delayOffset);
-      }
+      await processRemoveQueue(client);
+      await new Promise((resolve) => setTimeout(resolve, 10000));
     }
-    await fetch(uptimeUrl);
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+      await fetch(uptimeUrl, { signal: controller.signal });
+
+      clearTimeout(timeoutId);
+    } catch (error) {
+      console.error('Uptime check failed:', error);
+    }
+    // Check if the process has been running for more than 1 hour
+    const currentTime = Date.now();
+    if (startTime && (currentTime - startTime) > 3600000) {
+      console.log('Process has been running for more than 1 hour, shutting down...');
+      client.destroy();
+      process.exit(0);
+    }
+    if (startTime && (currentTime - startTime) < 3600000) {
+      console.log(`Process has been running for ${Math.floor((currentTime - startTime) / 60000)} minutes`);
+    }
   }
 });
