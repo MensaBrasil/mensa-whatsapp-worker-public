@@ -58,7 +58,7 @@ const recordUserEntryToGroup = async (
  * and alternative phone numbers from legal representatives.
  * @async
  * @param {number} registration_id - The registration ID to search for
- * @returns {Promise<Array<[string, boolean]>>} An array of tuples, each containing a phone number and a boolean indicating if it is a legal representative's phone
+ * @returns {Promise<Array<{ phone: string, is_legal_rep: boolean }>>} An array of objects, each containing a phone number and a boolean indicating if it is a legal representative's phone
  * @throws {Error} If there's an error executing the database query
  */
 async function getMemberPhoneNumbers(registration_id) {
@@ -89,7 +89,10 @@ async function getMemberPhoneNumbers(registration_id) {
         AND alternative_phone IS NOT NULL;
   `;
   const result = await pool.query(query, [registration_id]);
-  return result.rows.map((row) => [row.phone, row.is_legal_representative]);
+  return result.rows.map((row) => ({
+    phone: row.phone,
+    is_legal_rep: row.is_legal_rep
+  }));
 }
 
 /**
