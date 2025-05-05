@@ -65,14 +65,14 @@ async function processAddQueue(client) {
     };
 
     for (const phone of memberPhones) {
-        if (!phone) continue;
+        if (!phone.phone) continue;
         if (!phone.is_legal_rep) {
             if (item.group_type === 'RJB') {
                 console.log(`\x1b[31mPhone ${phone.phone} is not a legal representative, skipping...\x1b[0m`);
                 continue;
             }
         }
-        const newPhone = phone.replace(/\D/g, '');
+        const newPhone = phone.phone.replace(/\D/g, '');
         if (last8DigitsFromChats.includes(newPhone.slice(-8))) {
             const added = await addMemberToGroup(client, newPhone, item.group_id);
             if (added.added) {
