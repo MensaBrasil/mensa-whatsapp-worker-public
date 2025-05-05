@@ -52,39 +52,47 @@ const recordUserEntryToGroup = async (
 };
 
 /**
- * Retrieves all phone numbers associated with a specific registration ID.
+ * Retrieves all phone numbers associated with a specific registration ID,
+ * indicating whether each number is a legal representative's phone.
  * This includes primary phone numbers from the phones table and both primary
  * and alternative phone numbers from legal representatives.
  * @async
  * @param {number} registration_id - The registration ID to search for
- * @returns {Promise<string[]>} An array of phone numbers associated with the registration
+ * @returns {Promise<Array<{ phone: string, is_legal_rep: boolean }>>} An array of objects, each containing a phone number and a boolean indicating if it is a legal representative's phone
  * @throws {Error} If there's an error executing the database query
  */
 async function getMemberPhoneNumbers(registration_id) {
-  const query = `SELECT 
-                    phone_number AS phone
-                FROM 
-                    phones
-                WHERE 
-                    registration_id = $1
-                UNION ALL
-                SELECT 
-                    phone
-                FROM 
-                    legal_representatives
-                WHERE 
-                    registration_id = $1
-                UNION ALL
-                SELECT 
-                    alternative_phone AS phone
-                FROM 
-                    legal_representatives
-                WHERE 
-                    registration_id = $1
-                    AND alternative_phone IS NOT NULL;
-    `;
+  const query = `
+    SELECT 
+        phone_number AS phone,
+        FALSE AS is_legal_rep
+    FROM 
+        phones
+    WHERE 
+        registration_id = $1
+    UNION ALL
+    SELECT 
+        phone,
+        TRUE AS is_legal_rep
+    FROM 
+        legal_representatives
+    WHERE 
+        registration_id = $1
+    UNION ALL
+    SELECT 
+        alternative_phone AS phone,
+        TRUE AS is_legal_rep
+    FROM 
+        legal_representatives
+    WHERE 
+        registration_id = $1
+        AND alternative_phone IS NOT NULL;
+  `;
   const result = await pool.query(query, [registration_id]);
-  return result.rows.map((row) => row.phone);
+  return result.rows.map((row) => ({
+    phone: row.phone,
+    is_legal_rep: row.is_legal_rep
+  }));
 }
 
 /**
