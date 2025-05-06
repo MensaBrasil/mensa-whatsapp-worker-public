@@ -28,7 +28,7 @@
     "pgsql": "^1.0.0",
     "qrcode-terminal": "^0.12.0",
     "redis": "^4.7.0",
-    "whatsapp-web.js": "^1.27.0"
+    "whatsapp-web.js": "github:hiagot/whatsapp-web.js#main"
   },
   "devDependencies": {
     "eslint": "^9.21.0",
