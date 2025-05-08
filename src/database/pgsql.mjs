@@ -23,7 +23,7 @@ const pool = new Pool({
 const recordUserExitFromGroup = async (phone_number, group_id, reason) => {
   const query = `
         UPDATE member_groups
-        SET updated_at = NOW(), exit_date = CURRENT_DATE, removal_reason = $3
+        SET updated_at = NOW(), exit_date = NOW(), removal_reason = $3
         WHERE phone_number = $1 AND group_id = $2 AND exit_date IS NULL;
     `;
   await pool.query(query, [phone_number, group_id, reason]);
