@@ -70,57 +70,58 @@ client.on('disconnected', (reason) => {
 
 if (moderationMode) {
   client.on('message', async (message) => {
-    checkMessageContent(message, telegramBot, openai);
-  });
-  client.initialize();
-
-  // Main loop
-  client.on('ready', async () => {
-    client.setAutoDownloadDocuments(false);
-    client.setAutoDownloadAudio(false);
-    client.setAutoDownloadPhotos(false);
-    client.setAutoDownloadVideos(false);
-
-    console.log('Zelador worker is ready!');
-    await testRedisConnection();
-
-    // Main loop
-    const startTime = Date.now();
-    while (true) {
-      if (addMode) {
-        await processAddQueue(client);
-        await new Promise((resolve) => setTimeout(resolve, 10000));
-      }
-      if (removeMode) {
-        await processRemoveQueue(client);
-        await new Promise((resolve) => setTimeout(resolve, 10000));
-      }
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
-
-        await fetch(uptimeUrl, { signal: controller.signal });
-
-        clearTimeout(timeoutId);
-      } catch (error) {
-        console.error('Uptime check failed:', error);
-      }
-      // Check if the process has been running for more than 1 hour
-      const currentTime = Date.now();
-      if (startTime && currentTime - startTime > 3600000) {
-        console.log(
-          'Process has been running for more than 1 hour, shutting down...'
-        );
-        client.destroy();
-        process.exit(0);
-      }
-      if (startTime && currentTime - startTime < 3600000) {
-        console.log(
-          `Process has been running for ${Math.floor(
-            (currentTime - startTime) / 60000
-          )} minutes`
-        );
-      }
-    }
+    await checkMessageContent(message, telegramBot, openai);
   });
 }
+
+client.initialize();
+
+// Main loop
+client.on('ready', async () => {
+  client.setAutoDownloadDocuments(false);
+  client.setAutoDownloadAudio(false);
+  client.setAutoDownloadPhotos(false);
+  client.setAutoDownloadVideos(false);
+
+  console.log('Zelador worker is ready!');
+  await testRedisConnection();
+
+  // Main loop
+  const startTime = Date.now();
+  while (true) {
+    if (addMode) {
+      await processAddQueue(client);
+      await new Promise((resolve) => setTimeout(resolve, 10000));
+    }
+    if (removeMode) {
+      await processRemoveQueue(client);
+      await new Promise((resolve) => setTimeout(resolve, 10000));
+    }
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+      await fetch(uptimeUrl, { signal: controller.signal });
+
+      clearTimeout(timeoutId);
+    } catch (error) {
+      console.error('Uptime check failed:', error);
+    }
+    // Check if the process has been running for more than 1 hour
+    const currentTime = Date.now();
+    if (startTime && currentTime - startTime > 3600000) {
+      console.log(
+        'Process has been running for more than 1 hour, shutting down...'
+      );
+      client.destroy();
+      process.exit(0);
+    }
+    if (startTime && currentTime - startTime < 3600000) {
+      console.log(
+        `Process has been running for ${Math.floor(
+          (currentTime - startTime) / 60000
+        )} minutes`
+      );
+    }
+  }
+});

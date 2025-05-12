@@ -92,7 +92,7 @@ async function checkMessageContent(message, telegramBot, openai) {
     if (!resData.results) return;
     const flaggedResult = resData.results.find((r) => r.flagged);
     if (flaggedResult) {
-      sendTelegramFlaggedLog(message, chat, flaggedResult, telegramBot);
+      await sendTelegramFlaggedLog(message, chat, flaggedResult, telegramBot);
       console.log('Message flagged and logged to Telegram.');
       return;
     }
