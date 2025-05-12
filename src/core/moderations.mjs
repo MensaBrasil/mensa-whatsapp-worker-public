@@ -1,6 +1,9 @@
+import { configDotenv } from 'dotenv';
 import TelegramBot from 'node-telegram-bot-api'; // eslint-disable-line no-unused-vars
 import OpenAI from 'openai';  // eslint-disable-line no-unused-vars
 import WAWebJS from 'whatsapp-web.js';  // eslint-disable-line no-unused-vars
+
+configDotenv();
 
 /**
  * Sends a formatted flagged message log to a Telegram chat using the telegramBot instance.
