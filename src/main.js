@@ -1,9 +1,9 @@
 // Imports
 import { configDotenv } from 'dotenv';
-import { TelegramBot } from 'node-telegram-bot-api';
-import { OpenAI } from 'openai';
-import { qrcode } from 'qrcode-terminal';
-import { WAWebJS } from 'whatsapp-web.js';
+import TelegramBot from 'node-telegram-bot-api';
+import OpenAI from 'openai';
+import qrcode from 'qrcode-terminal';
+import WAWebJS from 'whatsapp-web.js';
 
 import { processAddQueue } from './core/addTask.mjs';
 import { checkMessageContent } from './core/moderations.mjs';
