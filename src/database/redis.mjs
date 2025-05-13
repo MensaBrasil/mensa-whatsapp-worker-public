@@ -3,27 +3,25 @@ import { createClient } from 'redis';
 
 configDotenv();
 
-const client = createClient(
-    {
-        password: process.env.REDIS_PASSWORD,
-        socket: {
-            host: process.env.REDIS_HOST,
-            port: process.env.REDIS_PORT,
-        },
-        retryStrategy: function (times) {
-            if (times > 20) {
-                console.log('Too many attempts to reconnect. Redis connection was terminated');
-                return new Error('Too many retries.');
-            } else {
-                return times * 500;
-            }
-        }
+const client = createClient({
+  password: process.env.REDIS_PASSWORD,
+  socket: {
+    host: process.env.REDIS_HOST,
+    port: process.env.REDIS_PORT,
+  },
+  retryStrategy: function (times) {
+    if (times > 20) {
+      console.log('Too many attempts to reconnect. Redis connection was terminated');
+      return new Error('Too many retries.');
+    } else {
+      return times * 500;
     }
-);
+  },
+});
 
 client.on('error', (err) => {
-    console.error(err);
-    process.exit(1);
+  console.error(err);
+  process.exit(1);
 });
 
 let isConnected = false;
@@ -35,10 +33,10 @@ let isConnected = false;
  * @returns {Promise<void>}
  */
 async function connect() {
-    if (!isConnected) {
-        await client.connect();
-        isConnected = true;
-    }
+  if (!isConnected) {
+    await client.connect();
+    isConnected = true;
+  }
 }
 
 /**
@@ -48,10 +46,10 @@ async function connect() {
  * @returns {Promise<void>}
  */
 async function disconnect() {
-    if (isConnected) {
-        await client.quit();
-        isConnected = false;
-    }
+  if (isConnected) {
+    await client.quit();
+    isConnected = false;
+  }
 }
 
 /**
@@ -60,14 +58,14 @@ async function disconnect() {
  * @returns {Promise<void>} Resolves if connection successful, exits process if connection fails
  */
 async function testRedisConnection() {
-    try {
-        await connect();
-        console.log('Successfully connected to Redis');
-        await disconnect();
-    } catch (error) {
-        console.error('Failed to connect to Redis:', error);
-        process.exit(1);
-    }
+  try {
+    await connect();
+    console.log('Successfully connected to Redis');
+    await disconnect();
+  } catch (error) {
+    console.error('Failed to connect to Redis:', error);
+    process.exit(1);
+  }
 }
 
 /**
@@ -76,9 +74,9 @@ async function testRedisConnection() {
  * @throws {Error} If Redis connection fails or JSON parsing fails
  */
 async function getFromAddQueue() {
-    await connect();
-    const queueItem = await client.lPop('addQueue');
-    return queueItem ? JSON.parse(queueItem) : null;
+  await connect();
+  const queueItem = await client.lPop('addQueue');
+  return queueItem ? JSON.parse(queueItem) : null;
 }
 
 /**
@@ -93,9 +91,9 @@ async function getFromAddQueue() {
  * @throws {Error} If Redis connection fails or JSON parsing fails
  */
 async function getFromRemoveQueue() {
-    await connect();
-    const queueItem = await client.lPop('removeQueue');
-    return queueItem ? JSON.parse(queueItem) : null;
+  await connect();
+  const queueItem = await client.lPop('removeQueue');
+  return queueItem ? JSON.parse(queueItem) : null;
 }
 
 export { getFromAddQueue, getFromRemoveQueue, testRedisConnection };

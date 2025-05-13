@@ -1,7 +1,7 @@
 import { configDotenv } from 'dotenv';
 import TelegramBot from 'node-telegram-bot-api'; // eslint-disable-line no-unused-vars
-import OpenAI from 'openai';  // eslint-disable-line no-unused-vars
-import WAWebJS from 'whatsapp-web.js';  // eslint-disable-line no-unused-vars
+import OpenAI from 'openai'; // eslint-disable-line no-unused-vars
+import WAWebJS from 'whatsapp-web.js'; // eslint-disable-line no-unused-vars
 
 configDotenv();
 
@@ -27,20 +27,13 @@ configDotenv();
 async function sendTelegramFlaggedLog(message, chat, flaggedResult, telegramBot) {
   const flaggedCatsInline = Object.entries(flaggedResult.categories)
     .filter(([, flag]) => flag)
-    .map(
-      ([cat]) =>
-        `<b>${cat}</b> (<code>${flaggedResult.category_scores[cat].toFixed(
-          3
-        )}</code>)`
-    )
+    .map(([cat]) => `<b>${cat}</b> (<code>${flaggedResult.category_scores[cat].toFixed(3)}</code>)`)
     .join(', ');
   const modalitiesSet = new Set();
   if (flaggedResult.category_applied_input_types) {
-    Object.values(flaggedResult.category_applied_input_types).forEach(
-      (types) => {
-        types.forEach((t) => modalitiesSet.add(t));
-      }
-    );
+    Object.values(flaggedResult.category_applied_input_types).forEach((types) => {
+      types.forEach((t) => modalitiesSet.add(t));
+    });
   }
   const modalitiesLine = Array.from(modalitiesSet).join(', ');
 
@@ -106,9 +99,7 @@ async function checkMessageContent(message, telegramBot, openai) {
   if (!/\bchat\.\s*whatsapp\.\s*com\b/i.test(message.body)) return;
   const senderId = message.author;
   if (!senderId) return;
-  const participant = chat.participants.find(
-    (p) => p.id._serialized === senderId
-  );
+  const participant = chat.participants.find((p) => p.id._serialized === senderId);
   if (participant && (participant.isAdmin || participant.isSuperAdmin)) return;
   message
     .delete(true)

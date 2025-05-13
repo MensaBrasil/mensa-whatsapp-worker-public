@@ -28,9 +28,7 @@ let removeMode = process.argv.includes('--remove');
 let moderationMode = process.argv.includes('--moderation');
 
 if (!addMode && !removeMode && !moderationMode) {
-  console.log(
-    'Normal mode selected! Additions, removals, and moderation tasks will be processed.'
-  );
+  console.log('Normal mode selected! Additions, removals, and moderation tasks will be processed.');
   addMode = true;
   removeMode = true;
   moderationMode = true;
@@ -39,9 +37,7 @@ if (!addMode && !removeMode && !moderationMode) {
 } else if (!addMode && removeMode && !moderationMode) {
   console.log('Remove mode selected! Only removals will be processed.');
 } else if (moderationMode) {
-  console.log(
-    'Moderation mode selected! Only moderation tasks will be processed.'
-  );
+  console.log('Moderation mode selected! Only moderation tasks will be processed.');
 }
 
 // Global error handler
@@ -115,18 +111,12 @@ client.on('ready', async () => {
     // Check if the process has been running for more than 1 hour
     const currentTime = Date.now();
     if (startTime && currentTime - startTime > 3600000) {
-      console.log(
-        'Process has been running for more than 1 hour, shutting down...'
-      );
+      console.log('Process has been running for more than 1 hour, shutting down...');
       client.destroy();
       process.exit(0);
     }
     if (startTime && currentTime - startTime < 3600000) {
-      console.log(
-        `Process has been running for ${Math.floor(
-          (currentTime - startTime) / 60000
-        )} minutes`
-      );
+      console.log(`Process has been running for ${Math.floor((currentTime - startTime) / 60000)} minutes`);
     }
   }
 });
