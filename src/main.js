@@ -1,30 +1,42 @@
 // Imports
 import { configDotenv } from 'dotenv';
+import TelegramBot from 'node-telegram-bot-api';
+import OpenAI from 'openai';
 import qrcode from 'qrcode-terminal';
 import WAWebJS from 'whatsapp-web.js';
 
 import { processAddQueue } from './core/addTask.mjs';
+import { checkMessageContent } from './core/moderations.mjs';
 import { processRemoveQueue } from './core/removeTask.mjs';
 import { testRedisConnection } from './database/redis.mjs';
+
 const { Client, LocalAuth } = WAWebJS;
 
 configDotenv();
 
 const uptimeUrl = process.env.UPTIME_URL;
 
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const telegramBot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, {
+  polling: false,
+});
+
 // Mode select
 let addMode = process.argv.includes('--add');
 let removeMode = process.argv.includes('--remove');
+let moderationMode = process.argv.includes('--moderation');
 
-if (!addMode && !removeMode) {
-  console.log('Normal mode selected! Additions and removals will be processed.');
+if (!addMode && !removeMode && !moderationMode) {
+  console.log('Normal mode selected! Additions, removals, and moderation tasks will be processed.');
   addMode = true;
   removeMode = true;
-} else if (addMode && !removeMode) {
+  moderationMode = true;
+} else if (addMode && !removeMode && !moderationMode) {
   console.log('Add mode selected! Only additions will be processed.');
-}
-else if (!addMode && removeMode) {
+} else if (!addMode && removeMode && !moderationMode) {
   console.log('Remove mode selected! Only removals will be processed.');
+} else if (moderationMode) {
+  console.log('Moderation mode selected! Only moderation tasks will be processed.');
 }
 
 // Global error handler
@@ -51,6 +63,12 @@ client.on('disconnected', (reason) => {
   console.error('Client was logged out', reason);
   process.exit(1);
 });
+
+if (moderationMode) {
+  client.on('message', async (message) => {
+    await checkMessageContent(message, telegramBot, openai);
+  });
+}
 
 client.initialize();
 
@@ -87,12 +105,12 @@ client.on('ready', async () => {
     }
     // Check if the process has been running for more than 1 hour
     const currentTime = Date.now();
-    if (startTime && (currentTime - startTime) > 3600000) {
+    if (startTime && currentTime - startTime > 3600000) {
       console.log('Process has been running for more than 1 hour, shutting down...');
       client.destroy();
       process.exit(0);
     }
-    if (startTime && (currentTime - startTime) < 3600000) {
+    if (startTime && currentTime - startTime < 3600000) {
       console.log(`Process has been running for ${Math.floor((currentTime - startTime) / 60000)} minutes`);
     }
   }

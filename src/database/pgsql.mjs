@@ -38,12 +38,7 @@ const recordUserExitFromGroup = async (phone_number, group_id, reason) => {
  * @param {string} status - The status of the user "Active" or "Inactive"
  * @returns {Promise<void>} - A promise that resolves when the entry is recorded
  */
-const recordUserEntryToGroup = async (
-  registration_id,
-  phone_number,
-  group_id,
-  status,
-) => {
+const recordUserEntryToGroup = async (registration_id, phone_number, group_id, status) => {
   const query = `
         INSERT INTO member_groups (registration_id, phone_number, group_id, status)
         VALUES ($1, $2, $3, $4);
@@ -91,7 +86,7 @@ async function getMemberPhoneNumbers(registration_id) {
   const result = await pool.query(query, [registration_id]);
   return result.rows.map((row) => ({
     phone: row.phone,
-    is_legal_rep: row.is_legal_rep
+    is_legal_rep: row.is_legal_rep,
   }));
 }
 
@@ -117,10 +112,4 @@ async function registerWhatsappAddAttempt(id) {
   await pool.query(query, [id]);
 }
 
-export {
-  recordUserExitFromGroup,
-  recordUserEntryToGroup,
-  getMemberPhoneNumbers,
-  registerWhatsappAddFulfilled,
-  registerWhatsappAddAttempt
-};
+export { recordUserExitFromGroup, recordUserEntryToGroup, getMemberPhoneNumbers, registerWhatsappAddFulfilled, registerWhatsappAddAttempt };

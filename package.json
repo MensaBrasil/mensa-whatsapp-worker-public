@@ -10,6 +10,7 @@
     "start": "node --max-old-space-size=512 src/main.js",
     "add": "node --max-old-space-size=512 src/main.js --add",
     "remove": "node --max-old-space-size=512 src/main.js --remove",
+    "moderation": "node --max-old-space-size=512 src/main.js --moderation",
     "loop": "bash -c 'while true; do npm run start; sleep 10; done'"
   },
   "repository": {
@@ -24,6 +25,8 @@
   "homepage": "https://github.com/Associacao-Mensa-Brasil/mensa-whatsapp-admin#readme",
   "dependencies": {
     "dotenv": "^16.4.7",
+    "node-telegram-bot-api": "^0.66.0",
+    "openai": "^4.98.0",
     "pg": "^8.13.3",
     "pgsql": "^1.0.0",
     "qrcode-terminal": "^0.12.0",
