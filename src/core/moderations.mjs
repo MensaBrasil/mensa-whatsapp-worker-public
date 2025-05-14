@@ -1,7 +1,9 @@
 import { configDotenv } from 'dotenv';
 import TelegramBot from 'node-telegram-bot-api'; // eslint-disable-line no-unused-vars
-import OpenAI from 'openai';  // eslint-disable-line no-unused-vars
-import WAWebJS from 'whatsapp-web.js';  // eslint-disable-line no-unused-vars
+import OpenAI from 'openai'; // eslint-disable-line no-unused-vars
+import WAWebJS from 'whatsapp-web.js'; // eslint-disable-line no-unused-vars
+
+import { checkGroupType } from '../utils/checkGroupType.mjs';
 
 configDotenv();
 
@@ -27,20 +29,13 @@ configDotenv();
 async function sendTelegramFlaggedLog(message, chat, flaggedResult, telegramBot) {
   const flaggedCatsInline = Object.entries(flaggedResult.categories)
     .filter(([, flag]) => flag)
-    .map(
-      ([cat]) =>
-        `<b>${cat}</b> (<code>${flaggedResult.category_scores[cat].toFixed(
-          3
-        )}</code>)`
-    )
+    .map(([cat]) => `<b>${cat}</b> (<code>${flaggedResult.category_scores[cat].toFixed(3)}</code>)`)
     .join(', ');
   const modalitiesSet = new Set();
   if (flaggedResult.category_applied_input_types) {
-    Object.values(flaggedResult.category_applied_input_types).forEach(
-      (types) => {
-        types.forEach((t) => modalitiesSet.add(t));
-      }
-    );
+    Object.values(flaggedResult.category_applied_input_types).forEach((types) => {
+      types.forEach((t) => modalitiesSet.add(t));
+    });
   }
   const modalitiesLine = Array.from(modalitiesSet).join(', ');
 
@@ -58,6 +53,32 @@ async function sendTelegramFlaggedLog(message, chat, flaggedResult, telegramBot)
 }
 
 /**
+ * Checks if a message contains a WhatsApp group link and deletes it if posted by a non-admin participant.
+ *
+ * @async
+ * @param {WAWebJS.Message} message - The WhatsApp message object to check.
+ * @param {WAWebJS.Chat} chat - The WhatsApp chat object containing participants.
+ * @returns {Promise<void>} Resolves when the check and possible deletion are complete.
+ */
+async function checkForGroupLink(message, chat) {
+  const groupLinkRegex = /\bchat\.\s*whatsapp\.\s*com\b/i;
+  if (!groupLinkRegex.test(message.body)) return;
+
+  const senderId = message.author;
+  if (!senderId) return;
+
+  const participant = chat.participants.find((p) => p.id._serialized === senderId);
+  if (participant && (participant.isAdmin || participant.isSuperAdmin)) return;
+
+  try {
+    await message.delete(true);
+    console.log('Message deleted');
+  } catch (err) {
+    console.error('Failed to delete message', err);
+  }
+}
+
+/**
  * Checks the content of a WhatsApp message for moderation purposes.
  * - Analyzes text and image content using OpenAI moderation API.
  * - Flags and logs messages that violate moderation policies.
@@ -71,49 +92,43 @@ async function sendTelegramFlaggedLog(message, chat, flaggedResult, telegramBot)
  */
 async function checkMessageContent(message, telegramBot, openai) {
   const chat = await message.getChat();
+  const groupType = await checkGroupType(chat);
+
   if (!chat.isGroup) return;
 
-  const inputs = [];
-  if (message.body && message.body.trim().length > 0) {
-    inputs.push({ type: 'text', text: message.body });
-  }
-  if (message.hasMedia) {
-    const media = await message.downloadMedia();
-    if (media && media.mimetype.startsWith('image/')) {
-      const dataUrl = `data:${media.mimetype};base64,${media.data}`;
-      inputs.push({ type: 'image_url', image_url: { url: dataUrl } });
+  await checkForGroupLink(message, chat);
+
+  if (groupType === 'M.JB' || groupType === 'JB') {
+    const inputs = [];
+    if (message.body && message.body.trim().length > 0) {
+      inputs.push({ type: 'text', text: message.body });
+    }
+    if (message.hasMedia) {
+      const media = await message.downloadMedia();
+      if (media && media.mimetype.startsWith('image/')) {
+        const dataUrl = `data:${media.mimetype};base64,${media.data}`;
+        inputs.push({ type: 'image_url', image_url: { url: dataUrl } });
+      }
+    }
+    if (inputs.length === 0) return;
+
+    try {
+      const moderationResponse = await openai.moderations.create({
+        model: 'omni-moderation-latest',
+        input: inputs,
+      });
+      const resData = moderationResponse.data || moderationResponse;
+      if (!resData.results) return;
+      const flaggedResult = resData.results.find((r) => r.flagged);
+      if (flaggedResult) {
+        await sendTelegramFlaggedLog(message, chat, flaggedResult, telegramBot);
+        console.log('Message flagged and logged to Telegram.');
+        return;
+      }
+    } catch (err) {
+      console.error('Moderation error:', err);
     }
   }
-  if (inputs.length === 0) return;
-
-  try {
-    const moderationResponse = await openai.moderations.create({
-      model: 'omni-moderation-latest',
-      input: inputs,
-    });
-    const resData = moderationResponse.data || moderationResponse;
-    if (!resData.results) return;
-    const flaggedResult = resData.results.find((r) => r.flagged);
-    if (flaggedResult) {
-      await sendTelegramFlaggedLog(message, chat, flaggedResult, telegramBot);
-      console.log('Message flagged and logged to Telegram.');
-      return;
-    }
-  } catch (err) {
-    console.error('Moderation error:', err);
-  }
-
-  if (!/\bchat\.\s*whatsapp\.\s*com\b/i.test(message.body)) return;
-  const senderId = message.author;
-  if (!senderId) return;
-  const participant = chat.participants.find(
-    (p) => p.id._serialized === senderId
-  );
-  if (participant && (participant.isAdmin || participant.isSuperAdmin)) return;
-  message
-    .delete(true)
-    .then(() => console.log('Message deleted'))
-    .catch((err) => console.error('Failed to delete message', err));
 }
 
 export { checkMessageContent };

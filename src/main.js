@@ -9,7 +9,6 @@ import { processAddQueue } from './core/addTask.mjs';
 import { checkMessageContent } from './core/moderations.mjs';
 import { processRemoveQueue } from './core/removeTask.mjs';
 import { testRedisConnection } from './database/redis.mjs';
-import { checkGroupType } from './utils/checkGroupType.mjs';
 
 const { Client, LocalAuth } = WAWebJS;
 
@@ -28,9 +27,7 @@ let removeMode = process.argv.includes('--remove');
 let moderationMode = process.argv.includes('--moderation');
 
 if (!addMode && !removeMode && !moderationMode) {
-  console.log(
-    'Normal mode selected! Additions, removals, and moderation tasks will be processed.'
-  );
+  console.log('Normal mode selected! Additions, removals, and moderation tasks will be processed.');
   addMode = true;
   removeMode = true;
   moderationMode = true;
@@ -39,9 +36,7 @@ if (!addMode && !removeMode && !moderationMode) {
 } else if (!addMode && removeMode && !moderationMode) {
   console.log('Remove mode selected! Only removals will be processed.');
 } else if (moderationMode) {
-  console.log(
-    'Moderation mode selected! Only moderation tasks will be processed.'
-  );
+  console.log('Moderation mode selected! Only moderation tasks will be processed.');
 }
 
 // Global error handler
@@ -71,11 +66,7 @@ client.on('disconnected', (reason) => {
 
 if (moderationMode) {
   client.on('message', async (message) => {
-    const chat = await message.getChat();
-    const groupType = await checkGroupType(chat);
-    if (groupType === 'M.JB' || groupType === 'JB') {
-      await checkMessageContent(message, telegramBot, openai);
-    }
+    await checkMessageContent(message, telegramBot, openai);
   });
 }
 
@@ -115,18 +106,12 @@ client.on('ready', async () => {
     // Check if the process has been running for more than 1 hour
     const currentTime = Date.now();
     if (startTime && currentTime - startTime > 3600000) {
-      console.log(
-        'Process has been running for more than 1 hour, shutting down...'
-      );
+      console.log('Process has been running for more than 1 hour, shutting down...');
       client.destroy();
       process.exit(0);
     }
     if (startTime && currentTime - startTime < 3600000) {
-      console.log(
-        `Process has been running for ${Math.floor(
-          (currentTime - startTime) / 60000
-        )} minutes`
-      );
+      console.log(`Process has been running for ${Math.floor((currentTime - startTime) / 60000)} minutes`);
     }
   }
 });
