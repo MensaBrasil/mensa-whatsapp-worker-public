@@ -9,7 +9,6 @@ import { processAddQueue } from './core/addTask.mjs';
 import { checkMessageContent } from './core/moderations.mjs';
 import { processRemoveQueue } from './core/removeTask.mjs';
 import { testRedisConnection } from './database/redis.mjs';
-import { checkGroupType } from './utils/checkGroupType.mjs';
 
 const { Client, LocalAuth } = WAWebJS;
 
@@ -67,11 +66,7 @@ client.on('disconnected', (reason) => {
 
 if (moderationMode) {
   client.on('message', async (message) => {
-    const chat = await message.getChat();
-    const groupType = await checkGroupType(chat);
-    if (groupType === 'M.JB' || groupType === 'JB') {
-      await checkMessageContent(message, telegramBot, openai);
-    }
+    await checkMessageContent(message, telegramBot, openai);
   });
 }
 
