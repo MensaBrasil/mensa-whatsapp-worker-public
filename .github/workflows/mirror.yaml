@@ -1,0 +1,16 @@
+name: Mirror main branch
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mirror to remote
+        uses: MensaBrasil/public-mirror-actions@v1.0.0
+        with:
+          ssh_key: ${{ secrets.MIRROR_SSH_KEY }}
+          known_hosts: ${{ secrets.MIRROR_KNOWN_HOSTS }}
+          ssh_remote: ${{ secrets.MIRROR_SSH_REMOTE }}
