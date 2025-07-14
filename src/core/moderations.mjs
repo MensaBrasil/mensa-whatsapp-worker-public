@@ -53,7 +53,7 @@ async function sendTelegramFlaggedLog(message, chat, flaggedResult, telegramBot)
 }
 
 /**
- * Checks if a message contains a WhatsApp group link and deletes it if posted by a non-admin participant.
+ * Checks if a message contains a WhatsApp group link or a shortened URL and deletes it if posted by a non-admin participant.
  *
  * @async
  * @param {WAWebJS.Message} message - The WhatsApp message object to check.
@@ -62,7 +62,8 @@ async function sendTelegramFlaggedLog(message, chat, flaggedResult, telegramBot)
  */
 async function checkForGroupLink(message, chat) {
   const groupLinkRegex = /\bchat\.\s*whatsapp\.\s*com\b/i;
-  if (!groupLinkRegex.test(message.body)) return;
+  const shortenerRegex = /(bit\.ly|tinyurl\.com|t\.co|goo\.gl|ow\.ly|buff\.ly|bitly\.com|shorturl\.at|cutt\.ly|rb\.gy)/i;
+  if (!groupLinkRegex.test(message.body) && !shortenerRegex.test(message.body)) return;
 
   const senderId = message.author;
   if (!senderId) return;
