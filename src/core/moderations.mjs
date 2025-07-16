@@ -47,7 +47,7 @@ async function sendTelegramFlaggedLog(message, chat, flaggedResult, telegramBot)
     `<b>Message:</b>\n<pre>${message.body}</pre>\n` +
     `<b>Flagged Categories:</b> ${flaggedCatsInline}\n` +
     `<b>Input Modalities:</b> ${modalitiesLine}`;
-  telegramBot.sendMessage(process.env.TELEGRAM_CHAT_ID, flaggedText, {
+  telegramBot.sendMessage(process.env.TELEGRAM_MODERATIONS_CHAT_ID, flaggedText, {
     parse_mode: 'HTML',
   });
 }

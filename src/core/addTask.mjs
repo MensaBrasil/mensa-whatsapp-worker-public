@@ -35,7 +35,13 @@ async function processAddQueue(client) {
   const item = await getFromAddQueue();
   if (!item) {
     console.log('No items in the addQueue');
-    return { added: false, inviteSent: false, alreadyInGroup: false, processedPhones: 0, totalPhones: 0 };
+    return {
+      added: false,
+      inviteSent: false,
+      alreadyInGroup: false,
+      processedPhones: 0,
+      totalPhones: 0,
+    };
   }
   console.log(`\x1b[96mProcessing addition request by member: ${item.registration_id} to group: ${item.group_id}\x1b[0m`);
   const chats = await client.getChats();
@@ -48,12 +54,24 @@ async function processAddQueue(client) {
 
   if (!botChatObj.isAdmin) {
     console.log(`\x1b[31mBot is not an admin in group ${group.name} id: ${item.group_id} skipping...\x1b[0m`);
-    return { added: false, inviteSent: false, alreadyInGroup: false, processedPhones: 0, totalPhones: 0 };
+    return {
+      added: false,
+      inviteSent: false,
+      alreadyInGroup: false,
+      processedPhones: 0,
+      totalPhones: 0,
+    };
   }
 
   if (!memberPhones.length) {
     console.log(`\x1b[31mNo phone numbers found for registration ID: ${item.registration_id}\x1b[0m`);
-    return { added: false, inviteSent: false, alreadyInGroup: false, processedPhones: 0, totalPhones: 0 };
+    return {
+      added: false,
+      inviteSent: false,
+      alreadyInGroup: false,
+      processedPhones: 0,
+      totalPhones: 0,
+    };
   }
 
   const results = {
