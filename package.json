@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
     "prettier": "prettier --write src/",
     "prettier:check": "prettier --check src/",
     "test": "jest",

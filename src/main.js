@@ -90,7 +90,7 @@ client.on('ready', async () => {
       await new Promise((resolve) => setTimeout(resolve, 10000));
     }
     if (removeMode) {
-      await processRemoveQueue(client);
+      await processRemoveQueue(client, telegramBot);
       await new Promise((resolve) => setTimeout(resolve, 10000));
     }
     try {
