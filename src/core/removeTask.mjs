@@ -5,6 +5,7 @@ import { recordUserExitFromGroup } from '../database/pgsql.mjs';
 import { getFromRemoveQueue } from '../database/redis.mjs';
 import { removeMemberFromGroup } from '../utils/clientOperations.mjs';
 import { delay } from '../utils/misc.mjs';
+import { sendRemovalFailureNotification } from '../utils/telegram.mjs';
 
 configDotenv();
 
@@ -20,7 +21,7 @@ const delayOffset = Number(process.env.DELAY_OFFSET) || 3;
  * // Process one item from the removeQueue
  * const success = await processRemoveQueue(client);
  */
-async function processRemoveQueue(client) {
+async function processRemoveQueue(client, telegramBot) {
   const item = await getFromRemoveQueue();
   if (!item) {
     console.log('No items in the removeQueue');
@@ -40,6 +41,16 @@ async function processRemoveQueue(client) {
     await delay(removeDelay, delayOffset);
     return true;
   }
+  console.log(`\x1b[91mFailed to remove member ${item.phone} from group ${item.groupId}\x1b[0m`);
+
+  const failureResult = {
+    removed: false,
+    error: result.removalType === null ? 'Member could not be removed from group/community' : 'Unknown error',
+    groupName: result.groupName,
+  };
+
+  await sendRemovalFailureNotification(item, failureResult, telegramBot);
+
   return false;
 }
 
