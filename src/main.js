@@ -84,6 +84,8 @@ if (moderationMode) {
 
 if (authMode) {
   client.on('message', async (message) => {
+    const chat = await message.getChat();
+    if (chat.isGroup) return;
     console.log(`Received message: ${message}`);
     const contact = await message.getContact();
     console.log(contact);
