@@ -88,6 +88,9 @@ if (authMode) {
     const chat = await message.getChat();
     if (chat.isGroup) return;
     await checkAuth(chat, workerPhone);
+    console.log(
+      `Authorization check completed for chat: ${chat.id._serialized}`,
+    );
   });
 }
 
@@ -126,7 +129,7 @@ client.on('ready', async () => {
       const chats = await client.getChats();
       const result = await checkAuth(chats, workerPhone);
       console.log(
-        `Initial authorization sync completed: ${result.added} added, ${result.removed} removed`,
+        `Initial authorization sync completed: ${result.added} added, ${result.removed} removed, ${result.updated} updated`,
       );
     } catch (error) {
       console.error('Error during initial authorization sync:', error);

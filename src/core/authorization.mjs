@@ -11,7 +11,7 @@ import {
  * @async
  * @param {import('whatsapp-web.js').Chat | import('whatsapp-web.js').Chat[]} chatInput
  * @param {string} workerPhone - The phone number of the WhatsApp worker
- * @returns {Promise<{added: number, removed: number}>} Statistics about authorization changes
+ * @returns {Promise<{added: number, removed: number, updated: number}>} Statistics about authorization changes
  */
 async function checkAuth(chatInput, workerPhone) {
   try {
@@ -48,7 +48,7 @@ async function checkAuth(chatInput, workerPhone) {
       .filter(Boolean)
       .map(String);
 
-    if (numbers.length === 0) return { added: 0, removed: 0 };
+    if (numbers.length === 0) return { added: 0, removed: 0, updated: 0 };
 
     // Get current authorizations for this worker
     let currentAuthorizations;
@@ -66,13 +66,17 @@ async function checkAuth(chatInput, workerPhone) {
         .map((auth) => auth.phone_number),
     );
 
-    // Prepare updates (add new authorizations)
-    const updates = numbers
-      .filter((number) => !currentAuthSet.has(number))
-      .map((number) => ({
-        phone_number: number,
-        worker_id: workerId,
-      }));
+    // Prepare updates (all numbers - both new and existing for updated_at)
+    const allUpdates = numbers.map((number) => ({
+      phone_number: number,
+      worker_id: workerId,
+    }));
+
+    // Count new vs existing
+    const newNumbers = numbers.filter((number) => !currentAuthSet.has(number));
+    const existingNumbers = numbers.filter((number) =>
+      currentAuthSet.has(number),
+    );
 
     // Prepare deletions (remove authorizations not in active chats)
     let deletions = [];
@@ -87,14 +91,16 @@ async function checkAuth(chatInput, workerPhone) {
 
     // Execute DB operations with error handling
     let addedCount = 0;
+    let updatedCount = 0;
     let removedCount = 0;
 
-    if (updates.length > 0) {
+    if (allUpdates.length > 0) {
       try {
-        await updateWhatsappAuthorizations(updates);
-        addedCount = updates.length;
+        await updateWhatsappAuthorizations(allUpdates);
+        addedCount = newNumbers.length;
+        updatedCount = existingNumbers.length;
       } catch (error) {
-        throw new Error(`Failed to add authorizations: ${error.message}`);
+        throw new Error(`Failed to update authorizations: ${error.message}`);
       }
     }
 
@@ -111,7 +117,7 @@ async function checkAuth(chatInput, workerPhone) {
       }
     }
 
-    return { added: addedCount, removed: removedCount };
+    return { added: addedCount, removed: removedCount, updated: updatedCount };
   } catch (error) {
     // Re-throw with context
     throw new Error(`checkAuth failed: ${error.message}`);
