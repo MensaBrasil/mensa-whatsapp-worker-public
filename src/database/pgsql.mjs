@@ -146,6 +146,23 @@ async function getAllWhatsAppAuthorizations() {
 }
 
 /**
+ * Retrieve a single WhatsApp authorization record by phone number and worker ID.
+ * @param {string} last8digits - The last 8 digits of the phone number to search for.
+ * @param {number} worker_id - The worker ID to search for.
+ * @returns {Promise<{ auth_id: number, phone_number: string, worker_id: number } | null>} The authorization record if found, otherwise null.
+ * @throws {Error} If there's an error executing the database query.
+ *
+ */
+async function getWhatsappAuthorization(last8digits, worker_id) {
+  const query = `
+    SELECT * FROM whatsapp_authorization
+    WHERE RIGHT(phone_number, 8) = $1 AND worker_id = $2;
+  `;
+  const result = await pool.query(query, [last8digits, worker_id]);
+  return result.rows.length > 0 ? result.rows[0] : null;
+}
+
+/**
  * Batch inserts or updates WhatsApp authorization records in the database.
  *
  * Accepts an array of authorization objects and performs a single bulk upsert operation.
@@ -211,4 +228,5 @@ export {
   updateWhatsappAuthorizations,
   getAllWhatsAppWorkers,
   deleteWhatsappAuthorization,
+  getWhatsappAuthorization,
 };

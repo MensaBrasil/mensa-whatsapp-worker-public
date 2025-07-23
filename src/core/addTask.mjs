@@ -6,6 +6,7 @@ import {
   recordUserEntryToGroup,
   registerWhatsappAddFulfilled,
   registerWhatsappAddAttempt,
+  getWhatsappAuthorization,
 } from '../database/pgsql.mjs';
 import { getFromAddQueue } from '../database/redis.mjs';
 import { addMemberToGroup } from '../utils/clientOperations.mjs';
@@ -51,11 +52,6 @@ async function processAddQueue(client) {
   console.log(
     `\x1b[96mProcessing addition request by member: ${item.registration_id} to group: ${item.group_id}\x1b[0m`,
   );
-  const chats = await client.getChats();
-  const conversations = chats.filter((chat) => !chat.isGroup);
-  const last8DigitsFromChats = conversations
-    .map((chat) => chat.id.user)
-    .map((number) => number.slice(-8));
   const memberPhones = await getMemberPhoneNumbers(item.registration_id);
 
   const group = await client.getChatById(item.group_id);
@@ -106,8 +102,16 @@ async function processAddQueue(client) {
       continue;
     }
     const newPhone = phone.phone.replace(/\D/g, '');
-    if (last8DigitsFromChats.includes(newPhone.slice(-8))) {
-      const added = await addMemberToGroup(client, newPhone, item.group_id);
+    // Check if the phone is in the authorization table
+    const authorized_number = await getWhatsappAuthorization(
+      newPhone.slice(-8),
+    );
+    if (authorized_number) {
+      const added = await addMemberToGroup(
+        client,
+        authorized_number.phone_number,
+        item.group_id,
+      );
       if (added.added) {
         console.log(
           `\x1b[32mMember ${item.registration_id} was added to group ${item.group_id} with phone ${newPhone}\x1b[0m`,
@@ -148,7 +152,7 @@ async function processAddQueue(client) {
       }
     } else {
       console.log(
-        `\x1b[31mPhone ${newPhone} not found in the active chat list.\x1b[0m`,
+        `\x1b[31mPhone ${newPhone} not found in the authorization table.\x1b[0m`,
       );
     }
   }

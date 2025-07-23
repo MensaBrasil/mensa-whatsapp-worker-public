@@ -86,16 +86,12 @@ if (authMode) {
   client.on('message', async (message) => {
     const chat = await message.getChat();
     if (chat.isGroup) return;
-    console.log(`Received message: ${JSON.stringify(message, null, 2)}`);
     const contact = await message.getContact();
-    console.log(contact);
-    // const workerPhone = client.info.wid.user;
-    // const chat = await message.getChat();
-    // if (chat.isGroup) return;
-    // await checkAuth(chat, workerPhone);
-    // console.log(
-    //   `Authorization check completed for chat: ${chat.id._serialized}`,
-    // );
+    const workerPhone = client.info.wid.user;
+    await checkAuth(contact.number, workerPhone);
+    console.log(
+      `Authorization check completed for number: ${contact.number}\nPush name: ${contact.pushname}`,
+    );
   });
 }
 
@@ -125,22 +121,6 @@ client.on('ready', async () => {
     console.error(`Worker not found for phone number: ${workerPhone}`);
     client.destroy();
     process.exit(0);
-  }
-
-  // Check and update authorizations if authMode is enabled
-  if (authMode) {
-    try {
-      console.log('Performing initial authorization sync...');
-      const chats = await client.getChats();
-      const result = await checkAuth(chats, workerPhone);
-      console.log(
-        `Initial authorization sync completed: ${result.added} added, ${result.removed} removed, ${result.updated} updated`,
-      );
-    } catch (error) {
-      console.error('Error during initial authorization sync:', error);
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, 10000));
   }
 
   // Main loop

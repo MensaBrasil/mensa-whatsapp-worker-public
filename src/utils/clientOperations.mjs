@@ -1,7 +1,5 @@
 import WAWebJS from 'whatsapp-web.js'; // eslint-disable-line no-unused-vars
 
-import { getSerializedPhone } from './misc.mjs';
-
 /**
  * Attempts to add a member to a WhatsApp group
  * @async
@@ -26,30 +24,28 @@ async function addMemberToGroup(client, phone, groupId) {
       return { added: false, isInviteV4Sent: false, alreadyInGroup: false };
     }
 
-    const serializePhone = await getSerializedPhone(client, phone);
-    if (serializePhone) {
+    if (phone) {
       console.log(
-        `Trying to add member ${phone} --> ${serializePhone} to group ${groupId} --> ${group.name}`,
+        `Trying to add member ${phone} to group ${groupId} --> ${group.name}`,
       );
-      const result = await group.addParticipants([serializePhone]);
-      if (!result || !result[serializePhone]) {
+      const result = await group.addParticipants([phone]);
+      if (!result || !result[phone]) {
         return { added: false, isInviteV4Sent: false, alreadyInGroup: false };
       }
-      if (result[serializePhone].code === 200) {
+      if (result[phone].code === 200) {
         return { added: true, isInviteV4Sent: false, alreadyInGroup: false };
       }
-      if (result[serializePhone].code === 409) {
+      if (result[phone].code === 409) {
         return { added: false, isInviteV4Sent: false, alreadyInGroup: true };
       }
-      if (
-        result[serializePhone].code === 403 &&
-        result[serializePhone].isInviteV4Sent
-      ) {
+      if (result[phone].code === 403 && result[phone].isInviteV4Sent) {
         return { added: false, isInviteV4Sent: true, alreadyInGroup: false };
       }
       return { added: false, isInviteV4Sent: false, alreadyInGroup: false };
     } else {
-      console.log(`\x1b[33mPhone number ${phone} not found in chats\x1b[0m`);
+      console.log(
+        `\x1b[33mPhone number ${phone} not found in authorization table\x1b[0m`,
+      );
       return { added: false, isInviteV4Sent: false, alreadyInGroup: false };
     }
   } catch (error) {

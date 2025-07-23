@@ -1,26 +1,24 @@
 import {
-  getAllWhatsAppAuthorizations,
   updateWhatsappAuthorizations,
-  deleteWhatsappAuthorization,
   getAllWhatsAppWorkers,
 } from '../database/pgsql.mjs';
 
 /**
- * Updates WhatsApp authorizations based on active chats.
- * Ensures the worker exists in the database and updates authorizations using both phone_number and worker_id.
+ * Updates WhatsApp authorization for a single phone number.
+ * Ensures the worker exists in the database and upserts the authorization.
  * @async
- * @param {import('whatsapp-web.js').Chat | import('whatsapp-web.js').Chat[]} chatInput
+ * @param {string} phoneNumber - A single phone number
  * @param {string} workerPhone - The phone number of the WhatsApp worker
- * @returns {Promise<{added: number, removed: number, updated: number}>} Statistics about authorization changes
+ * @returns {Promise<{success: boolean}>} Result of the operation
  */
-async function checkAuth(chatInput, workerPhone) {
+async function checkAuth(phoneNumber, workerPhone) {
   try {
     // Input validation
     if (!workerPhone || typeof workerPhone !== 'string') {
       throw new Error('workerPhone is required and must be a string');
     }
-    if (!chatInput) {
-      throw new Error('chatInput is required');
+    if (!phoneNumber || typeof phoneNumber !== 'string') {
+      throw new Error('phoneNumber is required and must be a string');
     }
 
     // Ensure worker exists in DB
@@ -39,87 +37,19 @@ async function checkAuth(chatInput, workerPhone) {
     }
     const workerId = worker.id;
 
-    const chats = Array.isArray(chatInput) ? chatInput : [chatInput];
-    const userChats = chats.filter(
-      (chat) => chat && chat.id && !chat.isGroup && !chat.isReadOnly,
-    );
-    const numbers = userChats
-      .map((chat) => chat.id.user)
-      .filter(Boolean)
-      .map(String);
-
-    if (numbers.length === 0) return { added: 0, removed: 0, updated: 0 };
-
-    // Get current authorizations for this worker
-    let currentAuthorizations;
-    try {
-      currentAuthorizations = await getAllWhatsAppAuthorizations();
-    } catch (error) {
-      throw new Error(
-        `Failed to retrieve authorizations from database: ${error.message}`,
-      );
-    }
-
-    const currentAuthSet = new Set(
-      currentAuthorizations
-        .filter((auth) => auth.worker_id === workerId)
-        .map((auth) => auth.phone_number),
-    );
-
-    // Prepare updates (all numbers - both new and existing for updated_at)
-    const allUpdates = numbers.map((number) => ({
-      phone_number: number,
+    // Upsert the authorization
+    const authUpdate = {
+      phone_number: String(phoneNumber),
       worker_id: workerId,
-    }));
+    };
 
-    // Count new vs existing
-    const newNumbers = numbers.filter((number) => !currentAuthSet.has(number));
-    const existingNumbers = numbers.filter((number) =>
-      currentAuthSet.has(number),
-    );
-
-    // Prepare deletions (remove authorizations not in active chats)
-    let deletions = [];
-    if (Array.isArray(chatInput)) {
-      deletions = Array.from(currentAuthSet)
-        .filter((phone) => !numbers.includes(phone))
-        .map((phone) => ({
-          phone_number: phone,
-          worker_id: workerId,
-        }));
+    try {
+      await updateWhatsappAuthorizations([authUpdate]);
+      return { success: true };
+    } catch (error) {
+      throw new Error(`Failed to update authorization: ${error.message}`);
     }
-
-    // Execute DB operations with error handling
-    let addedCount = 0;
-    let updatedCount = 0;
-    let removedCount = 0;
-
-    if (allUpdates.length > 0) {
-      try {
-        await updateWhatsappAuthorizations(allUpdates);
-        addedCount = newNumbers.length;
-        updatedCount = existingNumbers.length;
-      } catch (error) {
-        throw new Error(`Failed to update authorizations: ${error.message}`);
-      }
-    }
-
-    if (deletions.length > 0) {
-      try {
-        await Promise.all(
-          deletions.map(({ phone_number, worker_id }) =>
-            deleteWhatsappAuthorization(phone_number, worker_id),
-          ),
-        );
-        removedCount = deletions.length;
-      } catch (error) {
-        throw new Error(`Failed to remove authorizations: ${error.message}`);
-      }
-    }
-
-    return { added: addedCount, removed: removedCount, updated: updatedCount };
   } catch (error) {
-    // Re-throw with context
     throw new Error(`checkAuth failed: ${error.message}`);
   }
 }
