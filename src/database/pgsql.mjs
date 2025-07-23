@@ -179,7 +179,7 @@ async function updateWhatsappAuthorizations(authorizations) {
     VALUES
       ${placeholders.join(',\n')}
     ON CONFLICT (phone_number, worker_id)
-    DO NOTHING
+    DO UPDATE SET updated_at = NOW()
   `;
 
   await pool.query(query, values);
