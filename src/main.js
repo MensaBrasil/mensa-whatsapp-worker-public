@@ -84,13 +84,16 @@ if (moderationMode) {
 
 if (authMode) {
   client.on('message', async (message) => {
-    const workerPhone = client.info.wid.user;
-    const chat = await message.getChat();
-    if (chat.isGroup) return;
-    await checkAuth(chat, workerPhone);
-    console.log(
-      `Authorization check completed for chat: ${chat.id._serialized}`,
-    );
+    console.log(`Received message: ${message}`);
+    const contact = await message.getContact();
+    console.log(contact);
+    // const workerPhone = client.info.wid.user;
+    // const chat = await message.getChat();
+    // if (chat.isGroup) return;
+    // await checkAuth(chat, workerPhone);
+    // console.log(
+    //   `Authorization check completed for chat: ${chat.id._serialized}`,
+    // );
   });
 }
 
