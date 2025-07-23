@@ -30,12 +30,7 @@ async function processRemoveQueue(client, telegramBot) {
   console.log(
     `\x1b[96mProcessing removal of member ${item.registration_id} with phone ${item.phone} from group ${item.groupId}...\x1b[0m`,
   );
-  const result = await removeMemberFromGroup(
-    client,
-    item.phone,
-    item.groupId,
-    item.communityId,
-  );
+  const result = await removeMemberFromGroup(client, item.phone, item.groupId, item.communityId);
 
   if (result.removed && result.removalType === 'Community') {
     console.log(
@@ -52,16 +47,11 @@ async function processRemoveQueue(client, telegramBot) {
     await delay(removeDelay, delayOffset);
     return true;
   }
-  console.log(
-    `\x1b[91mFailed to remove member ${item.phone} from group ${item.groupId}\x1b[0m`,
-  );
+  console.log(`\x1b[91mFailed to remove member ${item.phone} from group ${item.groupId}\x1b[0m`);
 
   const failureResult = {
     removed: false,
-    error:
-      result.removalType === null
-        ? 'Member could not be removed from group/community'
-        : 'Unknown error',
+    error: result.removalType === null ? 'Member could not be removed from group/community' : 'Unknown error',
     groupName: result.groupName,
   };
 

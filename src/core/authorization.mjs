@@ -1,7 +1,4 @@
-import {
-  updateWhatsappAuthorizations,
-  getAllWhatsAppWorkers,
-} from '../database/pgsql.mjs';
+import { updateWhatsappAuthorizations, getAllWhatsAppWorkers } from '../database/pgsql.mjs';
 
 /**
  * Updates WhatsApp authorization for a single phone number.
@@ -26,9 +23,7 @@ async function checkAuth(phoneNumber, workerPhone) {
     try {
       allWorkers = await getAllWhatsAppWorkers();
     } catch (error) {
-      throw new Error(
-        `Failed to retrieve workers from database: ${error.message}`,
-      );
+      throw new Error(`Failed to retrieve workers from database: ${error.message}`);
     }
 
     const worker = allWorkers.find((w) => w.worker_phone === workerPhone);

@@ -25,9 +25,7 @@ async function addMemberToGroup(client, phone, groupId) {
     }
 
     if (phone) {
-      console.log(
-        `Trying to add member ${phone} to group ${groupId} --> ${group.name}`,
-      );
+      console.log(`Trying to add member ${phone} to group ${groupId} --> ${group.name}`);
       const result = await group.addParticipants([phone]);
       if (!result || !result[phone]) {
         return { added: false, isInviteV4Sent: false, alreadyInGroup: false };
@@ -43,15 +41,11 @@ async function addMemberToGroup(client, phone, groupId) {
       }
       return { added: false, isInviteV4Sent: false, alreadyInGroup: false };
     } else {
-      console.log(
-        `\x1b[33mPhone number ${phone} not found in authorization table\x1b[0m`,
-      );
+      console.log(`\x1b[33mPhone number ${phone} not found in authorization table\x1b[0m`);
       return { added: false, isInviteV4Sent: false, alreadyInGroup: false };
     }
   } catch (error) {
-    console.error(
-      `\x1b[31mError adding member ${phone} to group ${groupId}: ${error} ${error.stack}\x1b[0m`,
-    );
+    console.error(`\x1b[31mError adding member ${phone} to group ${groupId}: ${error} ${error.stack}\x1b[0m`);
     return { added: false, isInviteV4Sent: false, alreadyInGroup: false };
   }
 }
@@ -71,24 +65,15 @@ async function addMemberToGroup(client, phone, groupId) {
  *   - groupName: name of the group or null if group not found/error occurred
  * @throws {Error} When there's an error during the removal process
  */
-async function removeMemberFromGroup(
-  client,
-  phone,
-  groupId,
-  communityId = false,
-) {
+async function removeMemberFromGroup(client, phone, groupId, communityId = false) {
   try {
     const group = await client.getChatById(groupId);
     if (communityId) {
       const community = await client.getChatById(communityId);
       if (!community) {
-        console.log(
-          `\x1b[33mCommunity ${communityId} not found... Skipping community removal.\x1b[0m`,
-        );
+        console.log(`\x1b[33mCommunity ${communityId} not found... Skipping community removal.\x1b[0m`);
       } else {
-        const participant = community.participants.find((participant) =>
-          participant?.id?._serialized?.includes(phone),
-        );
+        const participant = community.participants.find((participant) => participant?.id?._serialized?.includes(phone));
         const participantId = participant?.id?._serialized || false;
         if (!participantId) {
           console.log(
@@ -124,14 +109,10 @@ async function removeMemberFromGroup(
       return { removed: false, removalType: null, groupName: null };
     }
 
-    const participant = group.participants.find((participant) =>
-      participant?.id?._serialized?.includes(phone),
-    );
+    const participant = group.participants.find((participant) => participant?.id?._serialized?.includes(phone));
     const participantId = participant?.id?._serialized || false;
     if (!participantId) {
-      console.log(
-        `\x1b[31mParticipant ${phone} not found in group ${groupId}\x1b[0m`,
-      );
+      console.log(`\x1b[31mParticipant ${phone} not found in group ${groupId}\x1b[0m`);
       return { removed: false, removalType: null, groupName: group.name };
     }
 
@@ -142,9 +123,7 @@ async function removeMemberFromGroup(
       return { removed: false, removalType: null, groupName: group.name };
     }
 
-    console.log(
-      `\x1b[1;37mTrying to remove member ${phone} from group ${group.name} --> ID: ${groupId}\x1b[0m`,
-    );
+    console.log(`\x1b[1;37mTrying to remove member ${phone} from group ${group.name} --> ID: ${groupId}\x1b[0m`);
     const result = await group.removeParticipants([participantId]);
     if (result.status === 200) {
       return { removed: true, removalType: 'Group', groupName: group.name };
@@ -152,9 +131,7 @@ async function removeMemberFromGroup(
 
     return { removed: false, removalType: null, groupName: group.name };
   } catch (error) {
-    console.error(
-      `\x1b[31mError removing member ${phone} from group ${groupId}: ${error} ${error.stack}\x1b[0m`,
-    );
+    console.error(`\x1b[31mError removing member ${phone} from group ${groupId}: ${error} ${error.stack}\x1b[0m`);
     return { removed: false, removalType: null, groupName: null };
   }
 }

@@ -21,6 +21,9 @@ const delayOffset = Number(process.env.DELAY_OFFSET) || 3;
  * Processes a queue of members to be added to a WhatsApp group
  * @async
  * @param {WAWebJS.Client} client - The WhatsApp Web client
+ * @param {Object} worker - The worker object containing worker details
+ * @param {number} worker.id - Unique identifier for the worker
+ * @param {string} worker.phone - Phone number associated with the worker
  * @returns {Promise<{
  *  added: boolean,  // Whether the member was successfully added
  *  inviteSent: boolean,  // Whether an invite link was sent instead of direct add
@@ -37,7 +40,7 @@ const delayOffset = Number(process.env.DELAY_OFFSET) || 3;
  * 4. Attempts to add members to group or send invite
  * 5. Records successful additions to database
  */
-async function processAddQueue(client) {
+async function processAddQueue(client, worker) {
   const item = await getFromAddQueue();
   if (!item) {
     console.log('No items in the addQueue');
@@ -55,14 +58,10 @@ async function processAddQueue(client) {
   const memberPhones = await getMemberPhoneNumbers(item.registration_id);
 
   const group = await client.getChatById(item.group_id);
-  const botChatObj = group.participants.find(
-    (chatObj) => chatObj.id.user === client.info.wid.user,
-  );
+  const botChatObj = group.participants.find((chatObj) => chatObj.id.user === client.info.wid.user);
 
   if (!botChatObj.isAdmin) {
-    console.log(
-      `\x1b[31mBot is not an admin in group ${group.name} id: ${item.group_id} skipping...\x1b[0m`,
-    );
+    console.log(`\x1b[31mBot is not an admin in group ${group.name} id: ${item.group_id} skipping...\x1b[0m`);
     return {
       added: false,
       inviteSent: false,
@@ -73,9 +72,7 @@ async function processAddQueue(client) {
   }
 
   if (!memberPhones.length) {
-    console.log(
-      `\x1b[31mNo phone numbers found for registration ID: ${item.registration_id}\x1b[0m`,
-    );
+    console.log(`\x1b[31mNo phone numbers found for registration ID: ${item.registration_id}\x1b[0m`);
     return {
       added: false,
       inviteSent: false,
@@ -96,32 +93,19 @@ async function processAddQueue(client) {
   for (const phone of memberPhones) {
     if (!phone.phone) continue;
     if (!phone.is_legal_rep && item.group_type === 'RJB') {
-      console.log(
-        `\x1b[31mPhone ${phone.phone} is not a legal representative, skipping...\x1b[0m`,
-      );
+      console.log(`\x1b[31mPhone ${phone.phone} is not a legal representative, skipping...\x1b[0m`);
       continue;
     }
     const newPhone = phone.phone.replace(/\D/g, '');
     // Check if the phone is in the authorization table
-    const authorized_number = await getWhatsappAuthorization(
-      newPhone.slice(-8),
-    );
+    const authorized_number = await getWhatsappAuthorization(newPhone.slice(-8), worker.id);
     if (authorized_number) {
-      const added = await addMemberToGroup(
-        client,
-        authorized_number.phone_number,
-        item.group_id,
-      );
+      const added = await addMemberToGroup(client, authorized_number.phone_number, item.group_id);
       if (added.added) {
         console.log(
           `\x1b[32mMember ${item.registration_id} was added to group ${item.group_id} with phone ${newPhone}\x1b[0m`,
         );
-        await recordUserEntryToGroup(
-          item.registration_id,
-          newPhone,
-          item.group_id,
-          'Active',
-        );
+        await recordUserEntryToGroup(item.registration_id, newPhone, item.group_id, 'Active');
         results.added = true;
         results.processedPhones++;
         await delay(addDelay, delayOffset);
@@ -129,31 +113,17 @@ async function processAddQueue(client) {
         console.log(
           `\x1b[32mMember can't be added to groups from someone that is not in the contact list.\nInvite link sent to ${newPhone} for group ${item.group_id}\x1b[0m`,
         );
-        await recordUserEntryToGroup(
-          item.registration_id,
-          newPhone,
-          item.group_id,
-          'Active',
-        );
+        await recordUserEntryToGroup(item.registration_id, newPhone, item.group_id, 'Active');
         results.inviteSent = true;
         results.processedPhones++;
       } else if (added.alreadyInGroup) {
-        console.log(
-          `\x1b[32mPhone ${newPhone} is already in group ${item.group_id}\x1b[0m`,
-        );
-        await recordUserEntryToGroup(
-          item.registration_id,
-          newPhone,
-          item.group_id,
-          'Active',
-        );
+        console.log(`\x1b[32mPhone ${newPhone} is already in group ${item.group_id}\x1b[0m`);
+        await recordUserEntryToGroup(item.registration_id, newPhone, item.group_id, 'Active');
         results.alreadyInGroup = true;
         results.processedPhones++;
       }
     } else {
-      console.log(
-        `\x1b[31mPhone ${newPhone} not found in the authorization table.\x1b[0m`,
-      );
+      console.log(`\x1b[31mPhone ${newPhone} not found in the authorization table.\x1b[0m`);
     }
   }
 
@@ -162,9 +132,7 @@ async function processAddQueue(client) {
     console.log(
       `\x1b[92mRequest nº: ${item.request_id} by member: ${item.registration_id} to group ${item.group_id} was fulfilled!\x1b[0m`,
     );
-    console.log(
-      `\x1b[97mAdded ${results.processedPhones} out of ${results.totalPhones} phone numbers.\x1b[0m`,
-    );
+    console.log(`\x1b[97mAdded ${results.processedPhones} out of ${results.totalPhones} phone numbers.\x1b[0m`);
     return results;
   }
   await registerWhatsappAddAttempt(item.request_id);

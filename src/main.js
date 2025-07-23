@@ -42,13 +42,9 @@ if (!addMode && !removeMode && !moderationMode && !authMode) {
 } else if (!addMode && removeMode && !moderationMode && !authMode) {
   console.log('Remove mode selected! Only removals will be processed.');
 } else if (moderationMode) {
-  console.log(
-    'Moderation mode selected! Only moderation tasks will be processed.',
-  );
+  console.log('Moderation mode selected! Only moderation tasks will be processed.');
 } else if (authMode) {
-  console.log(
-    'Authorization mode selected! Only authorization checks will be processed.',
-  );
+  console.log('Authorization mode selected! Only authorization checks will be processed.');
 }
 
 // Global error handler
@@ -89,9 +85,7 @@ if (authMode) {
     const contact = await message.getContact();
     const workerPhone = client.info.wid.user;
     await checkAuth(contact.number, workerPhone);
-    console.log(
-      `Authorization check completed for number: ${contact.number}\nPush name: ${contact.pushname}`,
-    );
+    console.log(`Authorization check completed for number: ${contact.number}\nPush name: ${contact.pushname}`);
   });
 }
 
@@ -127,7 +121,7 @@ client.on('ready', async () => {
   const startTime = Date.now();
   while (true) {
     if (addMode) {
-      await processAddQueue(client);
+      await processAddQueue(client, worker);
       await new Promise((resolve) => setTimeout(resolve, 10000));
     }
     if (removeMode) {
@@ -147,16 +141,12 @@ client.on('ready', async () => {
     // Check if the process has been running for more than 1 hour
     const currentTime = Date.now();
     if (startTime && currentTime - startTime > 3600000) {
-      console.log(
-        'Process has been running for more than 1 hour, shutting down...',
-      );
+      console.log('Process has been running for more than 1 hour, shutting down...');
       client.destroy();
       process.exit(0);
     }
     if (startTime && currentTime - startTime < 3600000) {
-      console.log(
-        `Process has been running for ${Math.floor((currentTime - startTime) / 60000)} minutes`,
-      );
+      console.log(`Process has been running for ${Math.floor((currentTime - startTime) / 60000)} minutes`);
     }
   }
 });
