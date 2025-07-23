@@ -24,19 +24,21 @@ async function addMemberToGroup(client, phone, groupId) {
       return { added: false, isInviteV4Sent: false, alreadyInGroup: false };
     }
 
+    const serialized_phone = phone + '@c.us';
+
     if (phone) {
       console.log(`Trying to add member ${phone} to group ${groupId} --> ${group.name}`);
-      const result = await group.addParticipants([phone]);
-      if (!result || !result[phone]) {
+      const result = await group.addParticipants([serialized_phone]);
+      if (!result || !result[serialized_phone]) {
         return { added: false, isInviteV4Sent: false, alreadyInGroup: false };
       }
-      if (result[phone].code === 200) {
+      if (result[serialized_phone].code === 200) {
         return { added: true, isInviteV4Sent: false, alreadyInGroup: false };
       }
-      if (result[phone].code === 409) {
+      if (result[serialized_phone].code === 409) {
         return { added: false, isInviteV4Sent: false, alreadyInGroup: true };
       }
-      if (result[phone].code === 403 && result[phone].isInviteV4Sent) {
+      if (result[serialized_phone].code === 403 && result[serialized_phone].isInviteV4Sent) {
         return { added: false, isInviteV4Sent: true, alreadyInGroup: false };
       }
       return { added: false, isInviteV4Sent: false, alreadyInGroup: false };
