@@ -86,7 +86,7 @@ if (authMode) {
   client.on('message', async (message) => {
     const chat = await message.getChat();
     if (chat.isGroup) return;
-    console.log(`Received message: ${message}`);
+    console.log(`Received message: ${JSON.stringify(message, null, 2)}`);
     const contact = await message.getContact();
     console.log(contact);
     // const workerPhone = client.info.wid.user;
