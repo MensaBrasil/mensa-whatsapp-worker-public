@@ -20,12 +20,20 @@ configDotenv();
  * @param {Object} telegramBot - The Telegram bot instance to use for sending the message
  * @returns {Promise<void>} Resolves when the message has been sent to Telegram
  */
-async function sendRemovalFailureNotification(item, failureResult, telegramBot) {
+async function sendRemovalFailureNotification(
+  item,
+  failureResult,
+  telegramBot,
+) {
   const timestamp = new Date().toISOString();
 
-  const groupInfo = failureResult.groupName ? `${failureResult.groupName} (${item.groupId})` : `${item.groupId}`;
+  const groupInfo = failureResult.groupName
+    ? `${failureResult.groupName} (${item.groupId})`
+    : `${item.groupId}`;
 
-  const communityInfo = item.communityId ? `\n<b>Community ID:</b> ${item.communityId}` : '';
+  const communityInfo = item.communityId
+    ? `\n<b>Community ID:</b> ${item.communityId}`
+    : '';
 
   const warningText =
     '<b>⚠️ MEMBER REMOVAL FAILED ⚠️</b>\n' +
@@ -37,12 +45,21 @@ async function sendRemovalFailureNotification(item, failureResult, telegramBot) 
     `<b>Error:</b> ${failureResult.error}`;
 
   try {
-    await telegramBot.sendMessage(process.env.TELEGRAM_CANTREMOVE_CHAT_ID, warningText, {
-      parse_mode: 'HTML',
-    });
-    console.log(`Sent removal failure notification to Telegram for member ${item.phone}`);
+    await telegramBot.sendMessage(
+      process.env.TELEGRAM_CANTREMOVE_CHAT_ID,
+      warningText,
+      {
+        parse_mode: 'HTML',
+      },
+    );
+    console.log(
+      `Sent removal failure notification to Telegram for member ${item.phone}`,
+    );
   } catch (err) {
-    console.error('Failed to send removal failure notification to Telegram:', err);
+    console.error(
+      'Failed to send removal failure notification to Telegram:',
+      err,
+    );
   }
 }
 

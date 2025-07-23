@@ -38,7 +38,12 @@ const recordUserExitFromGroup = async (phone_number, group_id, reason) => {
  * @param {string} status - The status of the user "Active" or "Inactive"
  * @returns {Promise<void>} - A promise that resolves when the entry is recorded
  */
-const recordUserEntryToGroup = async (registration_id, phone_number, group_id, status) => {
+const recordUserEntryToGroup = async (
+  registration_id,
+  phone_number,
+  group_id,
+  status,
+) => {
   const query = `
         INSERT INTO member_groups (registration_id, phone_number, group_id, status)
         VALUES ($1, $2, $3, $4);
@@ -97,7 +102,8 @@ async function getMemberPhoneNumbers(registration_id) {
  * @returns {Promise<void>} A promise that resolves when the update is complete.
  */
 async function registerWhatsappAddFulfilled(id) {
-  const query = 'UPDATE group_requests SET fulfilled = true, last_attempt = NOW(), updated_at = NOW() WHERE id = $1';
+  const query =
+    'UPDATE group_requests SET fulfilled = true, last_attempt = NOW(), updated_at = NOW() WHERE id = $1';
   await pool.query(query, [id]);
 }
 
@@ -108,14 +114,15 @@ async function registerWhatsappAddFulfilled(id) {
  * @returns {Promise<void>} A promise that resolves when the update is complete.
  */
 async function registerWhatsappAddAttempt(id) {
-  const query = 'UPDATE group_requests SET no_of_attempts = no_of_attempts + 1, last_attempt = NOW(), updated_at = NOW() WHERE id = $1';
+  const query =
+    'UPDATE group_requests SET no_of_attempts = no_of_attempts + 1, last_attempt = NOW(), updated_at = NOW() WHERE id = $1';
   await pool.query(query, [id]);
 }
 
 /**
  * Retrieves all whatsapp workers
  * @async
- * @returns {Promise<Array<{ worker_id: number, phone_number: string }>>} Array of whatsapp workers
+ * @returns {Promise<Array<{ worker_id: number, worker_phone: string }>>} Array of whatsapp workers
  */
 async function getAllWhatsAppWorkers() {
   const query = 'SELECT * FROM whatsapp_workers';
@@ -158,7 +165,9 @@ async function updateWhatsappAuthorizations(authorizations) {
 
   const values = [];
   const placeholders = authorizations.map((auth, i) => {
-    const phone = auth.phone_number ? String(auth.phone_number).replace(/\D/g, '') : null;
+    const phone = auth.phone_number
+      ? String(auth.phone_number).replace(/\D/g, '')
+      : null;
     values.push(phone, auth.worker_id);
     const base = i * columns.length;
     return `($${base + 1}, $${base + 2})`;

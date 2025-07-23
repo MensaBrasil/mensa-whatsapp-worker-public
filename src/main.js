@@ -30,7 +30,9 @@ let moderationMode = process.argv.includes('--moderation');
 let authMode = process.argv.includes('--auth');
 
 if (!addMode && !removeMode && !moderationMode && !authMode) {
-  console.log('Normal mode selected! Additions, removals, moderation tasks, and authorization checks will be processed.');
+  console.log(
+    'Normal mode selected! Additions, removals, moderation tasks, and authorization checks will be processed.',
+  );
   addMode = true;
   removeMode = true;
   moderationMode = true;
@@ -40,9 +42,13 @@ if (!addMode && !removeMode && !moderationMode && !authMode) {
 } else if (!addMode && removeMode && !moderationMode && !authMode) {
   console.log('Remove mode selected! Only removals will be processed.');
 } else if (moderationMode) {
-  console.log('Moderation mode selected! Only moderation tasks will be processed.');
+  console.log(
+    'Moderation mode selected! Only moderation tasks will be processed.',
+  );
 } else if (authMode) {
-  console.log('Authorization mode selected! Only authorization checks will be processed.');
+  console.log(
+    'Authorization mode selected! Only authorization checks will be processed.',
+  );
 }
 
 // Global error handler
@@ -105,7 +111,7 @@ client.on('ready', async () => {
 
   // Check if worker is registered in the database
   const allWorkers = await getAllWhatsAppWorkers();
-  const worker = allWorkers.find((w) => w.phone_number === workerPhone);
+  const worker = allWorkers.find((w) => w.worker_phone === workerPhone);
 
   if (!worker) {
     console.error(`Worker not found for phone number: ${workerPhone}`);
@@ -119,7 +125,9 @@ client.on('ready', async () => {
       console.log('Performing initial authorization sync...');
       const chats = await client.getChats();
       const result = await checkAuth(chats, workerPhone);
-      console.log(`Initial authorization sync completed: ${result.added} added, ${result.removed} removed`);
+      console.log(
+        `Initial authorization sync completed: ${result.added} added, ${result.removed} removed`,
+      );
     } catch (error) {
       console.error('Error during initial authorization sync:', error);
     }
@@ -151,12 +159,16 @@ client.on('ready', async () => {
     // Check if the process has been running for more than 1 hour
     const currentTime = Date.now();
     if (startTime && currentTime - startTime > 3600000) {
-      console.log('Process has been running for more than 1 hour, shutting down...');
+      console.log(
+        'Process has been running for more than 1 hour, shutting down...',
+      );
       client.destroy();
       process.exit(0);
     }
     if (startTime && currentTime - startTime < 3600000) {
-      console.log(`Process has been running for ${Math.floor((currentTime - startTime) / 60000)} minutes`);
+      console.log(
+        `Process has been running for ${Math.floor((currentTime - startTime) / 60000)} minutes`,
+      );
     }
   }
 });

@@ -56,16 +56,22 @@ async function delay(time, offset) {
  * 3. Progressive digit matching from full number down to last 8 digits
  */
 async function getSerializedPhone(client, phone) {
-  const conversations = (await client.getChats()).filter((chat) => !chat.isGroup);
+  const conversations = (await client.getChats()).filter(
+    (chat) => !chat.isGroup,
+  );
 
   // Trying to find the number as is (If the number in db is the same as the one in the chat.)
-  const matchingChat = conversations.find((chat) => chat.id.user && chat.id.user.endsWith(phone));
+  const matchingChat = conversations.find(
+    (chat) => chat.id.user && chat.id.user.endsWith(phone),
+  );
   if (matchingChat) {
     return matchingChat.id._serialized;
   }
 
   // Using last 8 digits to find serialized number
-  const matchingChat8digits = conversations.find((chat) => chat.id.user && chat.id.user.endsWith(phone.slice(-8)));
+  const matchingChat8digits = conversations.find(
+    (chat) => chat.id.user && chat.id.user.endsWith(phone.slice(-8)),
+  );
   if (matchingChat8digits) {
     return matchingChat8digits.id._serialized;
   }

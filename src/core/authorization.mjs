@@ -1,4 +1,9 @@
-import { getAllWhatsAppAuthorizations, updateWhatsappAuthorizations, deleteWhatsappAuthorization, getAllWhatsAppWorkers } from '../database/pgsql.mjs';
+import {
+  getAllWhatsAppAuthorizations,
+  updateWhatsappAuthorizations,
+  deleteWhatsappAuthorization,
+  getAllWhatsAppWorkers,
+} from '../database/pgsql.mjs';
 
 /**
  * Updates WhatsApp authorizations based on active chats
@@ -19,7 +24,7 @@ async function checkAuth(chatInput, workerPhone) {
 
     // Get all workers and find the worker_id for this phone number
     const allWorkers = await getAllWhatsAppWorkers();
-    const worker = allWorkers.find((w) => w.phone_number === workerPhone);
+    const worker = allWorkers.find((w) => w.worker_phone === workerPhone);
 
     if (!worker) {
       console.warn(`Worker not found for phone number: ${workerPhone}`);
@@ -52,7 +57,11 @@ async function checkAuth(chatInput, workerPhone) {
     console.log(`Processing authorization check for ${numbers.length} chats`);
 
     const currentAuthorizations = await getAllWhatsAppAuthorizations();
-    const currentAuthMap = new Map(currentAuthorizations.filter((auth) => auth.worker_id === workerId).map((auth) => [auth.phone_number, auth]));
+    const currentAuthMap = new Map(
+      currentAuthorizations
+        .filter((auth) => auth.worker_id === workerId)
+        .map((auth) => [auth.phone_number, auth]),
+    );
 
     const updates = [];
     const deletions = [];
@@ -91,12 +100,21 @@ async function checkAuth(chatInput, workerPhone) {
 
     if (deletions.length > 0) {
       console.log(`Removing ${deletions.length} authorizations`);
-      promises.push(...deletions.map((deletion) => deleteWhatsappAuthorization(deletion.phone_number, deletion.worker_id)));
+      promises.push(
+        ...deletions.map((deletion) =>
+          deleteWhatsappAuthorization(
+            deletion.phone_number,
+            deletion.worker_id,
+          ),
+        ),
+      );
     }
 
     if (promises.length > 0) {
       await Promise.all(promises);
-      console.log(`Authorization update completed: ${updates.length} added, ${deletions.length} removed`);
+      console.log(
+        `Authorization update completed: ${updates.length} added, ${deletions.length} removed`,
+      );
     } else {
       console.log('No authorization changes needed');
     }

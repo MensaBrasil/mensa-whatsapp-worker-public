@@ -11,7 +11,9 @@ const client = createClient({
   },
   retryStrategy: function (times) {
     if (times > 20) {
-      console.log('Too many attempts to reconnect. Redis connection was terminated');
+      console.log(
+        'Too many attempts to reconnect. Redis connection was terminated',
+      );
       return new Error('Too many retries.');
     } else {
       return times * 500;
