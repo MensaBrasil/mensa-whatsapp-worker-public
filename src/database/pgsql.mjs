@@ -122,7 +122,7 @@ async function registerWhatsappAddAttempt(id) {
 /**
  * Retrieves all whatsapp workers
  * @async
- * @returns {Promise<Array<{ worker_id: number, worker_phone: string }>>} Array of whatsapp workers
+ * @returns {Promise<Array<{ id: number, worker_phone: string }>>} Array of whatsapp workers
  */
 async function getAllWhatsAppWorkers() {
   const query = 'SELECT * FROM whatsapp_workers';
