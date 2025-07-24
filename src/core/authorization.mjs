@@ -1,5 +1,3 @@
-import fs from 'fs';
-
 import WAWebJS from 'whatsapp-web.js'; // eslint-disable-line no-unused-vars
 
 import { updateWhatsappAuthorizations, getAllWhatsAppWorkers } from '../database/pgsql.mjs';
@@ -69,46 +67,41 @@ async function addNewAuthorizations(client, workerPhone) {
     console.log(`Found ${allChats.length} chats.`);
     const privateChats = allChats.filter((chat) => !chat.isGroup && chat.isReadOnly === false);
     console.log(`Found ${privateChats.length} private chats (non-group chats).`);
-    const contacts = [];
+    const phone_numbers = [];
     for (const chat of privateChats) {
       const contact = await chat.getContact();
       if (contact && contact.number) {
-        contacts.push({ number: contact.number, pushname: contact.pushname });
+        phone_numbers.push(contact.number);
       }
     }
-    console.log(`Extracted ${contacts.length} contacts for authorization from private chats`);
+    console.log(`Extracted ${phone_numbers.length} phone numbers for authorization from private chats`);
 
-    // const allWorkers = await getAllWhatsAppWorkers();
-    // const worker = allWorkers.find((w) => w.worker_phone === workerPhone);
-    // const workerId = worker.id;
+    const allWorkers = await getAllWhatsAppWorkers();
+    const worker = allWorkers.find((w) => w.worker_phone === workerPhone);
+    const workerId = worker.id;
 
-    if (contacts.length === 0) {
-      console.log('No contacts found for authorization');
+    if (phone_numbers.length === 0) {
+      console.log('No phone numbers found for authorization');
       return;
     }
 
-    // Save contacts to contacts.json file
-    fs.writeFileSync('contacts.json', JSON.stringify(contacts, null, 2));
+    const updates = [];
+    for (const number of phone_numbers) {
+      if (number) {
+        updates.push({
+          phone_number: String(number),
+          worker_id: workerId,
+        });
+      }
+    }
 
-    process.exit(0);
+    if (updates.length === 0) {
+      console.log('No valid contacts found for authorization');
+      return;
+    }
 
-    // const updates = [];
-    // for (const contact of contacts) {
-    //   if (contact && contact.number) {
-    //     updates.push({
-    //       phone_number: String(contact.number),
-    //       worker_id: workerId,
-    //     });
-    //   }
-    // }
-
-    // if (updates.length === 0) {
-    //   console.log('No valid contacts found for authorization');
-    //   return;
-    // }
-
-    // await updateWhatsappAuthorizations(updates);
-    // console.log(`Successfully updated authorizations for ${updates.length} contacts.`);
+    await updateWhatsappAuthorizations(updates);
+    console.log(`Successfully updated authorizations for ${updates.length} contacts.`);
   } catch (error) {
     console.error(`Error updating authorizations: ${error.message}`);
     return;
