@@ -1,3 +1,5 @@
+import fs from 'fs';
+
 import WAWebJS from 'whatsapp-web.js'; // eslint-disable-line no-unused-vars
 
 import { updateWhatsappAuthorizations, getAllWhatsAppWorkers } from '../database/pgsql.mjs';
@@ -70,32 +72,37 @@ async function addNewAuthorizations(client, workerPhone) {
     const contacts = privateChats.map((chat) => chat.getContact());
     console.log(`Extracted ${contacts.length} contacts for authorization from private chats`);
 
-    const allWorkers = await getAllWhatsAppWorkers();
-    const worker = allWorkers.find((w) => w.worker_phone === workerPhone);
-    const workerId = worker.id;
+    // const allWorkers = await getAllWhatsAppWorkers();
+    // const worker = allWorkers.find((w) => w.worker_phone === workerPhone);
+    // const workerId = worker.id;
 
     if (contacts.length === 0) {
       console.log('No contacts found for authorization');
       return;
     }
 
-    const updates = [];
-    for (const contact of contacts) {
-      if (contact && contact.number) {
-        updates.push({
-          phone_number: String(contact.number),
-          worker_id: workerId,
-        });
-      }
-    }
+    // Save contacts to contacts.json file
+    fs.writeFileSync('contacts.json', JSON.stringify(contacts, null, 2));
 
-    if (updates.length === 0) {
-      console.log('No valid contacts found for authorization');
-      return;
-    }
+    process.exit(0);
 
-    await updateWhatsappAuthorizations(updates);
-    console.log(`Successfully updated authorizations for ${updates.length} contacts.`);
+    // const updates = [];
+    // for (const contact of contacts) {
+    //   if (contact && contact.number) {
+    //     updates.push({
+    //       phone_number: String(contact.number),
+    //       worker_id: workerId,
+    //     });
+    //   }
+    // }
+
+    // if (updates.length === 0) {
+    //   console.log('No valid contacts found for authorization');
+    //   return;
+    // }
+
+    // await updateWhatsappAuthorizations(updates);
+    // console.log(`Successfully updated authorizations for ${updates.length} contacts.`);
   } catch (error) {
     console.error(`Error updating authorizations: ${error.message}`);
     return;
