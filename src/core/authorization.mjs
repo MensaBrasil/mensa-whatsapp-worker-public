@@ -63,45 +63,39 @@ async function addNewAuthorizations(client, workerPhone) {
       throw new Error('workerPhone is required and must be a string');
     }
 
-    console.log(`Getting all chats for worker: ${workerPhone}`);
     const allChats = await client.getChats();
-    console.log(`Found ${allChats.length} chats for worker: ${workerPhone}`);
+    console.log(`Found ${allChats.length} chats.`);
     const privateChats = allChats.filter((chat) => !chat.isGroup && chat.isReadOnly === false);
-    console.log(`Found ${privateChats.length} private chats for worker: ${workerPhone}`);
+    console.log(`Found ${privateChats.length} private chats (non-group chats).`);
     const contacts = privateChats.map((chat) => chat.getContact());
     console.log(`Extracted ${contacts.length} contacts for authorization from private chats`);
 
     const allWorkers = await getAllWhatsAppWorkers();
-    console.log(`Found ${allWorkers.length} workers in the database`);
     const worker = allWorkers.find((w) => w.worker_phone === workerPhone);
     const workerId = worker.id;
-    console.log(`Worker ID for phone number ${workerPhone} is ${workerId}`);
 
-    console.log('Exiting after processing for testing purposes');
-    process.exit(0);
+    if (contacts.length === 0) {
+      console.log('No contacts found for authorization');
+      return;
+    }
 
-    // if (contacts.length === 0) {
-    //   console.log('No contacts found for authorization');
-    //   return;
-    // }
+    const updates = [];
+    for (const contact of contacts) {
+      if (contact && contact.number) {
+        updates.push({
+          phone_number: String(contact.number),
+          worker_id: workerId,
+        });
+      }
+    }
 
-    // const updates = [];
-    // for (const contact of contacts) {
-    //   if (contact && contact.phoneNumber) {
-    //     updates.push({
-    //       phone_number: String(contact.phoneNumber),
-    //       worker_id: workerId,
-    //     });
-    //   }
-    // }
+    if (updates.length === 0) {
+      console.log('No valid contacts found for authorization');
+      return;
+    }
 
-    // if (updates.length === 0) {
-    //   console.log('No valid contacts found for authorization');
-    //   return;
-    // }
-
-    // await updateWhatsappAuthorizations(updates);
-    // console.log(`Successfully updated authorizations for ${updates.length} contacts.`);
+    await updateWhatsappAuthorizations(updates);
+    console.log(`Successfully updated authorizations for ${updates.length} contacts.`);
   } catch (error) {
     console.error(`Error updating authorizations: ${error.message}`);
     return;
