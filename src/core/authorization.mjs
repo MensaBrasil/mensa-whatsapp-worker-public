@@ -69,7 +69,13 @@ async function addNewAuthorizations(client, workerPhone) {
     console.log(`Found ${allChats.length} chats.`);
     const privateChats = allChats.filter((chat) => !chat.isGroup && chat.isReadOnly === false);
     console.log(`Found ${privateChats.length} private chats (non-group chats).`);
-    const contacts = privateChats.map((chat) => chat.getContact());
+    const contacts = [];
+    for (const chat of privateChats) {
+      const contact = await chat.getContact();
+      if (contact && contact.number) {
+        contacts.push({ number: contact.number, pushname: contact.pushname });
+      }
+    }
     console.log(`Extracted ${contacts.length} contacts for authorization from private chats`);
 
     // const allWorkers = await getAllWhatsAppWorkers();
