@@ -61,9 +61,11 @@ async function sendTelegramFlaggedLog(message, chat, flaggedResult, telegramBot)
  * @returns {Promise<void>} Resolves when the check and possible deletion are complete.
  */
 async function checkForGroupLink(message, chat) {
-  const groupLinkRegex = /\bchat\.\s*whatsapp\.\s*com\b/i;
+  // Match explicit WhatsApp invite links like https://chat.whatsapp.com/XXXXXXXXXXXXXXX
+  const groupLinkRegex = /https?:\/\/chat\.whatsapp\.com\/[A-Za-z0-9]{10,}/i;
+  // Match shortened URLs only when they appear as actual links
   const shortenerRegex =
-    /(bit\.ly|tinyurl\.com|t\.co|goo\.gl|ow\.ly|buff\.ly|bitly\.com|shorturl\.at|cutt\.ly|rb\.gy)/i;
+    /https?:\/\/(?:www\.)?(bit\.ly|tinyurl\.com|t\.co|goo\.gl|ow\.ly|buff\.ly|bitly\.com|shorturl\.at|cutt\.ly|rb\.gy)\/\S+/i;
   if (!groupLinkRegex.test(message.body) && !shortenerRegex.test(message.body)) return;
 
   const senderId = message.author;
