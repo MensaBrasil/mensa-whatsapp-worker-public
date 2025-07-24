@@ -1,3 +1,5 @@
+import WAWebJS from 'whatsapp-web.js'; // eslint-disable-line no-unused-vars
+
 import { updateWhatsappAuthorizations, getAllWhatsAppWorkers } from '../database/pgsql.mjs';
 
 /**
@@ -49,4 +51,52 @@ async function checkAuth(phoneNumber, workerPhone) {
   }
 }
 
-export { checkAuth };
+/**
+ * Upsert authorizations for multiple phone numbers extracted from chats.
+ * @async
+ * @param {String} workerPhone - The ID of the WhatsApp worker
+ * @param {WAWebJS.Client} client - The WhatsApp Web client
+ */
+async function addNewAuthorizations(client, workerPhone) {
+  try {
+    if (!workerPhone || typeof workerPhone !== 'string') {
+      throw new Error('workerPhone is required and must be a string');
+    }
+
+    const allChats = await client.getChats();
+    const privateChats = allChats.filter((chat) => !chat.isGroup && chat.isReadOnly === false);
+    const contacts = privateChats.map((chat) => chat.getContact());
+
+    const allWorkers = await getAllWhatsAppWorkers();
+    const worker = allWorkers.find((w) => w.worker_phone === workerPhone);
+    const workerId = worker.id;
+
+    if (contacts.length === 0) {
+      console.log('No contacts found for authorization');
+      return;
+    }
+
+    const updates = [];
+    for (const contact of contacts) {
+      if (contact && contact.phoneNumber) {
+        updates.push({
+          phone_number: String(contact.phoneNumber),
+          worker_id: workerId,
+        });
+      }
+    }
+
+    if (updates.length === 0) {
+      console.log('No valid contacts found for authorization');
+      return;
+    }
+
+    await updateWhatsappAuthorizations(updates);
+    console.log(`Successfully updated authorizations for ${updates.length} contacts.`);
+  } catch (error) {
+    console.error(`Error updating authorizations: ${error.message}`);
+    return;
+  }
+}
+
+export { checkAuth, addNewAuthorizations };

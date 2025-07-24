@@ -6,7 +6,7 @@ import qrcode from 'qrcode-terminal';
 import WAWebJS from 'whatsapp-web.js';
 
 import { processAddQueue } from './core/addTask.mjs';
-import { checkAuth } from './core/authorization.mjs';
+import { checkAuth, addNewAuthorizations } from './core/authorization.mjs';
 import { checkMessageContent } from './core/moderations.mjs';
 import { processRemoveQueue } from './core/removeTask.mjs';
 import { getAllWhatsAppWorkers } from './database/pgsql.mjs';
@@ -116,6 +116,9 @@ client.on('ready', async () => {
     client.destroy();
     process.exit(0);
   }
+
+  console.log(`Running initial authorization check for worker: ${workerPhone}`);
+  await addNewAuthorizations(client, workerPhone);
 
   // Main loop
   const startTime = Date.now();
