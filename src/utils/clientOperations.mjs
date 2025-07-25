@@ -1,7 +1,5 @@
 import WAWebJS from 'whatsapp-web.js'; // eslint-disable-line no-unused-vars
 
-import { getSerializedPhone } from './misc.mjs';
-
 /**
  * Attempts to add a member to a WhatsApp group
  * @async
@@ -26,25 +24,26 @@ async function addMemberToGroup(client, phone, groupId) {
       return { added: false, isInviteV4Sent: false, alreadyInGroup: false };
     }
 
-    const serializePhone = await getSerializedPhone(client, phone);
-    if (serializePhone) {
-      console.log(`Trying to add member ${phone} --> ${serializePhone} to group ${groupId} --> ${group.name}`);
-      const result = await group.addParticipants([serializePhone]);
-      if (!result || !result[serializePhone]) {
+    const serialized_phone = phone + '@c.us';
+
+    if (phone) {
+      console.log(`Trying to add member ${phone} to group ${groupId} --> ${group.name}`);
+      const result = await group.addParticipants([serialized_phone]);
+      if (!result || !result[serialized_phone]) {
         return { added: false, isInviteV4Sent: false, alreadyInGroup: false };
       }
-      if (result[serializePhone].code === 200) {
+      if (result[serialized_phone].code === 200) {
         return { added: true, isInviteV4Sent: false, alreadyInGroup: false };
       }
-      if (result[serializePhone].code === 409) {
+      if (result[serialized_phone].code === 409) {
         return { added: false, isInviteV4Sent: false, alreadyInGroup: true };
       }
-      if (result[serializePhone].code === 403 && result[serializePhone].isInviteV4Sent) {
+      if (result[serialized_phone].code === 403 && result[serialized_phone].isInviteV4Sent) {
         return { added: false, isInviteV4Sent: true, alreadyInGroup: false };
       }
       return { added: false, isInviteV4Sent: false, alreadyInGroup: false };
     } else {
-      console.log(`\x1b[33mPhone number ${phone} not found in chats\x1b[0m`);
+      console.log(`\x1b[33mPhone number ${phone} not found in authorization table\x1b[0m`);
       return { added: false, isInviteV4Sent: false, alreadyInGroup: false };
     }
   } catch (error) {
@@ -79,17 +78,29 @@ async function removeMemberFromGroup(client, phone, groupId, communityId = false
         const participant = community.participants.find((participant) => participant?.id?._serialized?.includes(phone));
         const participantId = participant?.id?._serialized || false;
         if (!participantId) {
-          console.log(`\x1b[33mParticipant ${phone} not found in community ${community.name} --> ID: ${communityId}\x1b[0m`);
+          console.log(
+            `\x1b[33mParticipant ${phone} not found in community ${community.name} --> ID: ${communityId}\x1b[0m`,
+          );
         } else if (participant.isAdmin) {
           console.log(
-            `\x1b[33mAdmins can't be removed from communities... Skipping removal of ${phone} from community ${community.name} --> ID: ${communityId}\x1b[0m`
+            `\x1b[33mAdmins can't be removed from communities... Skipping removal of ${phone} from community ${community.name} --> ID: ${communityId}\x1b[0m`,
           );
-          return { removed: false, removalType: null, groupName: community.name };
+          return {
+            removed: false,
+            removalType: null,
+            groupName: community.name,
+          };
         } else {
-          console.log(`\x1b[1;37mTrying to remove member ${phone} from community ${community.name} --> ID: ${communityId}\x1b[0m`);
+          console.log(
+            `\x1b[1;37mTrying to remove member ${phone} from community ${community.name} --> ID: ${communityId}\x1b[0m`,
+          );
           const result = await community.removeParticipants([participantId]);
           if (result.status === 200) {
-            return { removed: true, removalType: 'Community', groupName: community.name };
+            return {
+              removed: true,
+              removalType: 'Community',
+              groupName: community.name,
+            };
           }
         }
       }
@@ -108,7 +119,9 @@ async function removeMemberFromGroup(client, phone, groupId, communityId = false
     }
 
     if (participant.isAdmin) {
-      console.log(`\x1b[33mAdmins can't be removed from groups... Skipping removal of ${phone} from group ${group.name} --> ID: ${groupId}\x1b[0m`);
+      console.log(
+        `\x1b[33mAdmins can't be removed from groups... Skipping removal of ${phone} from group ${group.name} --> ID: ${groupId}\x1b[0m`,
+      );
       return { removed: false, removalType: null, groupName: group.name };
     }
 

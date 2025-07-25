@@ -26,26 +26,16 @@ configDotenv();
  * @param {Object} telegramBot - The Telegram bot instance to use for sending the message.
  * @returns {Promise<void>} Resolves when the message has been sent to Telegram.
  */
-async function sendTelegramFlaggedLog(
-  message,
-  chat,
-  flaggedResult,
-  telegramBot,
-) {
+async function sendTelegramFlaggedLog(message, chat, flaggedResult, telegramBot) {
   const flaggedCatsInline = Object.entries(flaggedResult.categories)
     .filter(([, flag]) => flag)
-    .map(
-      ([cat]) =>
-        `<b>${cat}</b> (<code>${flaggedResult.category_scores[cat].toFixed(3)}</code>)`,
-    )
+    .map(([cat]) => `<b>${cat}</b> (<code>${flaggedResult.category_scores[cat].toFixed(3)}</code>)`)
     .join(', ');
   const modalitiesSet = new Set();
   if (flaggedResult.category_applied_input_types) {
-    Object.values(flaggedResult.category_applied_input_types).forEach(
-      (types) => {
-        types.forEach((t) => modalitiesSet.add(t));
-      },
-    );
+    Object.values(flaggedResult.category_applied_input_types).forEach((types) => {
+      types.forEach((t) => modalitiesSet.add(t));
+    });
   }
   const modalitiesLine = Array.from(modalitiesSet).join(', ');
 
@@ -57,13 +47,9 @@ async function sendTelegramFlaggedLog(
     `<b>Message:</b>\n<pre>${message.body}</pre>\n` +
     `<b>Flagged Categories:</b> ${flaggedCatsInline}\n` +
     `<b>Input Modalities:</b> ${modalitiesLine}`;
-  telegramBot.sendMessage(
-    process.env.TELEGRAM_MODERATIONS_CHAT_ID,
-    flaggedText,
-    {
-      parse_mode: 'HTML',
-    },
-  );
+  telegramBot.sendMessage(process.env.TELEGRAM_MODERATIONS_CHAT_ID, flaggedText, {
+    parse_mode: 'HTML',
+  });
 }
 
 /**
@@ -80,15 +66,12 @@ async function checkForGroupLink(message, chat) {
   // Match shortened URLs only when they appear as actual links
   const shortenerRegex =
     /https?:\/\/(?:www\.)?(bit\.ly|tinyurl\.com|t\.co|goo\.gl|ow\.ly|buff\.ly|bitly\.com|shorturl\.at|cutt\.ly|rb\.gy)\/\S+/i;
-  if (!groupLinkRegex.test(message.body) && !shortenerRegex.test(message.body))
-    return;
+  if (!groupLinkRegex.test(message.body) && !shortenerRegex.test(message.body)) return;
 
   const senderId = message.author;
   if (!senderId) return;
 
-  const participant = chat.participants.find(
-    (p) => p.id._serialized === senderId,
-  );
+  const participant = chat.participants.find((p) => p.id._serialized === senderId);
   if (participant && (participant.isAdmin || participant.isSuperAdmin)) return;
 
   try {

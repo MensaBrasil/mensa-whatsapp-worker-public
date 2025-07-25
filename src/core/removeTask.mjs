@@ -27,16 +27,22 @@ async function processRemoveQueue(client, telegramBot) {
     console.log('No items in the removeQueue');
     return false;
   }
-  console.log(`\x1b[96mProcessing removal of member ${item.registration_id} with phone ${item.phone} from group ${item.groupId}...\x1b[0m`);
+  console.log(
+    `\x1b[96mProcessing removal of member ${item.registration_id} with phone ${item.phone} from group ${item.groupId}...\x1b[0m`,
+  );
   const result = await removeMemberFromGroup(client, item.phone, item.groupId, item.communityId);
 
   if (result.removed && result.removalType === 'Community') {
-    console.log(`\x1b[92mMember ${item.phone} successfully removed from community ${item.groupId} -> ${result.groupName} for reason: ${item.reason}\x1b[0m`);
+    console.log(
+      `\x1b[92mMember ${item.phone} successfully removed from community ${item.groupId} -> ${result.groupName} for reason: ${item.reason}\x1b[0m`,
+    );
     await recordUserExitFromGroup(item.phone, item.communityId, item.reason);
     await delay(removeDelay, delayOffset);
     return true;
   } else if (result.removed && result.removalType === 'Group') {
-    console.log(`\x1b[92mMember ${item.phone} successfully removed from group ${item.groupId} -> ${result.groupName} for reason: ${item.reason}\x1b[0m`);
+    console.log(
+      `\x1b[92mMember ${item.phone} successfully removed from group ${item.groupId} -> ${result.groupName} for reason: ${item.reason}\x1b[0m`,
+    );
     await recordUserExitFromGroup(item.phone, item.groupId, item.reason);
     await delay(removeDelay, delayOffset);
     return true;

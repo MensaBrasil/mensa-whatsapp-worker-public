@@ -108,8 +108,117 @@ async function registerWhatsappAddFulfilled(id) {
  * @returns {Promise<void>} A promise that resolves when the update is complete.
  */
 async function registerWhatsappAddAttempt(id) {
-  const query = 'UPDATE group_requests SET no_of_attempts = no_of_attempts + 1, last_attempt = NOW(), updated_at = NOW() WHERE id = $1';
+  const query =
+    'UPDATE group_requests SET no_of_attempts = no_of_attempts + 1, last_attempt = NOW(), updated_at = NOW() WHERE id = $1';
   await pool.query(query, [id]);
 }
 
-export { recordUserExitFromGroup, recordUserEntryToGroup, getMemberPhoneNumbers, registerWhatsappAddFulfilled, registerWhatsappAddAttempt };
+/**
+ * Retrieves all whatsapp workers
+ * @async
+ * @returns {Promise<Array<{ id: number, worker_phone: string }>>} Array of whatsapp workers
+ */
+async function getAllWhatsAppWorkers() {
+  const query = 'SELECT * FROM whatsapp_workers';
+  const result = await pool.query(query);
+  return result.rows ?? [];
+}
+
+/**
+ * Retrieves all records from the whatsapp_authorization table.
+ * @async
+ * @returns {Promise<Array<{
+ *   auth_id: number,
+ *   phone_number: string,
+ *   worker_id: number
+ * }>>} Array of whatsapp authorization records
+ */
+async function getAllWhatsAppAuthorizations() {
+  const query = 'SELECT * FROM whatsapp_authorization';
+  const result = await pool.query(query);
+  return result.rows ?? [];
+}
+
+/**
+ * Retrieve a single WhatsApp authorization record by phone number and worker ID.
+ * @param {string} last8digits - The last 8 digits of the phone number to search for.
+ * @param {number} worker_id - The worker ID to search for.
+ * @returns {Promise<{ auth_id: number, phone_number: string, worker_id: number } | null>} The authorization record if found, otherwise null.
+ * @throws {Error} If there's an error executing the database query.
+ *
+ */
+async function getWhatsappAuthorization(last8digits, worker_id) {
+  const query = `
+    SELECT * FROM whatsapp_authorization
+    WHERE RIGHT(phone_number, 8) = $1 AND worker_id = $2;
+  `;
+  const result = await pool.query(query, [last8digits, worker_id]);
+  return result.rows.length > 0 ? result.rows[0] : null;
+}
+
+/**
+ * Batch inserts or updates WhatsApp authorization records in the database.
+ *
+ * Accepts an array of authorization objects and performs a single bulk upsert operation.
+ *
+ * @async
+ * @function
+ * @param {Array<{
+ *   phone_number: string,
+ *   worker_id: number
+ * }>} authorizations - Array of authorization objects to upsert.
+ * @returns {Promise<void>} Resolves when the operation is complete.
+ */
+async function updateWhatsappAuthorizations(authorizations) {
+  if (!Array.isArray(authorizations) || authorizations.length === 0) return;
+
+  const columns = ['phone_number', 'worker_id'];
+
+  const values = [];
+  const placeholders = authorizations.map((auth, i) => {
+    const phone = auth.phone_number ? String(auth.phone_number).replace(/\D/g, '') : null;
+    values.push(phone, auth.worker_id);
+    const base = i * columns.length;
+    return `($${base + 1}, $${base + 2})`;
+  });
+
+  const query = `
+    INSERT INTO whatsapp_authorization
+      (${columns.join(', ')})
+    VALUES
+      ${placeholders.join(',\n')}
+    ON CONFLICT (phone_number, worker_id)
+    DO UPDATE SET updated_at = NOW()
+  `;
+
+  await pool.query(query, values);
+}
+
+/**
+ * Delete a record from the whatsapp_authorization table.
+ * @async
+ * @param {string} phone_number - The phone number to delete.
+ * @param {number} worker_id - The worker ID to delete.
+ * @returns {Promise<void>} A promise that resolves when the deletion is complete.
+ *
+ */
+async function deleteWhatsappAuthorization(phone_number, worker_id) {
+  const query = `
+    DELETE FROM whatsapp_authorization
+    WHERE phone_number = $1 AND worker_id = $2;
+  `;
+  await pool.query(query, [phone_number, worker_id]);
+}
+
+export {
+  recordUserExitFromGroup,
+  recordUserEntryToGroup,
+  getMemberPhoneNumbers,
+  registerWhatsappAddFulfilled,
+  registerWhatsappAddAttempt,
+  getAllWhatsAppAuthorizations,
+  updateWhatsappAuthorizations,
+  getAllWhatsAppWorkers,
+  deleteWhatsappAuthorization,
+  getWhatsappAuthorization,
+};

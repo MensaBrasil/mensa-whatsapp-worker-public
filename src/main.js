@@ -6,8 +6,10 @@ import qrcode from 'qrcode-terminal';
 import WAWebJS from 'whatsapp-web.js';
 
 import { processAddQueue } from './core/addTask.mjs';
+import { checkAuth, addNewAuthorizations } from './core/authorization.mjs';
 import { checkMessageContent } from './core/moderations.mjs';
 import { processRemoveQueue } from './core/removeTask.mjs';
+import { getAllWhatsAppWorkers } from './database/pgsql.mjs';
 import { testRedisConnection } from './database/redis.mjs';
 
 const { Client, LocalAuth } = WAWebJS;
@@ -25,18 +27,24 @@ const telegramBot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, {
 let addMode = process.argv.includes('--add');
 let removeMode = process.argv.includes('--remove');
 let moderationMode = process.argv.includes('--moderation');
+let authMode = process.argv.includes('--auth');
 
-if (!addMode && !removeMode && !moderationMode) {
-  console.log('Normal mode selected! Additions, removals, and moderation tasks will be processed.');
+if (!addMode && !removeMode && !moderationMode && !authMode) {
+  console.log(
+    'Normal mode selected! Additions, removals, moderation tasks, and authorization checks will be processed.',
+  );
   addMode = true;
   removeMode = true;
   moderationMode = true;
-} else if (addMode && !removeMode && !moderationMode) {
+  authMode = true;
+} else if (addMode && !removeMode && !moderationMode && !authMode) {
   console.log('Add mode selected! Only additions will be processed.');
-} else if (!addMode && removeMode && !moderationMode) {
+} else if (!addMode && removeMode && !moderationMode && !authMode) {
   console.log('Remove mode selected! Only removals will be processed.');
 } else if (moderationMode) {
   console.log('Moderation mode selected! Only moderation tasks will be processed.');
+} else if (authMode) {
+  console.log('Authorization mode selected! Only authorization checks will be processed.');
 }
 
 // Global error handler
@@ -70,6 +78,17 @@ if (moderationMode) {
   });
 }
 
+if (authMode) {
+  client.on('message', async (message) => {
+    const chat = await message.getChat();
+    if (chat.isGroup) return;
+    const contact = await message.getContact();
+    const workerPhone = client.info.wid.user;
+    await checkAuth(contact.number, workerPhone);
+    console.log(`Authorization check completed for number: ${contact.number}\nPush name: ${contact.pushname}`);
+  });
+}
+
 client.initialize();
 
 // Main loop
@@ -82,11 +101,30 @@ client.on('ready', async () => {
   console.log('Zelador worker is ready!');
   await testRedisConnection();
 
+  console.log('Redis connection is working!');
+
+  const workerPhone = client.info.wid.user;
+
+  console.log(`Worker phone number: ${workerPhone}`);
+
+  // Check if worker is registered in the database
+  const allWorkers = await getAllWhatsAppWorkers();
+  const worker = allWorkers.find((w) => w.worker_phone === workerPhone);
+
+  if (!worker) {
+    console.error(`Worker not found for phone number: ${workerPhone}`);
+    client.destroy();
+    process.exit(0);
+  }
+
+  console.log(`Running initial authorization check for worker: ${workerPhone}`);
+  await addNewAuthorizations(client, workerPhone);
+
   // Main loop
   const startTime = Date.now();
   while (true) {
     if (addMode) {
-      await processAddQueue(client);
+      await processAddQueue(client, worker);
       await new Promise((resolve) => setTimeout(resolve, 10000));
     }
     if (removeMode) {
